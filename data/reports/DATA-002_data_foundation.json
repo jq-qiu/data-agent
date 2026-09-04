@@ -1,0 +1,49 @@
+{
+  "batch_id": "7c8842e6-11d3-4f65-af74-0cc44605b9f1",
+  "status": "success",
+  "reused": true,
+  "reconciliation": {
+    "passed": true,
+    "table_counts": {
+      "dim_date": 774,
+      "dim_region": 27,
+      "dim_category": 74,
+      "dim_customer": 99441,
+      "dim_product": 32951,
+      "dim_seller": 3095,
+      "fact_order": 99441,
+      "fact_order_item": 112650,
+      "fact_payment": 103886,
+      "fact_delivery": 99441,
+      "fact_review": 99224,
+      "dws_sales_region_daily": 10689,
+      "dws_sales_category_daily": 56665
+    },
+    "expected_fact_counts": {
+      "fact_order": 99441,
+      "fact_order_item": 112650,
+      "fact_payment": 103886,
+      "fact_delivery": 99441,
+      "fact_review": 99224
+    },
+    "orphan_counts": {
+      "order_customer": 0,
+      "item_order": 0,
+      "item_product": 0,
+      "item_seller": 0,
+      "payment_order": 0,
+      "delivery_order": 0,
+      "review_order": 0
+    },
+    "date_dimension_contiguous": true,
+    "base_gmv": "13494400.74",
+    "region_dws_gmv": "13494400.74",
+    "category_dws_gmv": "13494400.74",
+    "valid_order_count": 98207,
+    "region_dws_order_count": 98207,
+    "category_order_count_sum": 99002,
+    "naive_payment_item_join_gmv": "14105767.00",
+    "join_inflation_detected": true,
+    "synthetic_non_null_count": 0
+  }
+}
