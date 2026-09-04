@@ -21,6 +21,10 @@ async def recall_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
         # 2.5 从runtime中获取Embedding客户端、指标向量持久层
         embedding_client = runtime.context["embedding_client"]
         metric_qdrant_repository = runtime.context["metric_qdrant_repository"]
+        meta_mysql_repository = runtime.context["meta_mysql_repository"]
+
+        for metric_info in await meta_mysql_repository.get_v1_metrics_matching_text(state["query"]):
+            retrieved_metrics_dict[metric_info.id] = metric_info
 
         # 2.6 遍历关键词列表，执行向量检索
         for keyword in keywords:
@@ -28,7 +32,11 @@ async def recall_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
             embedding = await embedding_client.aembed_query(keyword)
             # 2.6.2 执行向量索引库检索
             # 指标候选较少且误召回会引入错误计算公式，因此每个关键词只取Top5
-            metric_infos: list[MetricInfo] = await metric_qdrant_repository.search(embedding, limit=5)
+            metric_ids = await metric_qdrant_repository.search_v1_ids(embedding, limit=5)
+            metric_infos: list[MetricInfo] = [
+                await meta_mysql_repository.get_v1_metric_info_by_id(metric_id)
+                for metric_id in metric_ids
+            ]
             # 2.6.3 去重
             for metric_info in metric_infos:
                 metric_id = metric_info.id

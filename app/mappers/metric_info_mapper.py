@@ -12,9 +12,11 @@ class MetricInfoMapper:
             name=model.name,
             description=model.description,
             relevant_columns=model.relevant_columns,
-            alias=model.alias
+            alias=model.alias,
         )
 
     @staticmethod
     def to_model(entity: MetricInfo):
-        return MetricInfoMySQL(**asdict(entity))
+        data = asdict(entity)
+        legacy_fields = ("id", "name", "description", "relevant_columns", "alias")
+        return MetricInfoMySQL(**{key: data[key] for key in legacy_fields})

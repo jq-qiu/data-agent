@@ -1,6 +1,7 @@
 import asyncio
+from pathlib import Path
 
-from langgraph.constants import START, END
+from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
 from app.agent.context import DataAgentContext
@@ -22,6 +23,10 @@ from app.clients.embedding_client_manager import embedding_client_manager
 from app.clients.es_client_manager import es_client_manager
 from app.clients.mysql_client_manager import dw_mysql_client_manager, meta_mysql_client_manager
 from app.clients.qdrant_client_manager import qdrant_client_manager
+from app.metadata.catalog import load_catalog
+from app.nl2sql.policy import load_sql_policy
+from app.nl2sql.routing import route_after_validation
+from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
@@ -66,17 +71,22 @@ graph_builder.add_edge("filter_metric", "add_extra_context")
 graph_builder.add_edge("add_extra_context", "generate_sql")
 graph_builder.add_edge("generate_sql", "validate_sql")
 
-# 条件边 如果校验SQL节点更新error有值 执行校正SQL 没有值 执行执行SQL
-graph_builder.add_conditional_edges("validate_sql", lambda state: "execute_sql" if state["error"] is None else "correct_sql", {"execute_sql":"execute_sql", "correct_sql":"correct_sql"})
 
-graph_builder.add_edge("correct_sql", "execute_sql")
+# 校验成功才执行；失败最多纠错一次，纠错结果必须回到同一校验节点。
+graph_builder.add_conditional_edges(
+    "validate_sql",
+    route_after_validation,
+    {"execute_sql": "execute_sql", "correct_sql": "correct_sql", "end": END},
+)
+
+graph_builder.add_edge("correct_sql", "validate_sql")
 graph_builder.add_edge("execute_sql", END)
 
 # 4.编译得到graph
 graph = graph_builder.compile()
 
 # 5.测试
-if __name__ == '__main__':
+if __name__ == "__main__":
     # print(graph.get_graph().draw_mermaid())
 
     # 调用执行graph
@@ -85,7 +95,7 @@ if __name__ == '__main__':
         # result = await graph.ainvoke(input=state)
         # 实时返回节点状态以及数据。改为流式调用，流式响应自定义数据 参数：input
         # state = DataAgentState(query="华北地区去年卖了多少钱")
-        state = DataAgentState(query="统计下各分类销量最高商品信息")
+        state = DataAgentState(query="统计各商品品类的销量", repair_attempts=0)
         # stream_mode=values 每一个节点输出state所有数据
         # stream_mode=updates 每一个节点state被更新
         # stream_mode=custom 节点写自定义数据
@@ -98,15 +108,21 @@ if __name__ == '__main__':
         es_client_manager.init()
 
         # 2.创建不同持久层对象
-        async with (meta_mysql_client_manager.session_factory() as meta_session, dw_mysql_client_manager.session_factory() as dw_session):
+        async with (
+            meta_mysql_client_manager.session_factory() as meta_session,
+            dw_mysql_client_manager.session_factory() as dw_session,
+        ):
             context = DataAgentContext(
                 meta_mysql_repository=MetaMySQLRepository(meta_session),
                 dw_mysql_repository=DWMySQLRepository(dw_session),
                 embedding_client=embedding_client_manager.client,
                 column_qdrant_repository=ColumnQdrantRepository(qdrant_client_manager.client),
                 metric_qdrant_repository=MetricQdrantRepository(qdrant_client_manager.client),
-                value_es_repository=ValueESRepository(es_client_manager.client)
-
+                value_es_repository=ValueESRepository(es_client_manager.client),
+                sql_validator=SQLValidator(
+                    load_catalog(Path(__file__).parents[2] / "conf" / "meta_config.yaml"),
+                    load_sql_policy(Path(__file__).parents[2] / "conf" / "sql_policy.yaml"),
+                ),
             )
             async for chunk in graph.astream(input=state, context=context, stream_mode="custom"):
                 print(chunk)
@@ -116,4 +132,5 @@ if __name__ == '__main__':
             await meta_mysql_client_manager.close()
             await es_client_manager.close()
             await qdrant_client_manager.close()
+
     asyncio.run(test_run_graph())

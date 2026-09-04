@@ -20,12 +20,17 @@ async def recall_column(state: DataAgentState, runtime: Runtime[DataAgentContext
         # 3.2 从runtime获取embeding客户端
         embedding_client = runtime.context["embedding_client"]
         column_qdrant_repository = runtime.context["column_qdrant_repository"]
+        meta_mysql_repository = runtime.context["meta_mysql_repository"]
 
         for keyword in keywords:
             # 3.1 对关键词转为向量
             embedding = await embedding_client.aembed_query(keyword)
             # 3.2 检索字段信息向量集合
-            colunm_infos: list[ColumnInfo] = await column_qdrant_repository.search(embedding)
+            column_ids = await column_qdrant_repository.search_v1_ids(embedding)
+            colunm_infos: list[ColumnInfo] = [
+                await meta_mysql_repository.get_v1_column_info_by_id(column_id)
+                for column_id in column_ids
+            ]
             # 3.3 获取检索结果
             for colunm_info in colunm_infos:
                 colunm_id = colunm_info.id

@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Metadata / Gate 2 complete.
+NL2SQL adaptation complete; Gate 3 evaluation pending.
 
 ## Current Feature
 
-META-001 Metadata Adaptation.
+SQL-001 NL2SQL Adaptation.
 
 ## Feature Status
 
-Completed. Versioned `metadata-v1` adapts 15 accepted Olist V1 tables, 103 columns, 9 metrics, and 21 allowed relationships. Feature-owned `meta_v1_*` tables, Qdrant collection, and Elasticsearch value index leave legacy metadata and the isolated DW unchanged. Twelve fixed samples passed Gate 2 with real retrieval metrics. The status is valid when the META-001 completion commit containing this file is present on `origin/main`.
+Completed. The single-turn LangGraph query path uses `metadata-v1` and a versioned AST policy before read-only access to `data_agent_v1_dw`. Unsafe SQL, unregistered schema/JOINs, sensitive projections, invalid metric/grain formulas, and payment-item fanout are rejected; one repair is allowed and must be revalidated. Real retrieval, SQL, and end-to-end LangGraph smoke passed. The status is valid when the SQL-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-META-001 Metadata Adaptation.
+SQL-001 NL2SQL Adaptation.
 
 ## Next Feature
 
-SQL-001 NL2SQL Adaptation.
+SQL-002 NL2SQL Evaluation.
 
 ## Last Successful Validation
 
@@ -62,10 +62,17 @@ SQL-001 NL2SQL Adaptation.
 - META-001 context evaluation: Precision 0.3406, Recall 0.9267, average estimated context 182.67 tokens, maximum 216 tokens, and Grain Warning Accuracy 1.0000;
 - META-001 source integrity: target database is `data_agent_v1_dw`; accepted valid-order GMV and region DWS GMV both remain 13,494,400.74;
 - Gate 2: all frozen metadata thresholds passed with real MySQL, Qdrant, Elasticsearch, and embedding-service evidence.
+- SQL-001 targeted tests: 26 passed; full pytest regression: 68 passed;
+- SQL-001 Ruff: 31 diagnostics, below the ENG-001 baseline of 51;
+- SQL-001 mypy: 36 errors in 11 files, below the ENG-001 baseline of 40 errors in 14 files;
+- SQL-001 policy: single read-only SELECT/CTE, registered database/schema/JOIN/functions, no sensitive identifier projection, 500-row cap, 10-second timeout, and at most one revalidated repair;
+- SQL-001 real SQL smoke: May 2018 GMV 992,871.75; AOV 145.305393; Top 5 categories returned five rows;
+- SQL-001 real LangGraph smoke: `2018年5月GMV是多少` completed V1 retrieval, generation, validation, EXPLAIN, and controlled execution with the same GMV result;
+- SQL-001 isolation: only `data_agent_v1_dw` was queried; original `dw`, accepted V1 data, and metadata indexes were not changed.
 
 ## Last Commit
 
-The META-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The SQL-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -73,13 +80,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None for META-001. Context Precision is 0.3406 at the evaluated TopK because context intentionally includes safety-relevant JOIN and grain-warning candidates; the fixed-set recall and all Gate 2 thresholds pass. The Qdrant client 1.16.2 reports a version-compatibility warning against server 1.19.0 but all real build and retrieval operations succeed. The repository still has the documented baselines of 51 Ruff diagnostics and 40 mypy errors in 14 files.
+None for SQL-001. SQL-002's 30-case evaluation is not yet implemented, so Gate 3 is not claimed. The Qdrant client 1.16.2 warning against server 1.19.0 remains, but live retrieval succeeds. The repository now reports 31 Ruff diagnostics and 36 mypy errors in 11 files, both below their ENG-001 baselines.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/SQL-001_nl2sql_adaptation.md` and its direct sources before implementation.
-5. Inspect the existing NL2SQL retrieval, linking, validation, and execution path without modifying diagnosis or Agent routing logic.
-6. Implement SQL-001 only, run its targeted tests and Gate prerequisites, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/SQL-002_nl2sql_evaluation.md` and its direct sources before implementation.
+5. Inspect the accepted SQL-001 runtime and the evaluation requirements without changing diagnosis, AOV decomposition, or API behavior.
+6. Implement SQL-002 only, run the frozen 30-case evaluation and Gate 3 checks, produce a completion report, create an independent commit, and push.

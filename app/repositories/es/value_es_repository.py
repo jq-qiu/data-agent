@@ -10,9 +10,14 @@ from app.entities.value_info import ValueInfo
 class ValueESRepository:
     """操作字段取值ES持久层类"""
 
-    def __init__(self, client: AsyncElasticsearch, index_name: str | None = None,
-                 analyzer: str | None = None, number_of_shards: int | None = None,
-                 number_of_replicas: int | None = None):
+    def __init__(
+        self,
+        client: AsyncElasticsearch,
+        index_name: str | None = None,
+        analyzer: str | None = None,
+        number_of_shards: int | None = None,
+        number_of_replicas: int | None = None,
+    ):
         self.client = client
         self.idx_name = index_name or app_config.es.index_name
         self.analyzer = analyzer or app_config.es.analyzer
@@ -31,10 +36,10 @@ class ValueESRepository:
                 "value": {
                     "type": "text",
                     "analyzer": self.analyzer,
-                    "search_analyzer": self.analyzer
+                    "search_analyzer": self.analyzer,
                 },
-                "column_id": {"type": "keyword"}
-            }
+                "column_id": {"type": "keyword"},
+            },
         }
 
     async def ensure_index(self):
@@ -50,9 +55,7 @@ class ValueESRepository:
 
         # 创建索引库
         await self.client.indices.create(
-            index=self.idx_name,
-            settings=self.es_index_settings,
-            mappings=self.es_index_mappings
+            index=self.idx_name, settings=self.es_index_settings, mappings=self.es_index_mappings
         )
 
         await self.ensure_ready()
@@ -75,24 +78,18 @@ class ValueESRepository:
             return
 
         for i in range(0, len(value_infos), batch_size):
-            batch = value_infos[i:i + batch_size]
+            batch = value_infos[i : i + batch_size]
             operations: list = []
             for value_info in batch:
                 # 指定操作的索引库以及文档ID
-                operations.append({
-                    "index": {
-                        "_index": self.idx_name,
-                        "_id": value_info.id
-                    }
-                })
+                operations.append({"index": {"_index": self.idx_name, "_id": value_info.id}})
                 # 指定文档内容
                 operations.append(asdict(value_info))
             # 将本批次数据批量写入ES
             response = await self.client.bulk(operations=operations)
             if response.get("errors"):
                 failed_items = [
-                    item["index"] for item in response["items"]
-                    if item["index"].get("error")
+                    item["index"] for item in response["items"] if item["index"].get("error")
                 ]
                 first_error = failed_items[0] if failed_items else "unknown bulk error"
                 raise RuntimeError(f"ES批量写入失败: {first_error}")
@@ -115,21 +112,52 @@ class ValueESRepository:
         }
     """
 
-    async def search(self, keyword: str, score_threshold: float = 0.6, limit: int = 10) -> list[ValueInfo]:
+    async def search(
+        self, keyword: str, score_threshold: float = 0.6, limit: int = 10
+    ) -> list[ValueInfo]:
         # 1.执行全文检索
-        result:ObjectApiResponse = await self.client.search(
+        result: ObjectApiResponse = await self.client.search(
             # 索引库名称 不指定会查询所有索引库
             index=self.idx_name,
             # 查询条件，采用match全文查询
-            query={
-                "match": {
-                    "value": keyword
-                }
-            },
+            query={"match": {"value": keyword}},
             # 相关性得分
             min_score=score_threshold,
             # 返回记录数
-            size=limit
+            size=limit,
         )
-        #2.解析ES结果
+        # 2.解析ES结果
         return [ValueInfo(**hit["_source"]) for hit in result["hits"]["hits"]]
+
+    async def search_v1_grounded(self, keyword: str, limit: int = 5) -> list[ValueInfo]:
+        result = await self.client.search(
+            index="data-agent-value-v1",
+            query={
+                "bool": {
+                    "should": [
+                        {"term": {"canonical_value": {"value": keyword, "boost": 8}}},
+                        {"term": {"aliases": {"value": keyword, "boost": 10}}},
+                        {"match_phrase": {"matched_value": keyword}},
+                    ],
+                    "minimum_should_match": 1,
+                }
+            },
+            size=limit,
+        )
+        hits = result["hits"]["hits"]
+        exact_hits = [
+            hit
+            for hit in hits
+            if keyword == str(hit["_source"]["canonical_value"])
+            or keyword in hit["_source"].get("aliases", [])
+        ]
+        selected_hits = exact_hits or hits
+        return [
+            ValueInfo(
+                id=str(hit["_source"]["id"]),
+                value=str(hit["_source"]["canonical_value"]),
+                column_id=str(hit["_source"]["column_id"]),
+                matched_value=keyword,
+            )
+            for hit in selected_hits
+        ]

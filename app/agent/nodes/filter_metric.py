@@ -1,7 +1,6 @@
 import yaml
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
-from langgraph.config import get_stream_writer
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
@@ -21,7 +20,9 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
         query = state["query"]
         # 2.调用llm获取回答用户问题需要指标
         # 2.1 构建提示词运行单元
-        prompt = PromptTemplate(template=load_prompt("filter_metric_info"), input_variables=["query", "metric_infos"])
+        prompt = PromptTemplate(
+            template=load_prompt("filter_metric_info"), input_variables=["query", "metric_infos"]
+        )
         # 2.2 llm结果解析 JSON格式
         out_put = JsonOutputParser()
         # 2.3 构建链，执行异步调用 得到所需指标列表（只包含指标名称）
@@ -32,7 +33,10 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
         chain = prompt | llm | out_put
         # 2.4 处理传入的列表对象，将列表转为Yaml
         result = await chain.ainvoke(
-            {"query": query, "metric_infos": yaml.dump(metric_infos, allow_unicode=True, sort_keys=False)}
+            {
+                "query": query,
+                "metric_infos": yaml.dump(metric_infos, allow_unicode=True, sort_keys=False),
+            }
         )
         logger.info(f"调用llm获取所需指标：{result}")
 
@@ -44,12 +48,13 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
                 metric_infos.remove(metric_info)
         # 4.更新state中指标信息列表 “metric_infos”
         write({"type": "progress", "step": "过滤指标", "status": "success"})
-        logger.info(f"过滤指标成功，指标：{[metric_info["name"] for metric_info in metric_infos]}")
+        logger.info(f"过滤指标成功，指标：{[metric_info['name'] for metric_info in metric_infos]}")
         return {"metric_infos": metric_infos}
     except Exception as e:
         logger.error(f"过滤指标发生异常：{e}")
         write({"type": "progress", "step": "过滤指标", "status": "error"})
         raise
+
 
 # if __name__ == '__main__':
 #     metric_state = MetricInfoState(

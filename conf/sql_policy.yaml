@@ -1,0 +1,29 @@
+version: sql-policy-v1
+allowed_database: data_agent_v1_dw
+max_rows: 500
+timeout_seconds: 10
+max_repair_attempts: 1
+forbidden_schemas: [information_schema, mysql, performance_schema, sys]
+forbidden_functions: [benchmark, load_file, sleep, sys_exec, sys_eval]
+allowed_functions:
+  - abs
+  - avg
+  - cast
+  - coalesce
+  - concat
+  - count
+  - date
+  - date_format
+  - day
+  - if
+  - ifnull
+  - lower
+  - max
+  - min
+  - month
+  - nullif
+  - quarter
+  - round
+  - sum
+  - upper
+  - year

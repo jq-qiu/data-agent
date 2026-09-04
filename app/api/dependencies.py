@@ -1,17 +1,33 @@
+from functools import lru_cache
+from pathlib import Path
+
 from fastapi import Depends
 from langchain_core.embeddings import Embeddings
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clients.embedding_client_manager import embedding_client_manager
 from app.clients.es_client_manager import es_client_manager
-from app.clients.mysql_client_manager import meta_mysql_client_manager, dw_mysql_client_manager
+from app.clients.mysql_client_manager import dw_mysql_client_manager, meta_mysql_client_manager
 from app.clients.qdrant_client_manager import qdrant_client_manager
+from app.metadata.catalog import load_catalog
+from app.nl2sql.policy import load_sql_policy
+from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
 from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
 from app.services.query_service import QueryService
+
+ROOT = Path(__file__).parents[2]
+
+
+@lru_cache(maxsize=1)
+def get_sql_validator() -> SQLValidator:
+    return SQLValidator(
+        load_catalog(ROOT / "conf" / "meta_config.yaml"),
+        load_sql_policy(ROOT / "conf" / "sql_policy.yaml"),
+    )
 
 
 async def get_embedding_client():
@@ -29,31 +45,35 @@ async def get_metric_qdrant_repository():
 async def get_value_es_repository():
     return ValueESRepository(es_client_manager.client)
 
+
 async def get_meta_session():
     """每次查询数据库Session每次都应该是新的Session，数据库操作完成关闭"""
     async with meta_mysql_client_manager.session_factory() as meta_session:
-        yield meta_session #查询前会获取到session,执行DB操作，完成DB操作后 自定关闭Session
+        yield meta_session  # 查询前会获取到session,执行DB操作，完成DB操作后 自定关闭Session
 
-async def get_meta_mysql_repository(session:AsyncSession = Depends(get_meta_session)):
+
+async def get_meta_mysql_repository(session: AsyncSession = Depends(get_meta_session)):
     return MetaMySQLRepository(session)
+
 
 async def get_dw_session():
     """每次查询数据库Session每次都应该是新的Session，数据库操作完成关闭"""
     async with dw_mysql_client_manager.session_factory() as dw_session:
-        print(f"session:{dw_session}")
-        yield dw_session #查询前会获取到session,执行DB操作，完成DB操作后 自定关闭Session
+        yield dw_session  # 查询前会获取到session,执行DB操作，完成DB操作后 自定关闭Session
 
 
-async def get_dw_mysql_repository(session:AsyncSession = Depends(get_dw_session)):
+async def get_dw_mysql_repository(session: AsyncSession = Depends(get_dw_session)):
     return DWMySQLRepository(session)
 
+
 async def get_query_service(
-        embedding_client: Embeddings = Depends(get_embedding_client),
-        column_qdrant_repository: ColumnQdrantRepository = Depends(get_column_qdrant_repository),
-        metric_qdrant_repository: MetricQdrantRepository = Depends(get_metric_qdrant_repository),
-        value_es_repository: ValueESRepository = Depends(get_value_es_repository),
-        meta_mysql_repository: MetaMySQLRepository = Depends(get_meta_mysql_repository),
-        dw_mysql_repository:DWMySQLRepository = Depends(get_dw_mysql_repository)
+    embedding_client: Embeddings = Depends(get_embedding_client),
+    column_qdrant_repository: ColumnQdrantRepository = Depends(get_column_qdrant_repository),
+    metric_qdrant_repository: MetricQdrantRepository = Depends(get_metric_qdrant_repository),
+    value_es_repository: ValueESRepository = Depends(get_value_es_repository),
+    meta_mysql_repository: MetaMySQLRepository = Depends(get_meta_mysql_repository),
+    dw_mysql_repository: DWMySQLRepository = Depends(get_dw_mysql_repository),
+    sql_validator: SQLValidator = Depends(get_sql_validator),  # noqa: B008
 ):
     return QueryService(
         embedding_client=embedding_client,
@@ -61,5 +81,6 @@ async def get_query_service(
         metric_qdrant_repository=metric_qdrant_repository,
         value_es_repository=value_es_repository,
         meta_mysql_repository=meta_mysql_repository,
-        dw_mysql_repository=dw_mysql_repository
+        dw_mysql_repository=dw_mysql_repository,
+        sql_validator=sql_validator,
     )

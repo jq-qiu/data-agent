@@ -1,5 +1,9 @@
-from sqlalchemy import text, Result
+import asyncio
+
+from sqlalchemy import Result, text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.nl2sql.validator import ValidatedSQL
 
 
 class DWMySQLRepository:
@@ -15,7 +19,9 @@ class DWMySQLRepository:
         # 查询结果是多列多行 返回列表 包装对象
         return {row.Field: row.Type for row in result.fetchall()}
 
-    async def get_column_values_by_table_id(self, table_id: str, column_name: str, limit: int = 10) -> list[str]:
+    async def get_column_values_by_table_id(
+        self, table_id: str, column_name: str, limit: int = 10
+    ) -> list[str]:
         """查询指定个数某张表某个字段取值"""
         sql = f"SELECT distinct {column_name} from {table_id} limit {limit}"
         result: Result = await self.session.execute(text(sql))
@@ -34,10 +40,17 @@ class DWMySQLRepository:
         # 3.返回结果
         return {"version": version, "dialect": dialect}
 
-    async def validate_sql(self, sql: str):
-        sql = f"explain {sql}"
-        await self.session.execute(text(sql))
+    async def validate_sql(self, validated_sql: ValidatedSQL):
+        await asyncio.wait_for(
+            self.session.execute(text(f"EXPLAIN {validated_sql.sql}")),
+            timeout=validated_sql.timeout_seconds,
+        )
 
-    async def execute_sql(self, sql: str) -> list[dict]:
-        result = await self.session.execute(text(sql))
-        return [dict(row_mapping) for row_mapping in result.mappings().fetchall()]
+    async def execute_sql(self, validated_sql: ValidatedSQL) -> list[dict]:
+        result = await asyncio.wait_for(
+            self.session.execute(text(validated_sql.sql)),
+            timeout=validated_sql.timeout_seconds,
+        )
+        return [
+            dict(row_mapping) for row_mapping in result.mappings().fetchmany(validated_sql.max_rows)
+        ]

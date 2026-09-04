@@ -1,8 +1,13 @@
-from langgraph.config import get_stream_writer
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
-from app.agent.state import DataAgentState, MetricInfoState, TableInfoState, ColumnInfoState
+from app.agent.state import (
+    ColumnInfoState,
+    DataAgentState,
+    MetricInfoState,
+    RelationshipInfoState,
+    TableInfoState,
+)
 from app.core.log import logger
 from app.entities.column_info import ColumnInfo
 from app.entities.metric_info import MetricInfo
@@ -25,27 +30,58 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
 
         # 2. 封装已召回信息中包含所有字段信息 考虑重复问题
         # 2.1 已召回字段列表转为字典，得到字段字典 字典key:字段ID Value:字段信息ColumnInfo
-        column_id_column_info_dict = {column_info.id: column_info for column_info in retrieved_columns}
+        column_id_column_info_dict = {
+            column_info.id: column_info for column_info in retrieved_columns
+        }
         # 2.2 从已召回指标列表中，得到指标相关字段ID，将字段信息加入到“字段字典”中
         for retrieved_metric in retrieved_metrics:
             for column_id in retrieved_metric.relevant_columns:
                 # 2.2.1 判断指标包含字段ID知否存在于字典中
                 if column_id not in column_id_column_info_dict:
                     # 2.2.2 从meta数据库中column_info表查询字段信息
-                    column_info: ColumnInfo = await meta_mysql_repository.get_column_info_by_id(column_id)
-                    column_id_column_info_dict[column_id] = column_info
+                    metric_column_info: ColumnInfo = (
+                        await meta_mysql_repository.get_v1_column_info_by_id(column_id)
+                    )
+                    column_id_column_info_dict[column_id] = metric_column_info
 
         # 2.3 从已召回字段取值列表中，得到字段取值对应 字段ID，将字段信息加入到“字段字典”中 注意：为字段增加实例值
         for value_info in retrieved_values:
             column_id = value_info.column_id
             if column_id not in column_id_column_info_dict:
                 # 说明字段ID不在字段字典中，根据字段ID查询字段信息
-                column_info: ColumnInfo = await meta_mysql_repository.get_column_info_by_id(column_id)
-                column_id_column_info_dict[column_id] = column_info
+                value_column_info: ColumnInfo = (
+                    await meta_mysql_repository.get_v1_column_info_by_id(column_id)
+                )
+                column_id_column_info_dict[column_id] = value_column_info
             # 字段取值（枚举值）
             value = value_info.value
             if value not in column_id_column_info_dict[column_id].examples:
                 column_id_column_info_dict[column_id].examples.append(value)
+
+        # 2.4 使用 Relationship Registry 补齐候选表之间的最短连接路径。
+        initial_table_ids = list(
+            dict.fromkeys(column.table_id for column in column_id_column_info_dict.values())
+        )
+        for index, left_table in enumerate(initial_table_ids):
+            for right_table in initial_table_ids[index + 1 :]:
+                path = await meta_mysql_repository.get_v1_relationship_path(
+                    left_table,
+                    right_table,
+                )
+                for relationship in path:
+                    for table_key, column_key in (
+                        ("left_table", "left_column"),
+                        ("right_table", "right_column"),
+                    ):
+                        relationship_column_id = (
+                            f"{relationship[table_key]}.{relationship[column_key]}"
+                        )
+                        if relationship_column_id not in column_id_column_info_dict:
+                            column_id_column_info_dict[
+                                relationship_column_id
+                            ] = await meta_mysql_repository.get_v1_column_info_by_id(
+                                relationship_column_id
+                            )
 
         # 3 将所有字段信息 转为 “表-字段列表”字典 key:table_id value:字段信息列表
         table_id_columns_dict: dict[str, list[ColumnInfo]] = {}
@@ -60,37 +96,46 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
 
         # 4. 补齐主外键字段信息
         # 4.1 遍历“表-字段列表”中key 得到每张表ID
-        for table_id in table_id_columns_dict.keys():
+        for table_id, table_columns in table_id_columns_dict.items():
             # 4.2 获取到当前表已召回所有字段ID
-            column_ids = [column.id for column in table_id_columns_dict[table_id]]
+            column_ids = [column.id for column in table_columns]
             # 4.3 根据表ID查询meta库中column_info表 获取主外键字段
-            key_columns: list[ColumnInfo] = await meta_mysql_repository.get_key_columns_by_table_id(table_id)
+            key_columns: list[
+                ColumnInfo
+            ] = await meta_mysql_repository.get_v1_key_columns_by_table_id(table_id)
             # 4.4 遍历主外键列表 是否需要将查询到主外键字段信息加入 对应表的字段列表中
             for key_column in key_columns:
                 # 4.4.1 判断是否已经包含主外键
                 if key_column.id not in column_ids:
                     # 4.4.2 暂未包含主外键字段信息，则添加
-                    table_id_columns_dict[table_id].append(key_column)
+                    table_columns.append(key_column)
 
         # 5 处理表信息封装table_infos:list[TableInfoState]
         table_infos: list[TableInfoState] = []
         # 5.1 遍历“表-字段列表”字典
         for table_id, column_infos in table_id_columns_dict.items():
             # 5.2 封装表state 表信息从meta数据库table_info查询
-            table_info: TableInfo = await meta_mysql_repository.get_table_info_by_id(table_id)
+            table_info: TableInfo = await meta_mysql_repository.get_v1_table_info_by_id(table_id)
             # 5.3 封装表中字段state
             table_info_state = TableInfoState(
                 name=table_info.name,
                 role=table_info.role,
+                grain=table_info.grain,
                 description=table_info.description,
-                columns=[ColumnInfoState(
-                    name=column_info.name,
-                    type=column_info.type,
-                    role=column_info.role,
-                    examples=column_info.examples,
-                    description=column_info.description,
-                    alias=column_info.alias
-                ) for column_info in column_infos]
+                time_column=table_info.time_column,
+                primary_key=table_info.primary_key,
+                allowed_join_relations=table_info.allowed_join_relations,
+                columns=[
+                    ColumnInfoState(
+                        name=column_info.name,
+                        type=column_info.type,
+                        role=column_info.role,
+                        examples=column_info.examples,
+                        description=column_info.description,
+                        alias=column_info.alias,
+                    )
+                    for column_info in column_infos
+                ],
             )
             # 5.4 将表state加入到table_infos
             table_infos.append(table_info_state)
@@ -100,17 +145,51 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
         if retrieved_metrics:
             for metric_info in retrieved_metrics:
                 metric_info_state = MetricInfoState(
+                    id=metric_info.id,
                     name=metric_info.name,
                     description=metric_info.description,
+                    formula=metric_info.formula,
+                    base_grain=metric_info.base_grain,
+                    time_column=metric_info.time_column,
+                    status_filters=metric_info.status_filters,
+                    allowed_dimensions=metric_info.allowed_dimensions,
+                    component_metrics=metric_info.component_metrics,
                     relevant_columns=metric_info.relevant_columns,
-                    alias=metric_info.alias
+                    alias=metric_info.alias,
                 )
                 metric_infos.append(metric_info_state)
+        relationships = await meta_mysql_repository.get_v1_relationships_for_tables(
+            set(table_id_columns_dict)
+        )
+        join_relations = [
+            RelationshipInfoState(
+                relation_id=item["relation_id"],
+                left_table=item["left_table"],
+                left_column=item["left_column"],
+                right_table=item["right_table"],
+                right_column=item["right_column"],
+                cardinality=item["cardinality"],
+                grain_warning=item["grain_warning"],
+            )
+            for item in relationships
+        ]
+        grain_warnings = list(
+            dict.fromkeys(item["grain_warning"] for item in join_relations if item["grain_warning"])
+        )
         write({"type": "progress", "step": "合并召回信息", "status": "success"})
         logger.info(f"合并召回信息成功，表：{table_id_columns_dict.keys()}")
-        logger.info(f"合并召回信息成功，字段：{[column['name'] for ti in table_infos for column in ti['columns']]}")
-        logger.info(f"合并召回信息成功，指标：{[metric_info["name"] for metric_info in metric_infos]}")
-        return {"table_infos": table_infos, "metric_infos": metric_infos}
+        logger.info(
+            f"合并召回信息成功，字段：{[column['name'] for ti in table_infos for column in ti['columns']]}"
+        )
+        logger.info(
+            f"合并召回信息成功，指标：{[metric_info['name'] for metric_info in metric_infos]}"
+        )
+        return {
+            "table_infos": table_infos,
+            "metric_infos": metric_infos,
+            "join_relations": join_relations,
+            "grain_warnings": grain_warnings,
+        }
     except Exception as e:
         logger.error(f"合并召回信息发生异常：{e}")
         write({"type": "progress", "step": "合并召回信息", "status": "error"})

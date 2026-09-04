@@ -1,7 +1,6 @@
 import yaml
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
-from langgraph.config import get_stream_writer
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
@@ -21,14 +20,19 @@ async def filter_table(state: DataAgentState, runtime: Runtime[DataAgentContext]
         table_infos: list[TableInfoState] = state["table_infos"]
         query = state["query"]
         # 2. 调用llm获取回答用户问题所需要表跟字段
-        prompt = PromptTemplate(template=load_prompt("filter_table_info"), input_variables=["query", "table_infos"])
+        prompt = PromptTemplate(
+            template=load_prompt("filter_table_info"), input_variables=["query", "table_infos"]
+        )
         chain = prompt | llm | JsonOutputParser()
         # {
         #     "表名1": ["字段1名称", "字段2名称", "..."],
         #     "表名2": ["字段1", "字段2", "..."]
         # }
         result = await chain.ainvoke(
-            {"query": query, "table_infos": yaml.dump(table_infos, allow_unicode=True, sort_keys=False)}
+            {
+                "query": query,
+                "table_infos": yaml.dump(table_infos, allow_unicode=True, sort_keys=False),
+            }
         )
 
         # 3.遍历表信息列表，将不需要的表信息以及表中字段删除
@@ -40,15 +44,17 @@ async def filter_table(state: DataAgentState, runtime: Runtime[DataAgentContext]
             else:
                 # 3.2 将表下包含不需要字段信息删除
                 columns = table_info["columns"]
-                #3.2.1 遍历表下字段列表
+                # 3.2.1 遍历表下字段列表
                 for column in columns[:]:
                     column_name = column["name"]
-                    #3.2.2 只有字段没有出现在llm结果 字典的Value中
+                    # 3.2.2 只有字段没有出现在llm结果 字典的Value中
                     if column_name not in result[table_name]:
                         table_info["columns"].remove(column)
         write({"type": "progress", "step": "过滤表格", "status": "success"})
-        logger.info(f"过滤表格成功，表信息：{[table_info["name"] for table_info in table_infos]}")
-        logger.info(f"过滤表格成功，字段信息：{[column['name'] for ti in table_infos for column in ti['columns']]}")
+        logger.info(f"过滤表格成功，表信息：{[table_info['name'] for table_info in table_infos]}")
+        logger.info(
+            f"过滤表格成功，字段信息：{[column['name'] for ti in table_infos for column in ti['columns']]}"
+        )
         # 4. 更新state中“table_infos”
         return {"table_infos": table_infos}
     except Exception as e:

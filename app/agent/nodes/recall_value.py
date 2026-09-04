@@ -28,7 +28,7 @@ async def recall_value(state: DataAgentState, runtime: Runtime[DataAgentContext]
         if keywords:
             for keyword in keywords:
                 es_started_at = perf_counter()
-                value_infos: list[ValueInfo] = await value_es_repository.search(keyword)
+                value_infos: list[ValueInfo] = await value_es_repository.search_v1_grounded(keyword)
                 logger.info(
                     f"ES字段取值检索耗时：{perf_counter() - es_started_at:.3f}秒，"
                     f"关键词：{keyword!r}，命中数：{len(value_infos)}"
@@ -46,8 +46,6 @@ async def recall_value(state: DataAgentState, runtime: Runtime[DataAgentContext]
         # 2.7 更新state中"retrieved_values"
         return {"retrieved_values": list(retrieved_metrics_dict.values())}
     except Exception as e:
-        logger.error(
-            f"召回字段取值发生异常，耗时：{perf_counter() - node_started_at:.3f}秒：{e}"
-        )
+        logger.error(f"召回字段取值发生异常，耗时：{perf_counter() - node_started_at:.3f}秒：{e}")
         write({"type": "progress", "step": "召回字段取值", "status": "error"})
         raise
