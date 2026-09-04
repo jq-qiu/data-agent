@@ -1,0 +1,526 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/agent-state.schema.json",
+  "title": "Attribution Analysis Agent State",
+  "description": "经营归因分析 Agent 的可序列化检查点状态。禁止包含连接、客户端、函数、密钥和大体量原始数据。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "state_version",
+    "task_id",
+    "conversation_id",
+    "tenant_id",
+    "user_id",
+    "status",
+    "current_node",
+    "user_query",
+    "context_refs",
+    "clarification",
+    "metric_resolution",
+    "analysis_plan",
+    "data_quality",
+    "observations",
+    "hypotheses",
+    "evidence",
+    "attribution_runs",
+    "tool_history",
+    "budgets",
+    "progress",
+    "errors",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "state_version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "task_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "conversation_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "tenant_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "user_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "trace_id": {
+      "type": ["string", "null"],
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["queued", "running", "waiting_user", "success", "failed", "cancelled"]
+    },
+    "current_node": {
+      "enum": [
+        "accept_task",
+        "load_context",
+        "define_problem",
+        "request_clarification",
+        "resolve_metric_and_baseline",
+        "authorize_and_plan",
+        "check_data_quality",
+        "query_overview",
+        "decompose_metric",
+        "drill_down_dimensions",
+        "form_and_test_hypotheses",
+        "synthesize_result",
+        "validate_result",
+        "persist_and_publish",
+        "terminal"
+      ]
+    },
+    "user_query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "context_refs": {
+      "$ref": "#/$defs/contextRefs"
+    },
+    "problem_definition": {
+      "oneOf": [
+        {"$ref": "#/$defs/problemDefinition"},
+        {"type": "null"}
+      ]
+    },
+    "clarification": {
+      "$ref": "#/$defs/clarification"
+    },
+    "metric_resolution": {
+      "$ref": "#/$defs/metricResolution"
+    },
+    "analysis_plan": {
+      "$ref": "#/$defs/analysisPlan"
+    },
+    "data_quality": {
+      "$ref": "#/$defs/dataQuality"
+    },
+    "observations": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/observation"}
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/hypothesis"}
+    },
+    "evidence": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "attribution_runs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/attributionRun"}
+    },
+    "tool_history": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/toolCall"}
+    },
+    "budgets": {
+      "$ref": "#/$defs/budgets"
+    },
+    "progress": {
+      "$ref": "#/$defs/progress"
+    },
+    "result_ref": {
+      "oneOf": [
+        {"$ref": "#/$defs/resultRef"},
+        {"type": "null"}
+      ]
+    },
+    "termination_reason": {
+      "type": ["string", "null"],
+      "enum": [
+        "evidence_sufficient",
+        "no_material_change",
+        "data_quality_blocked",
+        "budget_exhausted",
+        "no_progress",
+        "missing_data",
+        "waiting_for_user",
+        "user_cancelled",
+        "policy_denied",
+        "system_failure",
+        null
+      ]
+    },
+    "errors": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/errorRecord"}
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "numberOrNull": {
+      "type": ["number", "null"]
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "timezone", "granularity"],
+      "properties": {
+        "start": {"type": "string", "format": "date-time"},
+        "end": {"type": "string", "format": "date-time"},
+        "timezone": {"$ref": "#/$defs/nonEmptyString"},
+        "granularity": {
+          "enum": ["hour", "day", "week", "month", "quarter", "year"]
+        },
+        "is_complete": {"type": "boolean"}
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "alignment", "selection_source"],
+      "properties": {
+        "type": {
+          "enum": ["previous_period", "same_period_last_year", "rolling_average", "budget", "peer_group", "custom"]
+        },
+        "start": {"type": ["string", "null"], "format": "date-time"},
+        "end": {"type": ["string", "null"], "format": "date-time"},
+        "alignment": {
+          "enum": ["calendar_aligned", "weekday_aligned", "holiday_aligned", "business_day_aligned", "not_applicable"]
+        },
+        "selection_source": {
+          "enum": ["user", "metric_default", "organization_default"]
+        },
+        "rolling_window": {"type": ["integer", "null"], "minimum": 1},
+        "target_value": {"$ref": "#/$defs/numberOrNull"},
+        "peer_group_id": {"type": ["string", "null"]}
+      }
+    },
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension_id", "operator", "values", "source"],
+      "properties": {
+        "dimension_id": {"$ref": "#/$defs/nonEmptyString"},
+        "operator": {"enum": ["eq", "neq", "in", "not_in", "gt", "gte", "lt", "lte", "between"]},
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": ["string", "number", "boolean"]}
+        },
+        "source": {"enum": ["user", "context", "metric_default", "authorization_policy"]}
+      }
+    },
+    "problemDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question_text",
+        "analysis_type",
+        "metric_id",
+        "metric_version",
+        "current_period",
+        "baseline",
+        "filters",
+        "candidate_dimensions",
+        "defaults_disclosed"
+      ],
+      "properties": {
+        "question_text": {"type": "string", "minLength": 1},
+        "analysis_type": {"enum": ["diagnostic", "comparison", "trend", "root_cause"]},
+        "metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_version": {"$ref": "#/$defs/nonEmptyString"},
+        "current_period": {"$ref": "#/$defs/period"},
+        "baseline": {"$ref": "#/$defs/baseline"},
+        "filters": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/filter"}
+        },
+        "candidate_dimensions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonEmptyString"}
+        },
+        "defaults_disclosed": {"type": "boolean"}
+      }
+    },
+    "contextRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message_ids", "attachment_ids", "summary_ids", "prior_result_ids"],
+      "properties": {
+        "message_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "attachment_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "summary_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "prior_result_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "clarification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["needed", "reasons", "questions", "rounds"],
+      "properties": {
+        "needed": {"type": "boolean"},
+        "reasons": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "questions": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "rounds": {"type": "integer", "minimum": 0},
+        "last_response": {"type": ["string", "null"]}
+      }
+    },
+    "metricCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric_id", "metric_name", "version", "score"],
+      "properties": {
+        "metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_name": {"$ref": "#/$defs/nonEmptyString"},
+        "version": {"$ref": "#/$defs/nonEmptyString"},
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "match_reasons": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "metricResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "candidates", "selected_metric_id", "selected_metric_version"],
+      "properties": {
+        "status": {"enum": ["pending", "resolved", "ambiguous", "not_found"]},
+        "candidates": {"type": "array", "items": {"$ref": "#/$defs/metricCandidate"}},
+        "selected_metric_id": {"type": ["string", "null"]},
+        "selected_metric_version": {"type": ["string", "null"]}
+      }
+    },
+    "planStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "step_type", "description", "status", "depends_on", "attempts"],
+      "properties": {
+        "step_id": {"$ref": "#/$defs/nonEmptyString"},
+        "step_type": {"enum": ["quality_check", "overview", "metric_decomposition", "dimension_drilldown", "hypothesis_test", "evidence_search", "validation"]},
+        "description": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"enum": ["pending", "running", "success", "failed", "skipped", "blocked"]},
+        "depends_on": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "tool_name": {"type": ["string", "null"]},
+        "attempts": {"type": "integer", "minimum": 0}
+      }
+    },
+    "analysisPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "selected_metric_path", "selected_dimensions", "steps"],
+      "properties": {
+        "status": {"enum": ["pending", "ready", "running", "complete", "partial", "blocked"]},
+        "selected_metric_path": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "selected_dimensions": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "steps": {"type": "array", "items": {"$ref": "#/$defs/planStep"}}
+      }
+    },
+    "qualityCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "check_type", "status", "severity", "message"],
+      "properties": {
+        "check_id": {"$ref": "#/$defs/nonEmptyString"},
+        "check_type": {"enum": ["freshness", "completeness", "uniqueness", "validity", "consistency", "metric_version", "grain"]},
+        "status": {"enum": ["pass", "warn", "fail"]},
+        "severity": {"enum": ["info", "warning", "blocking"]},
+        "message": {"$ref": "#/$defs/nonEmptyString"},
+        "observed_value": {"type": ["string", "number", "boolean", "null"]},
+        "threshold": {"type": ["string", "number", "boolean", "null"]},
+        "snapshot_id": {"type": ["string", "null"]}
+      }
+    },
+    "dataQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate", "checks"],
+      "properties": {
+        "gate": {"enum": ["pending", "pass", "warn", "block"]},
+        "checks": {"type": "array", "items": {"$ref": "#/$defs/qualityCheck"}}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation_id", "metric_id", "statement", "snapshot_ids"],
+      "properties": {
+        "observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "current_value": {"$ref": "#/$defs/numberOrNull"},
+        "baseline_value": {"$ref": "#/$defs/numberOrNull"},
+        "delta": {"$ref": "#/$defs/numberOrNull"},
+        "delta_rate": {"$ref": "#/$defs/numberOrNull"},
+        "unit": {"type": ["string", "null"]},
+        "snapshot_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hypothesis_id", "statement", "status", "expected_observations", "supporting_evidence_ids", "opposing_evidence_ids", "missing_data_ids"],
+      "properties": {
+        "hypothesis_id": {"$ref": "#/$defs/nonEmptyString"},
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"enum": ["proposed", "testing", "supported", "partially_supported", "refuted", "unresolved"]},
+        "expected_observations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "supporting_evidence_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "opposing_evidence_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "missing_data_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "source_type", "source_ref", "summary", "snapshot_ids", "hard_gates_passed", "score", "score_components", "registered_at"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_type": {"enum": ["metric_store", "database", "file", "api", "calculation", "user_input", "experiment"]},
+        "source_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "summary": {"$ref": "#/$defs/nonEmptyString"},
+        "snapshot_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "hard_gates_passed": {"type": "boolean"},
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "score_components": {"$ref": "#/$defs/scoreComponents"},
+        "registered_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "scoreComponents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_quality", "relevance", "temporal_alignment", "magnitude", "consistency", "corroboration", "quality_penalty"],
+      "properties": {
+        "source_quality": {"type": "number", "minimum": 0, "maximum": 1},
+        "relevance": {"type": "number", "minimum": 0, "maximum": 1},
+        "temporal_alignment": {"type": "number", "minimum": 0, "maximum": 1},
+        "magnitude": {"type": "number", "minimum": 0, "maximum": 1},
+        "consistency": {"type": "number", "minimum": 0, "maximum": 1},
+        "corroboration": {"type": "number", "minimum": 0, "maximum": 1},
+        "quality_penalty": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+      }
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component_id", "component_name", "current_value", "baseline_value", "contribution_value", "unit", "direction"],
+      "properties": {
+        "component_id": {"$ref": "#/$defs/nonEmptyString"},
+        "component_name": {"$ref": "#/$defs/nonEmptyString"},
+        "current_value": {"type": "number"},
+        "baseline_value": {"type": "number"},
+        "contribution_value": {"type": "number"},
+        "net_share": {"$ref": "#/$defs/numberOrNull"},
+        "directional_share": {"$ref": "#/$defs/numberOrNull"},
+        "unit": {"$ref": "#/$defs/nonEmptyString"},
+        "direction": {"enum": ["increase", "decrease", "neutral"]}
+      }
+    },
+    "attributionRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "analysis_view", "method", "parent_metric_id", "total_delta", "residual", "tolerance", "reconciled", "contributions", "snapshot_ids"],
+      "properties": {
+        "run_id": {"$ref": "#/$defs/nonEmptyString"},
+        "analysis_view": {"$ref": "#/$defs/nonEmptyString"},
+        "method": {"enum": ["additive", "product_shapley_exact", "product_shapley_sampled", "ratio_shapley", "funnel_shapley", "descriptive"]},
+        "parent_metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "total_delta": {"type": "number"},
+        "residual": {"type": "number"},
+        "tolerance": {"type": "number", "minimum": 0},
+        "reconciled": {"type": "boolean"},
+        "contributions": {"type": "array", "items": {"$ref": "#/$defs/contribution"}},
+        "snapshot_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "random_seed": {"type": ["integer", "null"]},
+        "sample_count": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "toolCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["call_id", "step_id", "tool_name", "status", "attempt", "idempotency_key", "input_hash", "started_at"],
+      "properties": {
+        "call_id": {"$ref": "#/$defs/nonEmptyString"},
+        "step_id": {"$ref": "#/$defs/nonEmptyString"},
+        "tool_name": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"enum": ["queued", "running", "success", "failed", "cancelled"]},
+        "attempt": {"type": "integer", "minimum": 1},
+        "idempotency_key": {"$ref": "#/$defs/nonEmptyString"},
+        "input_hash": {"$ref": "#/$defs/nonEmptyString"},
+        "query_fingerprint": {"type": ["string", "null"]},
+        "output_ref": {"type": ["string", "null"]},
+        "error_code": {"type": ["string", "null"]},
+        "started_at": {"type": "string", "format": "date-time"},
+        "finished_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis_iterations", "max_analysis_iterations", "tool_calls", "max_tool_calls", "sql_queries", "max_sql_queries", "llm_calls", "max_llm_calls", "wall_time_seconds", "max_wall_time_seconds"],
+      "properties": {
+        "analysis_iterations": {"type": "integer", "minimum": 0},
+        "max_analysis_iterations": {"type": "integer", "minimum": 1},
+        "tool_calls": {"type": "integer", "minimum": 0},
+        "max_tool_calls": {"type": "integer", "minimum": 1},
+        "sql_queries": {"type": "integer", "minimum": 0},
+        "max_sql_queries": {"type": "integer", "minimum": 1},
+        "llm_calls": {"type": "integer", "minimum": 0},
+        "max_llm_calls": {"type": "integer", "minimum": 1},
+        "wall_time_seconds": {"type": "number", "minimum": 0},
+        "max_wall_time_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "deadline_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["iteration", "new_evidence_in_iteration", "directional_coverage", "seen_query_fingerprints", "validation_repairs"],
+      "properties": {
+        "iteration": {"type": "integer", "minimum": 0},
+        "new_evidence_in_iteration": {"type": "integer", "minimum": 0},
+        "directional_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "seen_query_fingerprints": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "validation_repairs": {"type": "integer", "minimum": 0, "maximum": 1}
+      }
+    },
+    "resultRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result_id", "result_status", "content_hash"],
+      "properties": {
+        "result_id": {"$ref": "#/$defs/nonEmptyString"},
+        "result_status": {"enum": ["complete", "partial", "no_anomaly", "data_issue"]},
+        "content_hash": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "errorRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error_id", "category", "code", "safe_message", "node", "retryable", "occurred_at"],
+      "properties": {
+        "error_id": {"$ref": "#/$defs/nonEmptyString"},
+        "category": {"enum": ["transient", "data_quality", "user_input", "policy", "contract", "system"]},
+        "code": {"$ref": "#/$defs/nonEmptyString"},
+        "safe_message": {"$ref": "#/$defs/nonEmptyString"},
+        "node": {"$ref": "#/$defs/nonEmptyString"},
+        "retryable": {"type": "boolean"},
+        "occurred_at": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

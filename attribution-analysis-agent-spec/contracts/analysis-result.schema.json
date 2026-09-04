@@ -1,0 +1,338 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/analysis-result.schema.json",
+  "title": "Attribution Analysis Result",
+  "description": "经营归因分析的结构化最终结果。自然语言报告必须由此对象渲染，不得另行生成未登记数字。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "result_id",
+    "task_id",
+    "conversation_id",
+    "tenant_id",
+    "result_status",
+    "problem_definition",
+    "executive_summary",
+    "key_metrics",
+    "attribution_views",
+    "evidence_list",
+    "conclusions",
+    "missing_data",
+    "next_actions",
+    "limitations",
+    "method_summary",
+    "lineage",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "result_id": {"$ref": "#/$defs/nonEmptyString"},
+    "task_id": {"$ref": "#/$defs/nonEmptyString"},
+    "conversation_id": {"$ref": "#/$defs/nonEmptyString"},
+    "tenant_id": {"$ref": "#/$defs/nonEmptyString"},
+    "result_status": {"enum": ["complete", "partial", "no_anomaly", "data_issue"]},
+    "problem_definition": {"$ref": "#/$defs/problemDefinition"},
+    "executive_summary": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "key_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/keyMetric"}
+    },
+    "attribution_views": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/attributionView"}
+    },
+    "evidence_list": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/evidence"}
+    },
+    "conclusions": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/conclusion"}
+    },
+    "missing_data": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/missingData"}
+    },
+    "next_actions": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/nextAction"}
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "method_summary": {"$ref": "#/$defs/methodSummary"},
+    "lineage": {"$ref": "#/$defs/lineage"},
+    "generated_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "numberOrNull": {"type": ["number", "null"]},
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "timezone", "granularity", "is_complete"],
+      "properties": {
+        "start": {"type": "string", "format": "date-time"},
+        "end": {"type": "string", "format": "date-time"},
+        "timezone": {"$ref": "#/$defs/nonEmptyString"},
+        "granularity": {"enum": ["hour", "day", "week", "month", "quarter", "year"]},
+        "is_complete": {"type": "boolean"}
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "label", "alignment", "selection_source"],
+      "properties": {
+        "type": {"enum": ["previous_period", "same_period_last_year", "rolling_average", "budget", "peer_group", "custom"]},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "start": {"type": ["string", "null"], "format": "date-time"},
+        "end": {"type": ["string", "null"], "format": "date-time"},
+        "alignment": {"enum": ["calendar_aligned", "weekday_aligned", "holiday_aligned", "business_day_aligned", "not_applicable"]},
+        "selection_source": {"enum": ["user", "metric_default", "organization_default"]},
+        "target_value": {"$ref": "#/$defs/numberOrNull"},
+        "peer_group_id": {"type": ["string", "null"]}
+      }
+    },
+    "filter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension_id", "dimension_name", "operator", "values"],
+      "properties": {
+        "dimension_id": {"$ref": "#/$defs/nonEmptyString"},
+        "dimension_name": {"$ref": "#/$defs/nonEmptyString"},
+        "operator": {"enum": ["eq", "neq", "in", "not_in", "gt", "gte", "lt", "lte", "between"]},
+        "values": {"type": "array", "minItems": 1, "items": {"type": ["string", "number", "boolean"]}}
+      }
+    },
+    "problemDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question_text", "analysis_type", "metric_id", "metric_name", "metric_version", "current_period", "baseline", "filters", "analysis_scope", "defaults_disclosed"],
+      "properties": {
+        "question_text": {"type": "string", "minLength": 1},
+        "analysis_type": {"enum": ["diagnostic", "comparison", "trend", "root_cause"]},
+        "metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_name": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_version": {"$ref": "#/$defs/nonEmptyString"},
+        "current_period": {"$ref": "#/$defs/period"},
+        "baseline": {"$ref": "#/$defs/baseline"},
+        "filters": {"type": "array", "items": {"$ref": "#/$defs/filter"}},
+        "analysis_scope": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "defaults_disclosed": {"type": "boolean"}
+      }
+    },
+    "keyMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric_id", "metric_name", "metric_version", "current_value", "baseline_value", "delta", "delta_rate", "unit", "current_period", "baseline_label", "snapshot_ids", "baseline_zero"],
+      "properties": {
+        "metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_name": {"$ref": "#/$defs/nonEmptyString"},
+        "metric_version": {"$ref": "#/$defs/nonEmptyString"},
+        "current_value": {"$ref": "#/$defs/numberOrNull"},
+        "baseline_value": {"$ref": "#/$defs/numberOrNull"},
+        "delta": {"$ref": "#/$defs/numberOrNull"},
+        "delta_rate": {"$ref": "#/$defs/numberOrNull"},
+        "unit": {"$ref": "#/$defs/nonEmptyString"},
+        "current_period": {"$ref": "#/$defs/period"},
+        "baseline_label": {"$ref": "#/$defs/nonEmptyString"},
+        "snapshot_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "baseline_zero": {"type": "boolean"}
+      }
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rank", "component_id", "component_name", "current_value", "baseline_value", "contribution_value", "net_share", "directional_share", "direction", "unit", "evidence_ids"],
+      "properties": {
+        "rank": {"type": "integer", "minimum": 1},
+        "component_id": {"$ref": "#/$defs/nonEmptyString"},
+        "component_name": {"$ref": "#/$defs/nonEmptyString"},
+        "current_value": {"type": "number"},
+        "baseline_value": {"type": "number"},
+        "contribution_value": {"type": "number"},
+        "net_share": {"$ref": "#/$defs/numberOrNull"},
+        "directional_share": {"$ref": "#/$defs/numberOrNull"},
+        "direction": {"enum": ["increase", "decrease", "neutral"]},
+        "unit": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}}
+      }
+    },
+    "attributionView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["view_id", "view_name", "method", "parent_metric_id", "total_delta", "residual", "tolerance", "reconciled", "directional_coverage", "contributions", "snapshot_ids"],
+      "properties": {
+        "view_id": {"$ref": "#/$defs/nonEmptyString"},
+        "view_name": {"$ref": "#/$defs/nonEmptyString"},
+        "method": {"enum": ["additive", "product_shapley_exact", "product_shapley_sampled", "ratio_shapley", "funnel_shapley", "descriptive"]},
+        "parent_metric_id": {"$ref": "#/$defs/nonEmptyString"},
+        "dimension_id": {"type": ["string", "null"]},
+        "total_delta": {"type": "number"},
+        "residual": {"type": "number"},
+        "tolerance": {"type": "number", "minimum": 0},
+        "reconciled": {"type": "boolean"},
+        "directional_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "contributions": {"type": "array", "items": {"$ref": "#/$defs/contribution"}},
+        "snapshot_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "random_seed": {"type": ["integer", "null"]},
+        "sample_count": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "scoreComponents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_quality", "relevance", "temporal_alignment", "magnitude", "consistency", "corroboration", "quality_penalty"],
+      "properties": {
+        "source_quality": {"type": "number", "minimum": 0, "maximum": 1},
+        "relevance": {"type": "number", "minimum": 0, "maximum": 1},
+        "temporal_alignment": {"type": "number", "minimum": 0, "maximum": 1},
+        "magnitude": {"type": "number", "minimum": 0, "maximum": 1},
+        "consistency": {"type": "number", "minimum": 0, "maximum": 1},
+        "corroboration": {"type": "number", "minimum": 0, "maximum": 1},
+        "quality_penalty": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "source_type", "source_name", "source_ref", "evidence_text", "related_metric_ids", "data_period", "retrieved_at", "snapshot_ids", "hard_gates_passed", "score", "score_components"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_type": {"enum": ["metric_store", "database", "file", "api", "calculation", "user_input", "experiment"]},
+        "source_name": {"$ref": "#/$defs/nonEmptyString"},
+        "source_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_text": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "related_metric_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "data_period": {"$ref": "#/$defs/period"},
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "snapshot_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "hard_gates_passed": {"type": "boolean"},
+        "score": {"type": "number", "minimum": 0, "maximum": 1},
+        "score_components": {"$ref": "#/$defs/scoreComponents"},
+        "counterevidence": {"type": "boolean", "default": false}
+      }
+    },
+    "causalAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["design_type", "treatment", "comparison", "estimand", "estimate", "confidence_interval", "assumptions", "diagnostics", "scope_of_validity"],
+      "properties": {
+        "design_type": {"enum": ["randomized_experiment", "difference_in_differences", "regression_discontinuity", "instrumental_variables", "synthetic_control", "matching"]},
+        "treatment": {"$ref": "#/$defs/nonEmptyString"},
+        "comparison": {"$ref": "#/$defs/nonEmptyString"},
+        "estimand": {"$ref": "#/$defs/nonEmptyString"},
+        "estimate": {"type": "number"},
+        "confidence_interval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "lower", "upper"],
+          "properties": {
+            "level": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+            "lower": {"type": "number"},
+            "upper": {"type": "number"}
+          }
+        },
+        "assumptions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "diagnostics": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "scope_of_validity": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "conclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conclusion_id", "claim", "claim_level", "hypothesis_status", "direction", "confidence", "supporting_evidence_ids", "opposing_evidence_ids", "method", "caveats"],
+      "properties": {
+        "conclusion_id": {"$ref": "#/$defs/nonEmptyString"},
+        "claim": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "claim_level": {"enum": ["descriptive", "associational", "contributory", "causal"]},
+        "hypothesis_status": {"enum": ["supported", "partially_supported", "refuted", "unresolved", "not_applicable"]},
+        "direction": {"enum": ["increase", "decrease", "mixed", "neutral", "unknown"]},
+        "contribution_value": {"$ref": "#/$defs/numberOrNull"},
+        "contribution_unit": {"type": ["string", "null"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "supporting_evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "opposing_evidence_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "method": {"enum": ["direct_observation", "additive_contribution", "shapley_decomposition", "correlation", "experiment", "quasi_experiment"]},
+        "caveats": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "causal_assessment": {
+          "oneOf": [
+            {"$ref": "#/$defs/causalAssessment"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"claim_level": {"const": "causal"}}, "required": ["claim_level"]},
+          "then": {
+            "required": ["causal_assessment"],
+            "properties": {"causal_assessment": {"$ref": "#/$defs/causalAssessment"}}
+          },
+          "else": {
+            "properties": {"causal_assessment": {"type": "null"}}
+          }
+        }
+      ]
+    },
+    "missingData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["missing_data_id", "name", "reason", "impact", "required_for_claim_level", "suggested_source", "priority"],
+      "properties": {
+        "missing_data_id": {"$ref": "#/$defs/nonEmptyString"},
+        "name": {"$ref": "#/$defs/nonEmptyString"},
+        "reason": {"$ref": "#/$defs/nonEmptyString"},
+        "impact": {"$ref": "#/$defs/nonEmptyString"},
+        "required_for_claim_level": {"enum": ["descriptive", "associational", "contributory", "causal"]},
+        "suggested_source": {"$ref": "#/$defs/nonEmptyString"},
+        "priority": {"enum": ["high", "medium", "low"]}
+      }
+    },
+    "nextAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "action", "rationale", "owner_role", "priority", "requires_human_approval", "success_metric"],
+      "properties": {
+        "action_id": {"$ref": "#/$defs/nonEmptyString"},
+        "action": {"$ref": "#/$defs/nonEmptyString"},
+        "rationale": {"$ref": "#/$defs/nonEmptyString"},
+        "owner_role": {"$ref": "#/$defs/nonEmptyString"},
+        "priority": {"enum": ["high", "medium", "low"]},
+        "requires_human_approval": {"type": "boolean"},
+        "success_metric": {"$ref": "#/$defs/nonEmptyString"},
+        "due_hint": {"type": ["string", "null"]}
+      }
+    },
+    "methodSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["methods", "data_quality_gate", "materiality_rule", "evidence_rule", "stopping_reason", "configuration_version"],
+      "properties": {
+        "methods": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["descriptive", "additive", "product_shapley_exact", "product_shapley_sampled", "ratio_shapley", "funnel_shapley", "correlation", "experiment", "quasi_experiment"]}},
+        "data_quality_gate": {"enum": ["pass", "warn", "block"]},
+        "materiality_rule": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_rule": {"$ref": "#/$defs/nonEmptyString"},
+        "stopping_reason": {"enum": ["evidence_sufficient", "no_material_change", "data_quality_blocked", "budget_exhausted", "no_progress", "missing_data"]},
+        "configuration_version": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_ids", "query_ids", "metric_versions", "attachment_ids", "content_hash"],
+      "properties": {
+        "snapshot_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "query_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "metric_versions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "attachment_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "content_hash": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    }
+  }
+}

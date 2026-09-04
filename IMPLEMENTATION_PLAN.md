@@ -1,0 +1,149 @@
+# MVP V1 实施计划
+
+## 1. 实施原则
+
+项目采用 Spec-driven、Gate-driven 和 Evaluation-driven 的开发方式。每次只实现一个 Feature；每个 Feature 必须形成可运行、可测试、可审查的闭环。
+
+## 2. 总体顺序
+
+```text
+ENG-001 Engineering Baseline
+        ↓ Gate -1
+DOC-001 Spec Cleanup
+        ↓ Gate 0
+DATA-001 Olist Import
+        ↓
+DATA-002 DWD and Diagnosis DWS
+        ↓
+DATA-003 Synthetic Evidence and Ground Truth
+        ↓ Gate 1
+META-001 Metadata Adaptation
+        ↓ Gate 2
+SQL-001 NL2SQL Adaptation
+        ↓
+SQL-002 NL2SQL Evaluation
+        ↓ Gate 3
+ANA-001 Intent Router
+        ↓
+ANA-002 Analysis Question Parser
+        ↓
+ANA-003 Capability Assessment
+        ↓
+ANA-004 Analysis Planner
+        ↓
+ANA-005 Analysis Task Executor
+        ↓
+ANA-006 Deterministic Analyzer
+        ↓
+ANA-007 Evidence Report
+        ↓ Gate 4
+EVAL-001 Diagnosis Regression
+        ↓ Gate 5
+API-001 Minimal Demo
+```
+
+## 3. Feature 与验收摘要
+
+当前 Feature Spec：[ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md)。后续 Feature 必须在进入对应阶段时单独建立 Spec，不得提前批量实现。
+
+| Feature | 目标 | 主要产物 | Gate 证据 |
+|---|---|---|---|
+| ENG-001 | 建立 Git、测试和静态检查基线 | 配置、工具链、Baseline 报告 | 三项命令可执行并记录真实结果 |
+| DOC-001 | 冻结唯一事实源 | README、AGENTS、实施计划、6 份设计文档 | 引用有效、口径无冲突 |
+| DATA-001 | 导入 Olist | Raw 表、导入脚本、行数报告 | 原始文件与导入行数一致 |
+| DATA-002 | 建立 DWD 和两张 DWS | DDL、ETL、对账 SQL | 粒度、PK/FK、GMV、Order Count 对账 |
+| DATA-003 | 构造三类已知异常 | Generator、Ground Truth Registry | 固定 Seed 可复现、指标链一致 |
+| META-001 | 适配新 Schema | Metadata、Metric Registry、索引 | 10～15 条召回样本通过 |
+| SQL-001 | 复用并适配现有 NL2SQL | 新 Schema 支持、粒度防护 | 无无关重写、受控只读执行 |
+| SQL-002 | 建立 NL2SQL 基线 | 30 条 Golden Dataset、报告 | Execution Accuracy 等真实指标 |
+| ANA-001 | 区分 QUERY 与 DIAGNOSIS | 路由 Schema 和节点 | 固定改写一致、模糊问题可降级 |
+| ANA-002 | 提取诊断结构 | Metric、时间、基线、Scope | 结构化输出和错误路径 |
+| ANA-003 | 判断数据能力 | Supported/Unsupported Methods | 无数据不开放方法、无实验不开放因果 |
+| ANA-004 | 生成最多四类任务 | AnalysisPlan | 只能选择 Supported Methods |
+| ANA-005 | 执行受控分析查询 | Query Builder、执行轨迹 | 禁止任意 SQL、每项可回溯 |
+| ANA-006 | 确定性分析 | Shapley、Dimension Contribution | 数学对账与边界测试 |
+| ANA-007 | 校验证据并生成报告 | Validated Evidence、Report | 报告只读已验证证据 |
+| EVAL-001 | 诊断回归 | 10 条案例和 Error Analysis | 数字一致、无无证据断言 |
+| API-001 | 最小演示 | 单轮 Query API 与 Trace 展示 | 固定 Demo 全链路通过 |
+
+## 4. Gate 定义
+
+### Gate -1：Engineering Baseline
+
+- Git 根目录明确；
+- 本地敏感配置未纳入版本控制；
+- pytest、Ruff、mypy 可以执行；
+- 存量问题形成真实 Baseline；
+- 没有修改业务逻辑。
+
+### Gate 0：Specification Freeze
+
+- README 不引用不存在文件；
+- 事实源优先级明确；
+- GMV、AOV、Order Count 口径唯一；
+- 每张事实表与 DWS 粒度明确；
+- Synthetic 与原始数据边界明确；
+- V1 单轮、非因果边界明确；
+- 诊断 SQL 采用 Controlled Query。
+
+### Gate 1：Data Foundation
+
+- Olist Raw、DWD、DWS 行数和金额可对账；
+- 一对多 JOIN 不造成 GMV 膨胀；
+- 整体订单量不从品类订单量相加获得；
+- 比率由分子、分母聚合后计算；
+- 三类 Synthetic Event 固定 Seed 可复现；
+- Ground Truth、Evidence 与结果变化一致。
+
+### Gate 2：Metadata
+
+- 10～15 条固定样本覆盖表、字段、指标、JOIN 和枚举值；
+- Metric Hit@1、Table/Column Recall@K 和 Join-key Recall 有真实记录；
+- 检索上下文不存在明显粒度误导。
+
+### Gate 3：NL2SQL
+
+- 30 条固定样本完成全量执行；
+- 报告 SQL Executability、Execution Accuracy、Metric、Table、Column 和 JOIN Accuracy；
+- 危险 SQL 放行次数为 0；
+- 所有失败有错误分类。
+
+### Gate 4：Diagnosis Agent
+
+- 单轮 GMV 下降问题能生成结构化计划；
+- 任务数和分析轮次有硬上限；
+- Shapley 拆解严格对账；
+- 维度贡献正确处理反向抵消和总变化接近 0；
+- 缺失证据时正确降级；
+- 报告无越级因果语言。
+
+### Gate 5：Diagnosis Evaluation
+
+- 10 条首版功能回归集全部运行；
+- Numeric Consistency 必须逐项通过；
+- Unsupported Claim 为 0；
+- 数据不足案例能够正确降级；
+- Hit@1、Recall@3 和 Evidence Precision 报告真实结果，不虚构提升比例。
+
+## 5. 固定 Demo
+
+V1 固定演示以下完整问题，不使用省略式多轮追问：
+
+1. `2018 年 5 月 GMV 是多少？`
+2. `2018 年 5 月 GMV 相比 4 月变化了多少？`
+3. `为什么 2018 年 5 月 GMV 下降？`
+4. `2018 年 5 月哪些品类和州对 GMV 下降贡献最大？`
+5. `2018 年 5 月流量、促销和库存分别发生了什么变化？`
+6. `进一步分析 2018 年 5 月圣保罗州 GMV 下降的原因。`
+
+## 6. 版本边界
+
+V1.1 才考虑：
+
+- `conversation_id`；
+- LangGraph Checkpointer；
+- 省略式连续追问；
+- 价格、退款和配送候选因素；
+- 更复杂的动态下钻。
+
+严格因果推断只有在引入处理组、对照组、实验或准实验设计以后才能立项，不属于当前路线的默认升级。

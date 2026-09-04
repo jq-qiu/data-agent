@@ -1,0 +1,45 @@
+from langgraph.runtime import Runtime
+
+from app.agent.context import DataAgentContext
+from app.agent.state import DataAgentState
+from app.core.log import logger
+from app.entities.metric_info import MetricInfo
+
+
+async def recall_metric(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    # 1.获取流写入器对象
+    write = runtime.stream_writer
+    write({"type": "progress", "step": "召回指标", "status": "running"})
+    # 2.具体逻辑
+    try:
+        # 使用统一扩展节点产生的指标关键词，保留顺序去重。
+        keywords = list(dict.fromkeys(state["keywords"] + state["metric_keywords"]))
+
+        # 2.4 声明指标信息字典，字典Key=指标ID  Value=指标信息（MetricInfo） 方便去重
+        retrieved_metrics_dict: dict[str, MetricInfo] = {}
+
+        # 2.5 从runtime中获取Embedding客户端、指标向量持久层
+        embedding_client = runtime.context["embedding_client"]
+        metric_qdrant_repository = runtime.context["metric_qdrant_repository"]
+
+        # 2.6 遍历关键词列表，执行向量检索
+        for keyword in keywords:
+            # 2.6.1 将关键词转为向量
+            embedding = await embedding_client.aembed_query(keyword)
+            # 2.6.2 执行向量索引库检索
+            # 指标候选较少且误召回会引入错误计算公式，因此每个关键词只取Top5
+            metric_infos: list[MetricInfo] = await metric_qdrant_repository.search(embedding, limit=5)
+            # 2.6.3 去重
+            for metric_info in metric_infos:
+                metric_id = metric_info.id
+                if metric_id not in retrieved_metrics_dict:
+                    retrieved_metrics_dict[metric_id] = metric_info
+
+        # 2.7 更新State中召回指标列表
+        write({"type": "progress", "step": "召回指标", "status": "success"})
+        logger.info(f"召回指标信息成功：{list(retrieved_metrics_dict.keys())}")
+        return {"retrieved_metrics": list(retrieved_metrics_dict.values())}
+    except Exception as e:
+        logger.error(f"召回指标发生异常：{e}")
+        write({"type": "progress", "step": "召回指标", "status": "error"})
+        raise

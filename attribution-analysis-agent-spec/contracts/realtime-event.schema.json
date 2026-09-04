@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.internal/contracts/realtime-event.schema.json",
+  "title": "经营归因分析系统服务端实时事件",
+  "description": "WebSocket 服务端向客户端推送的版本化事件信封。交付语义为至少一次，客户端使用 event_id 去重并按 task_id 和 event_seq 排序。",
+  "oneOf": [
+    { "$ref": "#/$defs/message_start_event" },
+    { "$ref": "#/$defs/message_delta_event" },
+    { "$ref": "#/$defs/tool_start_event" },
+    { "$ref": "#/$defs/tool_finish_event" },
+    { "$ref": "#/$defs/task_status_event" },
+    { "$ref": "#/$defs/result_ready_event" },
+    { "$ref": "#/$defs/error_event" },
+    { "$ref": "#/$defs/done_event" }
+  ],
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "base_event": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "event_id",
+        "event_type",
+        "conversation_id",
+        "task_id",
+        "event_seq",
+        "emitted_at",
+        "payload"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "event_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "event_type": {
+          "type": "string"
+        },
+        "conversation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "task_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "event_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "emitted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "trace_id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "message_start_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "message_start" },
+            "payload": {
+              "type": "object",
+              "required": ["message_id", "input_message_id", "config_version"],
+              "properties": {
+                "message_id": { "$ref": "#/$defs/uuid" },
+                "input_message_id": { "$ref": "#/$defs/uuid" },
+                "config_version": { "type": "integer", "minimum": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "message_delta_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "message_delta" },
+            "payload": {
+              "type": "object",
+              "required": ["message_id", "delta_text"],
+              "properties": {
+                "message_id": { "$ref": "#/$defs/uuid" },
+                "delta_text": { "type": "string", "minLength": 1, "maxLength": 32768 }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "tool_start_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "tool_start" },
+            "payload": {
+              "type": "object",
+              "required": ["tool_call_id", "tool_name"],
+              "properties": {
+                "tool_call_id": { "$ref": "#/$defs/uuid" },
+                "tool_name": { "type": "string", "minLength": 1, "maxLength": 128 },
+                "safe_input_summary": { "type": "string", "maxLength": 2000 }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "tool_finish_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "tool_finish" },
+            "payload": {
+              "type": "object",
+              "required": [
+                "tool_call_id",
+                "tool_name",
+                "tool_status",
+                "tool_result_summary",
+                "duration_ms"
+              ],
+              "properties": {
+                "tool_call_id": { "$ref": "#/$defs/uuid" },
+                "tool_name": { "type": "string", "minLength": 1, "maxLength": 128 },
+                "tool_status": {
+                  "enum": ["succeeded", "failed", "cancelled"]
+                },
+                "tool_result_summary": { "type": "string", "maxLength": 8000 },
+                "duration_ms": { "type": "integer", "minimum": 0 },
+                "artifact_ids": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/uuid" },
+                  "maxItems": 100,
+                  "uniqueItems": true
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "task_status_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "task_status" },
+            "payload": {
+              "type": "object",
+              "required": ["task_status", "current_step"],
+              "properties": {
+                "task_status": {
+                  "enum": ["queued", "running", "success", "failed", "cancelled"]
+                },
+                "current_step": {
+                  "type": ["string", "null"],
+                  "maxLength": 128
+                },
+                "progress_percent": {
+                  "type": ["number", "null"],
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "result_ready_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "result_ready" },
+            "payload": {
+              "type": "object",
+              "required": ["result_id", "result_version"],
+              "properties": {
+                "result_id": { "$ref": "#/$defs/uuid" },
+                "result_version": { "type": "integer", "minimum": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "error_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "error" },
+            "payload": {
+              "type": "object",
+              "required": ["error_code", "error_message", "retryable"],
+              "properties": {
+                "error_code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "^[A-Z][A-Z0-9_]*$"
+                },
+                "error_message": { "type": "string", "minLength": 1, "maxLength": 2000 },
+                "retryable": { "type": "boolean" },
+                "details": {
+                  "type": "object",
+                  "maxProperties": 20,
+                  "additionalProperties": {
+                    "type": ["string", "number", "integer", "boolean", "null"]
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "done_event": {
+      "allOf": [
+        { "$ref": "#/$defs/base_event" },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": { "const": "done" },
+            "payload": {
+              "type": "object",
+              "required": ["finished_at", "final_status"],
+              "properties": {
+                "finished_at": { "type": "string", "format": "date-time" },
+                "final_status": { "enum": ["success", "failed", "cancelled"] }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

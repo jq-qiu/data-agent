@@ -1,0 +1,23 @@
+# Python bytecode and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local environments and package caches
+.venv/
+.tmp/
+
+# IDE and runtime output
+.idea/
+logs/*.log
+
+# Local secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+conf/app_config.yaml
+
