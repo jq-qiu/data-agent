@@ -166,7 +166,7 @@ Inventory Fill Rate = Available SKU Count / Required SKU Count
 7. [实施计划](IMPLEMENTATION_PLAN.md)
 8. [Coding Agent 工作约束](AGENTS.md)
 
-当前第一个执行任务：[ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md)。
+实施进度以 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) 为准。已完成 Feature 的规范和报告保留在仓库中，例如 [ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md) 与 [ENG-001 Baseline Report](ENG-001_BASELINE.md)。进入新 Feature 时必须先在 `specs/` 中建立对应 Spec，不得依赖 README 中容易过时的“当前任务”描述。
 
 `attribution-analysis-agent-spec/` 是早期设计资料，不再作为 V1 实现事实源。发生冲突时，以根目录上述文档为准。
 

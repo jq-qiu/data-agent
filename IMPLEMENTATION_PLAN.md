@@ -44,7 +44,7 @@ API-001 Minimal Demo
 
 ## 3. Feature 与验收摘要
 
-当前 Feature Spec：[ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md)。后续 Feature 必须在进入对应阶段时单独建立 Spec，不得提前批量实现。
+实时执行状态见 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)。已完成的首个 Feature Spec 为 [ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md)。后续 Feature 必须在进入对应阶段时单独建立 Spec，不得提前批量实现，也不得把“未来支持”的计划项描述为当前已实现能力。
 
 | Feature | 目标 | 主要产物 | Gate 证据 |
 |---|---|---|---|
