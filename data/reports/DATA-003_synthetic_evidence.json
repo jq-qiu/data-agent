@@ -1,0 +1,29 @@
+{
+  "batch_id": "2321db0b-34d1-457e-a159-c94888b66c42",
+  "status": "success",
+  "reused": true,
+  "reconciliation": {
+    "passed": true,
+    "case_count": 10,
+    "event_count": 10,
+    "event_types": [
+      "promotion_end",
+      "stockout",
+      "traffic_drop"
+    ],
+    "region_row_count": 427,
+    "category_row_count": 183,
+    "content_sha256": "070602b820a2acf1afd56a61200fa7f82b61afdfdff06827a10749acb766532a",
+    "source_summary_sha256": "39a17f7a16fb55b0a352f38ebbc1fac7a0392225522f0e3c51a548036b31a93b",
+    "source_unchanged": true,
+    "source_gate_passed": true,
+    "single_factor_cases": 6,
+    "dual_factor_cases": 2,
+    "no_clear_evidence_cases": 1,
+    "missing_evidence_cases": 1,
+    "evidence_chain_failures": 0,
+    "stable_case_failures": 0,
+    "degradation_case_failures": 0,
+    "zero_denominator_returns_none": true
+  }
+}

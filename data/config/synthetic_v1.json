@@ -1,0 +1,102 @@
+{
+  "generator_version": "synthetic-v1",
+  "random_seed": 20260905,
+  "dataset_version": "2",
+  "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+  "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+  "base_conversion_rate": "0.04",
+  "active_sku_count": 100,
+  "required_sku_count": 100,
+  "baseline_promotion_coverage": "0.40",
+  "baseline_inventory_fill_rate": "0.95",
+  "promotion_order_elasticity": "0.50",
+  "inventory_order_elasticity": "0.60",
+  "cases": [
+    {
+      "case_id": "D01",
+      "region_id": "PR",
+      "category_id": null,
+      "causes": [{"event_type": "traffic_drop", "effect_strength": "0.15", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D02",
+      "region_id": "SP",
+      "category_id": "informatica_acessorios",
+      "causes": [{"event_type": "traffic_drop", "effect_strength": "0.18", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D03",
+      "region_id": "SC",
+      "category_id": null,
+      "causes": [{"event_type": "promotion_end", "effect_strength": "0.40", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D04",
+      "region_id": "SP",
+      "category_id": "eletrodomesticos",
+      "causes": [{"event_type": "promotion_end", "effect_strength": "0.45", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D05",
+      "region_id": "SP",
+      "category_id": null,
+      "causes": [{"event_type": "stockout", "effect_strength": "0.30", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D06",
+      "region_id": "SP",
+      "category_id": "cool_stuff",
+      "causes": [{"event_type": "stockout", "effect_strength": "0.35", "ground_truth_rank": 1}],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D07",
+      "region_id": "MG",
+      "category_id": null,
+      "causes": [
+        {"event_type": "traffic_drop", "effect_strength": "0.10", "ground_truth_rank": 1},
+        {"event_type": "promotion_end", "effect_strength": "0.25", "ground_truth_rank": 2}
+      ],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D08",
+      "region_id": "PA",
+      "category_id": null,
+      "causes": [
+        {"event_type": "traffic_drop", "effect_strength": "0.12", "ground_truth_rank": 1},
+        {"event_type": "stockout", "effect_strength": "0.30", "ground_truth_rank": 2}
+      ],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D09",
+      "region_id": "RJ",
+      "category_id": null,
+      "causes": [],
+      "missing_evidence": [],
+      "unobserved_order_factor": "1.00"
+    },
+    {
+      "case_id": "D10",
+      "region_id": "ES",
+      "category_id": null,
+      "causes": [],
+      "missing_evidence": ["visitors"],
+      "unobserved_order_factor": "0.85"
+    }
+  ]
+}

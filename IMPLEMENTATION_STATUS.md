@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Data Foundation / Gate 1 in progress.
+Data Foundation / Gate 1 complete.
 
 ## Current Feature
 
-DATA-002 DWD and Diagnosis DWS.
+DATA-003 Synthetic Evidence and Ground Truth.
 
 ## Feature Status
 
-Completed. The isolated `data_agent_v1_dw` database contains the 11 declared DWD dimension/fact tables and both diagnosis DWS tables. DWD-to-ODS counts, logical foreign keys, DWS grains, GMV, and overall Order Count reconcile, and a repeated run reuses the successful build batch. The status is valid when the DATA-002 completion commit containing this file is present on `origin/main`.
+Completed. Versioned `synthetic-v1` Evidence and Ground Truth are generated in independent `analysis_*` tables with fixed Seed 20260905. D01-D10 cover the three event types, single/dual factors, no clear evidence, and missing evidence. Reproduction, chain consistency, source immutability, and all Gate 1 checks pass. The status is valid when the DATA-003 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-DATA-002 DWD and Diagnosis DWS.
+DATA-003 Synthetic Evidence and Ground Truth.
 
 ## Next Feature
 
-DATA-003 Synthetic Evidence and Ground Truth.
+META-001 Metadata Adaptation.
 
 ## Last Successful Validation
 
@@ -45,10 +45,18 @@ DATA-003 Synthetic Evidence and Ground Truth.
 - DATA-002 order count: 98,207 valid orders equals the region DWS sum; category order count sums to 99,002 and is not used as the overall count;
 - DATA-002 join guard: the unsafe payment-item join produces 14,105,767.00, while both accepted DWS tables remain at the correct 13,494,400.74;
 - DATA-002 target idempotency: the second run reused the same successful batch; independent read-only reconciliation passed.
+- DATA-003 tests: 4 passed; full pytest regression: 35 passed;
+- DATA-003 Ruff/mypy: 51 and 40 respectively, unchanged from the engineering baseline;
+- DATA-003 target generation: 10 Ground Truth cases, 10 Business Events, 427 region-analysis rows, and 183 category-analysis rows;
+- DATA-003 coverage: 3 event types, 6 single-factor cases, 2 dual-factor cases, 1 stable case, and 1 missing-Evidence degradation case;
+- DATA-003 reproducibility: two independent controlled databases produced the same content digest; the second target run reused the same successful batch and digest;
+- DATA-003 chain validation: 0 Evidence-chain failures, 0 stable-case failures, and 0 degradation-case failures;
+- DATA-003 source integrity: Olist DWD and both accepted DWS summaries remained unchanged; their GMV remains 13,494,400.74;
+- Gate 1: all Data Foundation conditions passed with real import, build, generation, and reconciliation evidence.
 
 ## Last Commit
 
-The DATA-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The DATA-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -56,13 +64,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None for DATA-002. Physical MySQL foreign-key constraints are not created because the least-privilege DW account lacks `REFERENCES`; the seven fixed logical relationships are instead enforced by mandatory zero-orphan reconciliation. The repository still has the documented baselines of 51 Ruff diagnostics and 40 mypy errors in 14 files.
+None for DATA-003. Synthetic results are deliberately separated from Olist facts and are association-oriented regression fixtures, not causal evidence. Physical MySQL foreign-key constraints remain replaced by mandatory logical-key reconciliation. The repository still has the documented baselines of 51 Ruff diagnostics and 40 mypy errors in 14 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Read and freeze `specs/DATA-003_synthetic_evidence.md` before implementing DATA-003.
-5. Inspect the accepted DWD/DWS data in `data_agent_v1_dw`; keep ODS/DWD original values and the original `dw` database untouched.
-6. Implement DATA-003 only, complete Gate 1, produce a completion report, create an independent commit, and push.
+4. Read and freeze `specs/META-001_metadata_adaptation.md` before implementing META-001.
+5. Inspect the accepted DWD, DWS, Synthetic, and Ground Truth schemas without changing their data.
+6. Implement META-001 only, run the fixed 10-15 sample retrieval evaluation and Gate 2 checks, produce a completion report, create an independent commit, and push.
