@@ -1,182 +1,320 @@
+version: metadata-v1
+
 tables:
-  - name: dim_region
-    role: dim
-    description: 地区维度表，用于描述订单发生的地理区域信息。
+  - table_name: dim_date
+    role: dimension
+    grain: one row per calendar date
+    description: 日期维度，提供自然日、年、季度、月和周的统一时间筛选。
+    aliases: [日期维度, 时间维度, calendar]
+    time_column: date
+    primary_key: [date_id]
+    allowed_join_relations: [order_to_date, region_daily_to_date, category_daily_to_date]
     columns:
-      - name: region_id
-        role: primary_key
-        description: 地区唯一标识。
-        alias: [ 地区ID, 区域ID ]
-        # 控制是否需要将该字段枚举值存入到Elasticsearch全文索引库
-        sync: false
+      - {name: date_id, role: primary_key, description: YYYYMMDD 格式的日期键。, aliases: [日期键]}
+      - {name: date, role: time, description: 自然日期。, aliases: [日期, 下单日]}
+      - {name: year, role: dimension, description: 四位年份。, aliases: [年, 年份]}
+      - {name: quarter, role: dimension, description: 一至四季度。, aliases: [季度]}
+      - {name: month, role: dimension, description: YYYY-MM 格式月份。, aliases: [月, 月份]}
+      - {name: week, role: dimension, description: ISO 年周。, aliases: [周, 星期]}
 
-      - name: province
-        role: dimension
-        description: 订单所属的省份名称。
-        alias: [ 省份, 省, 所在省份 ]
-        # 同步将枚举值存入到Elasticsearch 解决SQL正确 无法查询到数据
-        sync: true
-
-      - name: region_name
-        role: dimension
-        description: 订单所属的大区名称，如华东、华南等。
-        alias: [ 地区, 区域, 大区 ]
-        sync: true
-
-      - name: country
-        role: dimension
-        description: 地区所属国家名称。
-        alias: [ 国家, 国家名称 ]
-        sync: true
-
-
-  - name: dim_customer
-    role: dim
-    description: 客户维度表，描述下单客户的基本属性。
+  - table_name: dim_region
+    role: dimension
+    grain: one row per Brazilian federative unit
+    description: 巴西州级地区维度；保留巴西联邦州代码语义，不表示其他国家的行政区划。
+    aliases: [巴西州, 州维度, 地区维度, Brazilian state]
+    time_column: null
+    primary_key: [state_code]
+    allowed_join_relations: [customer_to_region, seller_to_region, region_daily_to_region, category_daily_to_region]
     columns:
-      - name: customer_id
+      - name: state_code
         role: primary_key
-        description: 客户唯一标识。
-        alias: [ 客户ID, 用户ID ]
-        sync: false
+        description: 巴西两位州代码，例如 SP、RJ、MG。
+        aliases: [州代码, 地区代码, state, UF]
+        value_index_enabled: true
+        value_aliases:
+          SP: [São Paulo, Sao Paulo, 圣保罗, 圣保罗州]
+          RJ: [Rio de Janeiro, 里约热内卢, 里约热内卢州]
+          MG: [Minas Gerais, 米纳斯吉拉斯, 米纳斯吉拉斯州]
+          RS: [Rio Grande do Sul, 南里奥格兰德]
+          PR: [Paraná, Parana, 巴拉那]
+          BA: [Bahia, 巴伊亚]
+      - {name: display_name, role: dimension, description: 州的显示名称，当前数据保留真实州代码。, aliases: [州名称, 地区名称]}
 
-      - name: customer_name
-        role: dimension
-        description: 客户名称。
-        alias: [ 客户名称, 用户名称 ]
-        sync: true
-
-      - name: gender
-        role: dimension
-        description: 客户性别。
-        alias: [ 性别 ]
-        sync: true
-
-      - name: member_level
-        role: dimension
-        description: 客户会员等级。
-        alias: [ 会员等级, 用户等级 ]
-        sync: true
-
-
-  - name: dim_product
-    role: dim
-    description: 商品维度表，描述商品的基本属性信息。
+  - table_name: dim_category
+    role: dimension
+    grain: one row per normalized product category
+    description: Olist 商品品类维度，包含葡萄牙语原名和英文翻译。
+    aliases: [商品品类, 产品分类, category]
+    time_column: null
+    primary_key: [category_id]
+    allowed_join_relations: [product_to_category, category_daily_to_category]
     columns:
-      - name: product_id
+      - name: category_id
         role: primary_key
-        description: 商品唯一标识。
-        alias: [ 商品ID, 产品ID ]
-        sync: false
+        description: 规范化品类标识，使用 Olist 葡萄牙语品类键。
+        aliases: [品类ID, 分类ID, 品类]
+        value_index_enabled: true
+        value_aliases:
+          cama_mesa_banho: [bed bath table, bed_bath_table, 床浴用品]
+          beleza_saude: [health beauty, health_beauty, 美妆健康]
+          esporte_lazer: [sports leisure, sports_leisure, 运动休闲]
+          moveis_decoracao: [furniture decor, furniture_decor, 家具装饰]
+          informatica_acessorios: [computers accessories, computers_accessories, 电脑配件]
+      - {name: category_name_pt, role: dimension, description: 商品品类葡萄牙语名称。, aliases: [葡萄牙语品类], value_index_enabled: true}
+      - {name: category_name_en, role: dimension, description: 商品品类英文翻译。, aliases: [英文品类, English category], value_index_enabled: true}
 
-      - name: product_name
-        role: dimension
-        description: 商品名称。
-        alias: [ 商品名称, 产品名称 ]
-        sync: true
-
-      - name: category
-        role: dimension
-        description: 商品所属品类。
-        alias: [ 商品类别, 品类, 分类 ]
-        sync: true
-
-      - name: brand
-        role: dimension
-        description: 商品品牌名称。
-        alias: [ 品牌, 品牌名称 ]
-        sync: true
-
-
-  - name: dim_date
-    role: dim
-    description: 时间维度表，用于多时间粒度分析。
+  - table_name: dim_customer
+    role: dimension
+    grain: one row per order customer identifier
+    description: 客户维度；customer_id 是订单级客户标识，customer_unique_id 可跨订单识别客户。
+    aliases: [客户维度, 买家, customer]
+    time_column: null
+    primary_key: [customer_id]
+    allowed_join_relations: [order_to_customer, customer_to_region]
     columns:
-      - name: date_id
-        role: primary_key
-        description: 日期唯一标识，格式 yyyyMMdd。
-        alias: [ 日期ID, 日期 ]
-        sync: false
+      - {name: customer_id, role: primary_key, description: 订单侧客户标识。, aliases: [客户ID], is_sensitive: true}
+      - {name: customer_unique_id, role: natural_key, description: 可跨订单关联的客户唯一标识。, aliases: [唯一客户ID], is_sensitive: true}
+      - {name: state, role: foreign_key, description: 客户所在巴西州代码，关联 dim_region.state_code。, aliases: [客户州, 买家州]}
 
-      - name: year
-        role: dimension
-        description: 年份。
-        alias: [ 年, 年份 ]
-        sync: false
+  - table_name: dim_product
+    role: dimension
+    grain: one row per product
+    description: 商品维度，记录品类与重量、长宽高属性。
+    aliases: [商品维度, 产品维度, product]
+    time_column: null
+    primary_key: [product_id]
+    allowed_join_relations: [order_item_to_product, product_to_category]
+    columns:
+      - {name: product_id, role: primary_key, description: 商品唯一标识。, aliases: [商品ID, 产品ID]}
+      - {name: category_id, role: foreign_key, description: 关联标准品类的标识。, aliases: [品类ID, 分类]}
+      - {name: weight_g, role: measure, description: 商品重量，单位克。, aliases: [重量]}
+      - {name: length_cm, role: measure, description: 商品长度，单位厘米。, aliases: [长度]}
+      - {name: height_cm, role: measure, description: 商品高度，单位厘米。, aliases: [高度]}
+      - {name: width_cm, role: measure, description: 商品宽度，单位厘米。, aliases: [宽度]}
 
-      - name: quarter
-        role: dimension
-        description: 季度。
-        alias: [ 季度 ]
-        sync: true
+  - table_name: dim_seller
+    role: dimension
+    grain: one row per seller
+    description: 卖家维度，记录 Olist 卖家及其巴西州代码。
+    aliases: [卖家维度, 商家, seller]
+    time_column: null
+    primary_key: [seller_id]
+    allowed_join_relations: [order_item_to_seller, seller_to_region]
+    columns:
+      - {name: seller_id, role: primary_key, description: 卖家唯一标识。, aliases: [卖家ID, 商家ID]}
+      - {name: state, role: foreign_key, description: 卖家所在巴西州代码。, aliases: [卖家州, 商家州]}
 
-      - name: month
-        role: dimension
-        description: 月份。
-        alias: [ 月, 月份 ]
-        sync: false
-
-      - name: day
-        role: dimension
-        description: 日。
-        alias: [ 日, 天 ]
-        sync: false
-
-  - name: fact_order
+  - table_name: fact_order
     role: fact
-    description: 订单事实表，记录订单数量和金额等核心指标。
+    grain: one row per order
+    description: 订单事实表，保存订单状态、客户和下单时间；不直接保存 GMV。
+    aliases: [订单事实, 订单, orders]
+    time_column: purchase_date
+    primary_key: [order_id]
+    allowed_join_relations: [order_to_customer, order_to_date, order_item_to_order, payment_to_order, delivery_to_order, review_to_order]
     columns:
-      - name: order_id
-        role: primary_key
-        description: 订单唯一标识。
-        alias: [ 订单ID ]
-        sync: false
+      - {name: order_id, role: primary_key, description: 订单唯一标识。, aliases: [订单ID]}
+      - {name: customer_id, role: foreign_key, description: 关联客户维度的标识。, aliases: [客户ID]}
+      - name: status
+        role: dimension
+        description: Olist 订单状态。
+        aliases: [订单状态, 状态]
+        value_index_enabled: true
+        value_aliases: {delivered: [已送达, 已交付], canceled: [已取消, 取消], unavailable: [无货, 不可用], shipped: [已发货], invoiced: [已开票], processing: [处理中], approved: [已批准], created: [已创建]}
+      - {name: purchase_timestamp, role: time, description: 下单时间戳。, aliases: [下单时间, 购买时间]}
+      - {name: purchase_date, role: time, description: 下单自然日期。, aliases: [下单日期, 购买日期]}
+      - {name: date_id, role: foreign_key, description: 下单日期键，关联 dim_date.date_id。, aliases: [日期键]}
+      - {name: approved_at, role: time, description: 订单批准时间。, aliases: [批准时间]}
+      - {name: delivered_carrier_at, role: time, description: 交付承运商时间。, aliases: [承运时间]}
+      - {name: delivered_customer_at, role: time, description: 送达客户时间。, aliases: [送达时间]}
+      - {name: estimated_delivery_date, role: time, description: 预计送达日期。, aliases: [预计送达]}
 
-      - name: customer_id
-        role: foreign_key
-        description: 关联客户维度的外键。
-        alias: [ 客户ID, 用户ID ]
-        sync: false
+  - table_name: fact_order_item
+    role: fact
+    grain: one row per order item
+    description: 订单项事实表；V1 GMV 的唯一金额来源是 price，freight_value 不计入 GMV。
+    aliases: [订单项事实, 订单商品, order items]
+    time_column: shipping_limit_at
+    primary_key: [order_id, item_no]
+    allowed_join_relations: [order_item_to_order, order_item_to_product, order_item_to_seller]
+    columns:
+      - {name: order_id, role: foreign_key, description: 所属订单标识。, aliases: [订单ID]}
+      - {name: item_no, role: primary_key, description: 订单内商品项序号。, aliases: [商品项序号]}
+      - {name: product_id, role: foreign_key, description: 商品标识。, aliases: [商品ID]}
+      - {name: seller_id, role: foreign_key, description: 卖家标识。, aliases: [卖家ID]}
+      - {name: shipping_limit_at, role: time, description: 发货时限。, aliases: [发货截止时间]}
+      - {name: price, role: measure, description: 商品项成交金额；V1 GMV 使用该字段求和。, aliases: [成交金额, 商品金额, 销售额]}
+      - {name: freight_value, role: measure, description: 运费；V1 GMV 明确不包含此字段。, aliases: [运费]}
 
-      - name: product_id
-        role: foreign_key
-        description: 关联商品维度的外键。
-        alias: [ 商品ID, 产品ID ]
-        sync: false
+  - table_name: fact_payment
+    role: fact
+    grain: one row per order payment sequence
+    description: 支付事实表；一个订单可有多条支付记录，payment_value 不作为 V1 GMV。
+    aliases: [支付事实, 付款, payments]
+    time_column: null
+    primary_key: [order_id, payment_sequential]
+    allowed_join_relations: [payment_to_order]
+    columns:
+      - {name: order_id, role: foreign_key, description: 所属订单标识。, aliases: [订单ID]}
+      - {name: payment_sequential, role: primary_key, description: 订单内支付记录序号。, aliases: [支付序号]}
+      - name: payment_type
+        role: dimension
+        description: 支付方式。
+        aliases: [支付类型, 付款方式]
+        value_index_enabled: true
+        value_aliases: {credit_card: [信用卡], debit_card: [借记卡], boleto: [巴西银行票据, 银行票据], voucher: [代金券], not_defined: [未定义]}
+      - {name: payment_installments, role: measure, description: 支付分期数。, aliases: [分期数]}
+      - {name: payment_value, role: measure, description: 支付记录金额；不能直接解释为 V1 GMV。, aliases: [支付金额]}
 
-      - name: date_id
-        role: foreign_key
-        description: 关联时间维度的外键。
-        alias: [ 日期, 下单日期 ]
-        sync: false
+  - table_name: fact_delivery
+    role: fact
+    grain: one row per order delivery
+    description: 配送事实表，保存预计与实际送达日期及延迟天数。
+    aliases: [配送事实, 物流, delivery]
+    time_column: delivered_date
+    primary_key: [order_id]
+    allowed_join_relations: [delivery_to_order]
+    columns:
+      - {name: order_id, role: foreign_key, description: 所属订单标识。, aliases: [订单ID]}
+      - {name: estimated_date, role: time, description: 预计送达日期。, aliases: [预计送达]}
+      - {name: delivered_date, role: time, description: 实际送达日期。, aliases: [实际送达]}
+      - {name: delay_days, role: measure, description: 实际相对预计的延迟天数。, aliases: [延迟天数, 配送延误]}
 
-      - name: region_id
-        role: foreign_key
-        description: 关联地区维度的外键。
-        alias: [ 地区ID, 区域ID ]
-        sync: false
+  - table_name: fact_review
+    role: fact
+    grain: one row per review and order pair
+    description: 评价事实表，保存订单评分和评价创建时间。
+    aliases: [评价事实, 评论, reviews]
+    time_column: created_at
+    primary_key: [review_id, order_id]
+    allowed_join_relations: [review_to_order]
+    columns:
+      - {name: review_id, role: primary_key, description: 评价标识。, aliases: [评价ID]}
+      - {name: order_id, role: foreign_key, description: 所属订单标识。, aliases: [订单ID]}
+      - {name: score, role: measure, description: 一至五星评价分数。, aliases: [评分, 星级]}
+      - {name: created_at, role: time, description: 评价创建时间。, aliases: [评价时间]}
 
-      - name: order_quantity
-        role: measure
-        description: 订单中商品的购买数量。
-        alias: [ 销量, 购买数量, 件数 ]
-        sync: false
+  - table_name: dws_sales_region_daily
+    role: aggregate
+    grain: date by customer Brazilian state
+    description: 地区日汇总；承担整体/地区 GMV、整体 Order Count、AOV 及候选因素基础量。
+    aliases: [地区日汇总, 州日销售, region daily sales]
+    time_column: date_id
+    primary_key: [date_id, region_id]
+    allowed_join_relations: [region_daily_to_date, region_daily_to_region]
+    columns: &region_daily_columns
+      - {name: date_id, role: foreign_key, description: 日期键。, aliases: [日期键]}
+      - {name: region_id, role: foreign_key, description: 客户所在巴西州代码。, aliases: [地区, 州代码]}
+      - {name: gmv, role: measure, description: 该日期州粒度的可加总 GMV。, aliases: [成交总额, 销售额]}
+      - {name: order_count, role: measure, description: 整体去重订单数，可跨州和日期汇总。, aliases: [订单量, 订单数]}
+      - {name: visitors, role: measure, description: 合成州级访客数；可能缺失。, aliases: [访客数, 流量]}
+      - {name: promoted_sku_count, role: measure, description: 促销中的 SKU 数。, aliases: [促销SKU数]}
+      - {name: active_sku_count, role: measure, description: 活跃 SKU 数，是促销覆盖率分母。, aliases: [活跃SKU数]}
+      - {name: available_sku_count, role: measure, description: 可售 SKU 数，是库存满足率分子。, aliases: [可售SKU数]}
+      - {name: required_sku_count, role: measure, description: 所需 SKU 数，是库存满足率分母。, aliases: [所需SKU数]}
+      - {name: dataset_version, role: lineage, description: Olist 数据集版本。, aliases: [数据版本]}
+      - {name: synthetic_version, role: lineage, description: 合成数据版本；原始汇总可为空。, aliases: [合成版本]}
 
-      - name: order_amount
-        role: measure
-        description: 订单金额。
-        alias: [ 销售额, 订单金额, 收入 ]
-        sync: false
+  - table_name: dws_sales_category_daily
+    role: aggregate
+    grain: date by customer Brazilian state by product category
+    description: 品类日汇总；category_order_count 仅表示包含该品类的去重订单，禁止跨品类求和解释整体订单量。
+    aliases: [品类日汇总, 分类日销售, category daily sales]
+    time_column: date_id
+    primary_key: [date_id, region_id, category_id]
+    allowed_join_relations: [category_daily_to_date, category_daily_to_region, category_daily_to_category]
+    columns:
+      - {name: date_id, role: foreign_key, description: 日期键。, aliases: [日期键]}
+      - {name: region_id, role: foreign_key, description: 客户所在巴西州代码。, aliases: [地区, 州代码]}
+      - {name: category_id, role: foreign_key, description: 商品品类标识。, aliases: [品类, 分类]}
+      - {name: gmv, role: measure, description: 日期州品类粒度的可加总 GMV。, aliases: [品类成交额]}
+      - {name: item_count, role: measure, description: 商品项数量。, aliases: [商品项数, 件数]}
+      - {name: category_order_count, role: measure, description: 包含该品类的去重订单数；禁止跨品类相加作为整体订单量。, aliases: [品类订单数]}
+      - {name: category_visitors, role: measure, description: 合成品类范围访客数；不能复制州级访客数。, aliases: [品类访客数]}
+      - {name: promoted_sku_count, role: measure, description: 促销中的 SKU 数。, aliases: [促销SKU数]}
+      - {name: active_sku_count, role: measure, description: 活跃 SKU 数。, aliases: [活跃SKU数]}
+      - {name: available_sku_count, role: measure, description: 可售 SKU 数。, aliases: [可售SKU数]}
+      - {name: required_sku_count, role: measure, description: 所需 SKU 数。, aliases: [所需SKU数]}
+      - {name: dataset_version, role: lineage, description: Olist 数据集版本。, aliases: [数据版本]}
+      - {name: synthetic_version, role: lineage, description: 合成数据版本；原始汇总可为空。, aliases: [合成版本]}
 
+  - table_name: analysis_sales_region_daily
+    role: synthetic_evidence
+    grain: ground truth case by date by Brazilian state
+    description: 合成诊断的州级 Evidence；只用于回归评测，不覆盖 Olist 事实数据。
+    aliases: [州级合成证据, 诊断地区日数据]
+    time_column: date_id
+    primary_key: [case_id, date_id, region_id]
+    allowed_join_relations: [analysis_region_to_date, analysis_region_to_region]
+    columns: &analysis_columns
+      - {name: case_id, role: primary_key, description: Ground Truth 案例标识。, aliases: [案例ID]}
+      - {name: date_id, role: primary_key, description: 日期键。, aliases: [日期键]}
+      - {name: region_id, role: primary_key, description: 巴西州代码。, aliases: [州代码]}
+      - {name: period_role, role: dimension, description: baseline 或 current 期间标签。, aliases: [期间角色]}
+      - {name: visitors, role: measure, description: 合成访客数，可为空表示证据缺失。, aliases: [访客数]}
+      - {name: promoted_sku_count, role: measure, description: 合成促销 SKU 数。, aliases: [促销SKU数]}
+      - {name: active_sku_count, role: measure, description: 合成活跃 SKU 数。, aliases: [活跃SKU数]}
+      - {name: available_sku_count, role: measure, description: 合成可售 SKU 数。, aliases: [可售SKU数]}
+      - {name: required_sku_count, role: measure, description: 合成所需 SKU 数。, aliases: [所需SKU数]}
+      - {name: analysis_order_count, role: measure, description: 合成诊断订单数。, aliases: [分析订单数]}
+      - {name: analysis_gmv, role: measure, description: 合成诊断 GMV。, aliases: [分析GMV]}
+      - {name: dataset_version, role: lineage, description: Olist 数据集版本。, aliases: [数据版本]}
+      - {name: generator_version, role: lineage, description: 合成生成器版本。, aliases: [生成器版本]}
+
+  - table_name: analysis_sales_category_daily
+    role: synthetic_evidence
+    grain: ground truth case by date by Brazilian state by product category
+    description: 合成诊断的品类级 Evidence；只用于回归评测，不覆盖 Olist 事实数据。
+    aliases: [品类合成证据, 诊断品类日数据]
+    time_column: date_id
+    primary_key: [case_id, date_id, region_id, category_id]
+    allowed_join_relations: [analysis_category_to_date, analysis_category_to_region, analysis_category_to_category]
+    columns:
+      - {name: case_id, role: primary_key, description: Ground Truth 案例标识。, aliases: [案例ID]}
+      - {name: date_id, role: primary_key, description: 日期键。, aliases: [日期键]}
+      - {name: region_id, role: primary_key, description: 巴西州代码。, aliases: [州代码]}
+      - {name: period_role, role: dimension, description: baseline 或 current 期间标签。, aliases: [期间角色]}
+      - {name: visitors, role: measure, description: 合成品类访客数，可为空。, aliases: [品类访客数]}
+      - {name: promoted_sku_count, role: measure, description: 合成促销 SKU 数。, aliases: [促销SKU数]}
+      - {name: active_sku_count, role: measure, description: 合成活跃 SKU 数。, aliases: [活跃SKU数]}
+      - {name: available_sku_count, role: measure, description: 合成可售 SKU 数。, aliases: [可售SKU数]}
+      - {name: required_sku_count, role: measure, description: 合成所需 SKU 数。, aliases: [所需SKU数]}
+      - {name: analysis_order_count, role: measure, description: 合成诊断品类订单数。, aliases: [分析订单数]}
+      - {name: analysis_gmv, role: measure, description: 合成诊断品类 GMV。, aliases: [分析GMV]}
+      - {name: dataset_version, role: lineage, description: Olist 数据集版本。, aliases: [数据版本]}
+      - {name: generator_version, role: lineage, description: 合成生成器版本。, aliases: [生成器版本]}
+      - {name: category_id, role: primary_key, description: 商品品类标识。, aliases: [品类ID]}
+
+relationships:
+  - {relation_id: order_to_customer, left_table: fact_order, left_column: customer_id, right_table: dim_customer, right_column: customer_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: order_to_date, left_table: fact_order, left_column: date_id, right_table: dim_date, right_column: date_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: order_item_to_order, left_table: fact_order_item, left_column: order_id, right_table: fact_order, right_column: order_id, cardinality: many_to_one, allowed: true, grain_warning: 订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。}
+  - {relation_id: order_item_to_product, left_table: fact_order_item, left_column: product_id, right_table: dim_product, right_column: product_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: order_item_to_seller, left_table: fact_order_item, left_column: seller_id, right_table: dim_seller, right_column: seller_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: payment_to_order, left_table: fact_payment, left_column: order_id, right_table: fact_order, right_column: order_id, cardinality: many_to_one, allowed: true, grain_warning: 一个订单可能有多条支付记录；与订单项同时连接会放大金额，必须分别聚合到订单粒度。}
+  - {relation_id: delivery_to_order, left_table: fact_delivery, left_column: order_id, right_table: fact_order, right_column: order_id, cardinality: one_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: review_to_order, left_table: fact_review, left_column: order_id, right_table: fact_order, right_column: order_id, cardinality: many_to_one, allowed: true, grain_warning: 订单可能存在多条评价记录，聚合订单指标前需去重。}
+  - {relation_id: customer_to_region, left_table: dim_customer, left_column: state, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: seller_to_region, left_table: dim_seller, left_column: state, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: 卖家州与客户州语义不同，不得替代订单客户地区。}
+  - {relation_id: product_to_category, left_table: dim_product, left_column: category_id, right_table: dim_category, right_column: category_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: region_daily_to_date, left_table: dws_sales_region_daily, left_column: date_id, right_table: dim_date, right_column: date_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: region_daily_to_region, left_table: dws_sales_region_daily, left_column: region_id, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: category_daily_to_date, left_table: dws_sales_category_daily, left_column: date_id, right_table: dim_date, right_column: date_id, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: category_daily_to_region, left_table: dws_sales_category_daily, left_column: region_id, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: ''}
+  - {relation_id: category_daily_to_category, left_table: dws_sales_category_daily, left_column: category_id, right_table: dim_category, right_column: category_id, cardinality: many_to_one, allowed: true, grain_warning: category_order_count 禁止跨品类求和解释为整体订单量。}
+  - {relation_id: analysis_region_to_date, left_table: analysis_sales_region_daily, left_column: date_id, right_table: dim_date, right_column: date_id, cardinality: many_to_one, allowed: true, grain_warning: 合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。}
+  - {relation_id: analysis_region_to_region, left_table: analysis_sales_region_daily, left_column: region_id, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: 合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。}
+  - {relation_id: analysis_category_to_date, left_table: analysis_sales_category_daily, left_column: date_id, right_table: dim_date, right_column: date_id, cardinality: many_to_one, allowed: true, grain_warning: 合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。}
+  - {relation_id: analysis_category_to_region, left_table: analysis_sales_category_daily, left_column: region_id, right_table: dim_region, right_column: state_code, cardinality: many_to_one, allowed: true, grain_warning: 合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。}
+  - {relation_id: analysis_category_to_category, left_table: analysis_sales_category_daily, left_column: category_id, right_table: dim_category, right_column: category_id, cardinality: many_to_one, allowed: true, grain_warning: 合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。}
 
 metrics:
-  - name: GMV
-    description: 全称Gross Merchandise Value，表示所有订单的成交金额总和。
-    relevant_columns:
-      - fact_order.order_amount
-    alias: [ 成交总额, 订单总额 ]
-  - name: AOV
-    description: 全称Average Order Value，表示所有订单的成交金额平均值。
-    relevant_columns:
-      - fact_order.order_quantity
-    alias: [ 平均单价, 平均订单金额 ]
+  - {metric_id: gmv, display_name: GMV, description: 商品成交总额，唯一口径为订单项 price 求和，不包含运费或 payment_value。, formula: 'SUM(fact_order_item.price)', base_grain: order item, time_column: fact_order.purchase_date, status_filters: {'exclude:fact_order.status': [canceled, unavailable]}, allowed_dimensions: [date, region, category, seller], component_metrics: [], relevant_columns: [fact_order_item.price, fact_order_item.order_id, fact_order.order_id, fact_order.purchase_date, fact_order.status], aliases: [成交总额, 商品交易总额, 销售额]}
+  - {metric_id: order_count, display_name: Order Count, description: 整体去重订单数；诊断聚合必须使用地区 DWS 的 order_count。, formula: 'SUM(dws_sales_region_daily.order_count)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [], relevant_columns: [dws_sales_region_daily.order_count, dws_sales_region_daily.date_id, dws_sales_region_daily.region_id], aliases: [订单量, 订单数, 整体订单数]}
+  - {metric_id: aov, display_name: AOV, description: 平均订单金额，按汇总后的 GMV 除以整体去重订单数运行时计算。, formula: 'SUM(dws_sales_region_daily.gmv) / NULLIF(SUM(dws_sales_region_daily.order_count), 0)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [gmv, order_count], relevant_columns: [dws_sales_region_daily.gmv, dws_sales_region_daily.order_count, dws_sales_region_daily.date_id, dws_sales_region_daily.region_id], aliases: [平均订单金额, 客单价]}
+  - {metric_id: item_count, display_name: Item Count, description: 商品项数量，可按日期、地区和品类汇总。, formula: 'SUM(dws_sales_category_daily.item_count)', base_grain: date by customer Brazilian state by product category, time_column: dws_sales_category_daily.date_id, status_filters: {}, allowed_dimensions: [date, region, category], component_metrics: [], relevant_columns: [dws_sales_category_daily.item_count, dws_sales_category_daily.date_id, dws_sales_category_daily.region_id, dws_sales_category_daily.category_id], aliases: [商品项数, 件数, 销量]}
+  - {metric_id: category_order_count, display_name: Category Order Count, description: 包含某品类的去重订单数；禁止跨品类相加后解释为整体订单量。, formula: 'SUM(dws_sales_category_daily.category_order_count)', base_grain: date by customer Brazilian state by product category, time_column: dws_sales_category_daily.date_id, status_filters: {}, allowed_dimensions: [date, region, category], component_metrics: [], relevant_columns: [dws_sales_category_daily.category_order_count, dws_sales_category_daily.category_id], aliases: [品类订单数]}
+  - {metric_id: visitors, display_name: Visitors, description: 州级访客基础量；缺失时不得输出 Traffic 原因。, formula: 'SUM(dws_sales_region_daily.visitors)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [], relevant_columns: [dws_sales_region_daily.visitors, dws_sales_region_daily.date_id, dws_sales_region_daily.region_id], aliases: [访客数, 流量]}
+  - {metric_id: conversion_rate, display_name: Conversion Rate, description: 订单数除以访客数，必须先汇总分子和分母再计算。, formula: 'SUM(dws_sales_region_daily.order_count) / NULLIF(SUM(dws_sales_region_daily.visitors), 0)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [order_count, visitors], relevant_columns: [dws_sales_region_daily.order_count, dws_sales_region_daily.visitors], aliases: [转化率, 下单转化率]}
+  - {metric_id: promotion_coverage, display_name: Promotion Coverage, description: 促销 SKU 数除以活跃 SKU 数，必须先汇总分子和分母再计算。, formula: 'SUM(dws_sales_region_daily.promoted_sku_count) / NULLIF(SUM(dws_sales_region_daily.active_sku_count), 0)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [], relevant_columns: [dws_sales_region_daily.promoted_sku_count, dws_sales_region_daily.active_sku_count], aliases: [促销覆盖率, 促销比例]}
+  - {metric_id: inventory_fill_rate, display_name: Inventory Fill Rate, description: 可售 SKU 数除以所需 SKU 数，必须先汇总分子和分母再计算。, formula: 'SUM(dws_sales_region_daily.available_sku_count) / NULLIF(SUM(dws_sales_region_daily.required_sku_count), 0)', base_grain: date by customer Brazilian state, time_column: dws_sales_region_daily.date_id, status_filters: {}, allowed_dimensions: [date, region], component_metrics: [], relevant_columns: [dws_sales_region_daily.available_sku_count, dws_sales_region_daily.required_sku_count], aliases: [库存满足率, 库存可用率]}

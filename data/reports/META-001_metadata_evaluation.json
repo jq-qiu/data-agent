@@ -1,0 +1,708 @@
+{
+  "metadata_version": "metadata-v1",
+  "catalog_sha256": "3599ab80fd5140ebe426b833923193051a16ef09f28fe4462e7af37304bfbebb",
+  "warehouse_schema_valid": true,
+  "mysql_counts": {
+    "tables": 15,
+    "columns": 103,
+    "metrics": 9,
+    "relationships": 21
+  },
+  "qdrant_point_count": 148,
+  "elasticsearch_value_count": 258,
+  "evaluation": {
+    "dataset_version": "metadata-golden-v1",
+    "metadata_version": "metadata-v1",
+    "case_count": 12,
+    "retrieval_limits": {
+      "metric": 1,
+      "table": 5,
+      "column": 10,
+      "relationship": 5,
+      "value": 5
+    },
+    "metrics": {
+      "metric_hit_at_1": 1.0,
+      "mrr": 1.0,
+      "table_recall_at_5": 0.9791666666666666,
+      "column_recall_at_10": 0.90625,
+      "join_key_recall_at_5": 0.8787878787878788,
+      "value_grounding_accuracy": 1.0,
+      "context_precision": 0.3406410558040993,
+      "context_recall": 0.9266806722689075,
+      "average_context_token_count": 182.66666666666666,
+      "max_context_token_count": 216,
+      "grain_warning_accuracy": 1.0
+    },
+    "thresholds": {
+      "metric_hit_at_1": 0.8,
+      "table_recall_at_5": 0.85,
+      "column_recall_at_10": 0.8,
+      "join_key_recall_at_5": 0.8,
+      "value_grounding_accuracy": 0.8,
+      "grain_warning_accuracy": 1.0
+    },
+    "gate_checks": {
+      "metric_hit_at_1": true,
+      "table_recall_at_5": true,
+      "column_recall_at_10": true,
+      "join_key_recall_at_5": true,
+      "value_grounding_accuracy": true,
+      "grain_warning_accuracy": true
+    },
+    "gate_2_passed": true,
+    "cases": [
+      {
+        "case_id": "META-001",
+        "metric_top1": [
+          "gmv"
+        ],
+        "tables": [
+          "fact_order_item",
+          "fact_order",
+          "dim_region",
+          "dim_seller",
+          "dim_date"
+        ],
+        "columns": [
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "fact_order.purchase_date",
+          "fact_order.status",
+          "dim_region.state_code",
+          "fact_order_item.seller_id",
+          "dim_seller.seller_id",
+          "dim_seller.state",
+          "fact_order.date_id"
+        ],
+        "join_relations": [
+          "order_item_to_order",
+          "order_item_to_seller",
+          "seller_to_region",
+          "order_to_date",
+          "order_to_customer"
+        ],
+        "values": [
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "SP"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RJ"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "MG"
+          }
+        ],
+        "grain_warnings": [
+          "订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。",
+          "卖家州与客户州语义不同，不得替代订单客户地区。"
+        ],
+        "table_recall": 0.75,
+        "column_recall": 0.625,
+        "join_key_recall": 0.6666666666666666,
+        "warning_ok": true,
+        "context_token_count": 158
+      },
+      {
+        "case_id": "META-002",
+        "metric_top1": [
+          "aov"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dim_region",
+          "dim_date",
+          "fact_order",
+          "fact_order_item"
+        ],
+        "columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.region_id",
+          "dim_region.state_code",
+          "dim_date.date_id",
+          "fact_order.date_id",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "dim_seller.state"
+        ],
+        "join_relations": [
+          "region_daily_to_region",
+          "region_daily_to_date",
+          "order_to_date",
+          "order_item_to_order",
+          "seller_to_region"
+        ],
+        "values": [
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RJ"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RS"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "SP"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "MG"
+          }
+        ],
+        "grain_warnings": [
+          "订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。",
+          "卖家州与客户州语义不同，不得替代订单客户地区。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 178
+      },
+      {
+        "case_id": "META-003",
+        "metric_top1": [
+          "order_count"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "fact_payment",
+          "dim_region",
+          "dim_date",
+          "fact_order"
+        ],
+        "columns": [
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.region_id",
+          "fact_payment.payment_type",
+          "dim_region.state_code",
+          "dim_date.date_id",
+          "fact_order.date_id",
+          "fact_payment.order_id",
+          "fact_order.order_id",
+          "dim_seller.state"
+        ],
+        "join_relations": [
+          "region_daily_to_date",
+          "order_to_date",
+          "payment_to_order",
+          "region_daily_to_region",
+          "seller_to_region"
+        ],
+        "values": [
+          {
+            "column_id": "fact_payment.payment_type",
+            "canonical_value": "boleto"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "BA"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "PR"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "SP"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RJ"
+          }
+        ],
+        "grain_warnings": [
+          "一个订单可能有多条支付记录；与订单项同时连接会放大金额，必须分别聚合到订单粒度。",
+          "卖家州与客户州语义不同，不得替代订单客户地区。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 187
+      },
+      {
+        "case_id": "META-004",
+        "metric_top1": [
+          "gmv"
+        ],
+        "tables": [
+          "fact_order_item",
+          "fact_order",
+          "dws_sales_category_daily",
+          "dim_category",
+          "fact_payment"
+        ],
+        "columns": [
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "fact_order.purchase_date",
+          "fact_order.status",
+          "dws_sales_category_daily.item_count",
+          "dws_sales_category_daily.date_id",
+          "dws_sales_category_daily.region_id",
+          "dws_sales_category_daily.category_id",
+          "dim_category.category_id"
+        ],
+        "join_relations": [
+          "order_item_to_order",
+          "order_to_date",
+          "category_daily_to_date",
+          "order_item_to_product",
+          "product_to_category"
+        ],
+        "values": [
+          {
+            "column_id": "dim_category.category_id",
+            "canonical_value": "cama_mesa_banho"
+          },
+          {
+            "column_id": "fact_payment.payment_type",
+            "canonical_value": "credit_card"
+          },
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "unavailable"
+          }
+        ],
+        "grain_warnings": [
+          "订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 0.75,
+        "join_key_recall": 0.0,
+        "warning_ok": true,
+        "context_token_count": 189
+      },
+      {
+        "case_id": "META-005",
+        "metric_top1": [
+          "order_count"
+        ],
+        "tables": [
+          "fact_payment",
+          "fact_order",
+          "dim_category",
+          "dim_date",
+          "dws_sales_category_daily"
+        ],
+        "columns": [
+          "fact_payment.payment_type",
+          "fact_order.status",
+          "dim_category.category_id",
+          "fact_payment.order_id",
+          "fact_order.order_id",
+          "fact_order.date_id",
+          "dim_date.date_id",
+          "dws_sales_category_daily.date_id",
+          "dws_sales_category_daily.category_id",
+          "fact_payment.payment_sequential"
+        ],
+        "join_relations": [
+          "payment_to_order",
+          "order_to_date",
+          "category_daily_to_date",
+          "category_daily_to_category",
+          "review_to_order"
+        ],
+        "values": [
+          {
+            "column_id": "fact_payment.payment_type",
+            "canonical_value": "credit_card"
+          },
+          {
+            "column_id": "fact_payment.payment_type",
+            "canonical_value": "debit_card"
+          },
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "delivered"
+          },
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "unavailable"
+          },
+          {
+            "column_id": "dim_category.category_id",
+            "canonical_value": "cama_mesa_banho"
+          }
+        ],
+        "grain_warnings": [
+          "一个订单可能有多条支付记录；与订单项同时连接会放大金额，必须分别聚合到订单粒度。",
+          "category_order_count 禁止跨品类求和解释为整体订单量。",
+          "订单可能存在多条评价记录，聚合订单指标前需去重。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 202
+      },
+      {
+        "case_id": "META-006",
+        "metric_top1": [
+          "inventory_fill_rate"
+        ],
+        "tables": [
+          "fact_order",
+          "dim_category",
+          "dim_date",
+          "dws_sales_category_daily",
+          "fact_delivery"
+        ],
+        "columns": [
+          "fact_order.status",
+          "dim_category.category_id",
+          "fact_order.date_id",
+          "dim_date.date_id",
+          "dws_sales_category_daily.date_id",
+          "dws_sales_category_daily.category_id",
+          "fact_delivery.order_id",
+          "fact_order.order_id",
+          "dim_product.category_id",
+          "fact_order_item.product_id"
+        ],
+        "join_relations": [
+          "order_to_date",
+          "category_daily_to_date",
+          "category_daily_to_category",
+          "delivery_to_order",
+          "product_to_category"
+        ],
+        "values": [
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "delivered"
+          },
+          {
+            "column_id": "dim_category.category_id",
+            "canonical_value": "informatica_acessorios"
+          }
+        ],
+        "grain_warnings": [
+          "category_order_count 禁止跨品类求和解释为整体订单量。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 0.5,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 175
+      },
+      {
+        "case_id": "META-007",
+        "metric_top1": [
+          "conversion_rate"
+        ],
+        "tables": [
+          "fact_order",
+          "fact_review",
+          "fact_order_item",
+          "dws_sales_category_daily",
+          "analysis_sales_category_daily"
+        ],
+        "columns": [
+          "fact_order.status",
+          "fact_review.order_id",
+          "fact_order.order_id",
+          "fact_review.created_at",
+          "fact_order.approved_at",
+          "fact_order.purchase_timestamp",
+          "fact_order.purchase_date",
+          "fact_order.delivered_customer_at",
+          "fact_review.score",
+          "fact_review.review_id"
+        ],
+        "join_relations": [
+          "review_to_order",
+          "analysis_category_to_date",
+          "analysis_region_to_date",
+          "category_daily_to_category",
+          "category_daily_to_date"
+        ],
+        "values": [
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "created"
+          }
+        ],
+        "grain_warnings": [
+          "订单可能存在多条评价记录，聚合订单指标前需去重。",
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。",
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。",
+          "category_order_count 禁止跨品类求和解释为整体订单量。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 166
+      },
+      {
+        "case_id": "META-008",
+        "metric_top1": [
+          "promotion_coverage"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dim_region",
+          "dim_date",
+          "analysis_sales_region_daily",
+          "dim_seller"
+        ],
+        "columns": [
+          "dws_sales_region_daily.promoted_sku_count",
+          "dws_sales_region_daily.active_sku_count",
+          "dim_region.state_code",
+          "dws_sales_region_daily.region_id",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "analysis_sales_region_daily.date_id",
+          "analysis_sales_region_daily.region_id",
+          "analysis_sales_region_daily.promoted_sku_count",
+          "analysis_sales_region_daily.active_sku_count"
+        ],
+        "join_relations": [
+          "region_daily_to_region",
+          "region_daily_to_date",
+          "analysis_region_to_date",
+          "analysis_region_to_region",
+          "category_daily_to_region"
+        ],
+        "values": [
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "SP"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RJ"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "MG"
+          }
+        ],
+        "grain_warnings": [
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。",
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 209
+      },
+      {
+        "case_id": "META-009",
+        "metric_top1": [
+          "inventory_fill_rate"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dim_region",
+          "dim_date",
+          "analysis_sales_region_daily",
+          "dim_seller"
+        ],
+        "columns": [
+          "dws_sales_region_daily.available_sku_count",
+          "dws_sales_region_daily.required_sku_count",
+          "dim_region.state_code",
+          "dws_sales_region_daily.region_id",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "analysis_sales_region_daily.date_id",
+          "analysis_sales_region_daily.region_id",
+          "analysis_sales_region_daily.available_sku_count",
+          "dws_sales_region_daily.active_sku_count"
+        ],
+        "join_relations": [
+          "region_daily_to_region",
+          "region_daily_to_date",
+          "analysis_region_to_date",
+          "analysis_region_to_region",
+          "customer_to_region"
+        ],
+        "values": [
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "MG"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "PR"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "SP"
+          },
+          {
+            "column_id": "dim_region.state_code",
+            "canonical_value": "RJ"
+          }
+        ],
+        "grain_warnings": [
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。",
+          "合成 Evidence 仅用于版本化诊断回归，不得解释为原始 Olist 事实。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 216
+      },
+      {
+        "case_id": "META-010",
+        "metric_top1": [
+          "conversion_rate"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dim_date",
+          "fact_order",
+          "dim_region",
+          "dim_customer"
+        ],
+        "columns": [
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.visitors",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.region_id",
+          "dim_date.date_id",
+          "fact_order.date_id",
+          "dim_region.state_code",
+          "dim_customer.state",
+          "fact_order.customer_id",
+          "dim_customer.customer_id"
+        ],
+        "join_relations": [
+          "region_daily_to_date",
+          "order_to_date",
+          "region_daily_to_region",
+          "customer_to_region",
+          "order_to_customer"
+        ],
+        "values": [],
+        "grain_warnings": [],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": null,
+        "warning_ok": true,
+        "context_token_count": 152
+      },
+      {
+        "case_id": "META-011",
+        "metric_top1": [
+          "gmv"
+        ],
+        "tables": [
+          "fact_order_item",
+          "fact_order",
+          "fact_payment",
+          "dws_sales_category_daily",
+          "dim_customer"
+        ],
+        "columns": [
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "fact_order.purchase_date",
+          "fact_order.status",
+          "fact_payment.payment_type",
+          "fact_payment.order_id",
+          "fact_order_item.freight_value",
+          "fact_payment.payment_value",
+          "dws_sales_category_daily.gmv"
+        ],
+        "join_relations": [
+          "order_item_to_order",
+          "payment_to_order",
+          "review_to_order",
+          "category_daily_to_category",
+          "order_item_to_seller"
+        ],
+        "values": [
+          {
+            "column_id": "fact_payment.payment_type",
+            "canonical_value": "debit_card"
+          },
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "unavailable"
+          },
+          {
+            "column_id": "fact_order.status",
+            "canonical_value": "delivered"
+          }
+        ],
+        "grain_warnings": [
+          "订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。",
+          "一个订单可能有多条支付记录；与订单项同时连接会放大金额，必须分别聚合到订单粒度。",
+          "订单可能存在多条评价记录，聚合订单指标前需去重。",
+          "category_order_count 禁止跨品类求和解释为整体订单量。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 178
+      },
+      {
+        "case_id": "META-012",
+        "metric_top1": [
+          "category_order_count"
+        ],
+        "tables": [
+          "dws_sales_category_daily",
+          "dws_sales_region_daily",
+          "dim_category",
+          "dim_date",
+          "fact_order"
+        ],
+        "columns": [
+          "dws_sales_category_daily.category_order_count",
+          "dws_sales_category_daily.category_id",
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.region_id",
+          "dim_category.category_id",
+          "dws_sales_category_daily.date_id",
+          "dim_date.date_id",
+          "fact_order.date_id",
+          "fact_order_item.order_id"
+        ],
+        "join_relations": [
+          "category_daily_to_date",
+          "region_daily_to_date",
+          "category_daily_to_category",
+          "order_to_date",
+          "order_item_to_order"
+        ],
+        "values": [
+          {
+            "column_id": "dim_category.category_id",
+            "canonical_value": "cama_mesa_banho"
+          }
+        ],
+        "grain_warnings": [
+          "category_order_count 禁止跨品类求和解释为整体订单量。",
+          "订单含多个商品项；在订单粒度聚合前不得重复计算订单量或支付金额。"
+        ],
+        "table_recall": 1.0,
+        "column_recall": 1.0,
+        "join_key_recall": 1.0,
+        "warning_ok": true,
+        "context_token_count": 182
+      }
+    ]
+  }
+}

@@ -1,0 +1,122 @@
+[
+  {
+    "case_id": "META-001",
+    "question": "2018年5月圣保罗州的GMV是多少",
+    "expected_metric_ids": ["gmv"],
+    "expected_tables": ["fact_order_item", "fact_order", "dim_customer", "dim_region"],
+    "expected_columns": ["fact_order_item.price", "fact_order_item.order_id", "fact_order.order_id", "fact_order.purchase_date", "fact_order.customer_id", "dim_customer.customer_id", "dim_customer.state", "dim_region.state_code"],
+    "expected_join_relations": ["order_item_to_order", "order_to_customer", "customer_to_region"],
+    "expected_values": [{"column_id": "dim_region.state_code", "canonical_value": "SP"}],
+    "required_grain_warning": true
+  },
+  {
+    "case_id": "META-002",
+    "question": "里约热内卢州每月客单价趋势",
+    "expected_metric_ids": ["aov"],
+    "expected_tables": ["dws_sales_region_daily", "dim_region", "dim_date"],
+    "expected_columns": ["dws_sales_region_daily.gmv", "dws_sales_region_daily.order_count", "dws_sales_region_daily.date_id", "dws_sales_region_daily.region_id", "dim_region.state_code", "dim_date.date_id"],
+    "expected_join_relations": ["region_daily_to_region", "region_daily_to_date"],
+    "expected_values": [{"column_id": "dim_region.state_code", "canonical_value": "RJ"}],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-003",
+    "question": "按巴西州统计整体订单量",
+    "expected_metric_ids": ["order_count"],
+    "expected_tables": ["dws_sales_region_daily", "dim_region"],
+    "expected_columns": ["dws_sales_region_daily.order_count", "dws_sales_region_daily.region_id", "dim_region.state_code"],
+    "expected_join_relations": ["region_daily_to_region"],
+    "expected_values": [],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-004",
+    "question": "床浴用品品类的商品项销量和销售额",
+    "expected_metric_ids": ["item_count", "gmv"],
+    "expected_tables": ["dws_sales_category_daily", "dim_category"],
+    "expected_columns": ["dws_sales_category_daily.item_count", "dws_sales_category_daily.gmv", "dws_sales_category_daily.category_id", "dim_category.category_id"],
+    "expected_join_relations": ["category_daily_to_category"],
+    "expected_values": [{"column_id": "dim_category.category_id", "canonical_value": "cama_mesa_banho"}],
+    "required_grain_warning": true
+  },
+  {
+    "case_id": "META-005",
+    "question": "信用卡支付记录有多少，应该连接哪张订单表",
+    "expected_metric_ids": [],
+    "expected_tables": ["fact_payment", "fact_order"],
+    "expected_columns": ["fact_payment.payment_type", "fact_payment.order_id", "fact_order.order_id"],
+    "expected_join_relations": ["payment_to_order"],
+    "expected_values": [{"column_id": "fact_payment.payment_type", "canonical_value": "credit_card"}],
+    "required_grain_warning": true
+  },
+  {
+    "case_id": "META-006",
+    "question": "订单实际送达日期和配送延迟天数",
+    "expected_metric_ids": [],
+    "expected_tables": ["fact_delivery", "fact_order"],
+    "expected_columns": ["fact_delivery.delivered_date", "fact_delivery.delay_days", "fact_delivery.order_id", "fact_order.order_id"],
+    "expected_join_relations": ["delivery_to_order"],
+    "expected_values": [],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-007",
+    "question": "订单评价评分和评价创建时间",
+    "expected_metric_ids": [],
+    "expected_tables": ["fact_review", "fact_order"],
+    "expected_columns": ["fact_review.score", "fact_review.created_at", "fact_review.order_id", "fact_order.order_id"],
+    "expected_join_relations": ["review_to_order"],
+    "expected_values": [],
+    "required_grain_warning": true
+  },
+  {
+    "case_id": "META-008",
+    "question": "圣保罗州的促销覆盖率如何变化",
+    "expected_metric_ids": ["promotion_coverage"],
+    "expected_tables": ["dws_sales_region_daily", "dim_region"],
+    "expected_columns": ["dws_sales_region_daily.promoted_sku_count", "dws_sales_region_daily.active_sku_count", "dws_sales_region_daily.region_id", "dim_region.state_code"],
+    "expected_join_relations": ["region_daily_to_region"],
+    "expected_values": [{"column_id": "dim_region.state_code", "canonical_value": "SP"}],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-009",
+    "question": "米纳斯吉拉斯州库存满足率下降了吗",
+    "expected_metric_ids": ["inventory_fill_rate"],
+    "expected_tables": ["dws_sales_region_daily", "dim_region"],
+    "expected_columns": ["dws_sales_region_daily.available_sku_count", "dws_sales_region_daily.required_sku_count", "dws_sales_region_daily.region_id", "dim_region.state_code"],
+    "expected_join_relations": ["region_daily_to_region"],
+    "expected_values": [{"column_id": "dim_region.state_code", "canonical_value": "MG"}],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-010",
+    "question": "访客数和下单转化率",
+    "expected_metric_ids": ["conversion_rate"],
+    "expected_tables": ["dws_sales_region_daily"],
+    "expected_columns": ["dws_sales_region_daily.order_count", "dws_sales_region_daily.visitors"],
+    "expected_join_relations": [],
+    "expected_values": [],
+    "required_grain_warning": false
+  },
+  {
+    "case_id": "META-011",
+    "question": "订单项和多条支付记录同时连接会不会把GMV放大",
+    "expected_metric_ids": ["gmv"],
+    "expected_tables": ["fact_order_item", "fact_order", "fact_payment"],
+    "expected_columns": ["fact_order_item.price", "fact_order_item.order_id", "fact_order.order_id", "fact_payment.order_id", "fact_payment.payment_value"],
+    "expected_join_relations": ["order_item_to_order", "payment_to_order"],
+    "expected_values": [],
+    "required_grain_warning": true
+  },
+  {
+    "case_id": "META-012",
+    "question": "各品类订单数相加能否作为整体订单量",
+    "expected_metric_ids": ["category_order_count"],
+    "expected_tables": ["dws_sales_category_daily", "dim_category"],
+    "expected_columns": ["dws_sales_category_daily.category_order_count", "dws_sales_category_daily.category_id", "dim_category.category_id"],
+    "expected_join_relations": ["category_daily_to_category"],
+    "expected_values": [],
+    "required_grain_warning": true
+  }
+]

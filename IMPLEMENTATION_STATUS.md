@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Data Foundation / Gate 1 complete.
+Metadata / Gate 2 complete.
 
 ## Current Feature
 
-DATA-003 Synthetic Evidence and Ground Truth.
+META-001 Metadata Adaptation.
 
 ## Feature Status
 
-Completed. Versioned `synthetic-v1` Evidence and Ground Truth are generated in independent `analysis_*` tables with fixed Seed 20260905. D01-D10 cover the three event types, single/dual factors, no clear evidence, and missing evidence. Reproduction, chain consistency, source immutability, and all Gate 1 checks pass. The status is valid when the DATA-003 completion commit containing this file is present on `origin/main`.
+Completed. Versioned `metadata-v1` adapts 15 accepted Olist V1 tables, 103 columns, 9 metrics, and 21 allowed relationships. Feature-owned `meta_v1_*` tables, Qdrant collection, and Elasticsearch value index leave legacy metadata and the isolated DW unchanged. Twelve fixed samples passed Gate 2 with real retrieval metrics. The status is valid when the META-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-DATA-003 Synthetic Evidence and Ground Truth.
+META-001 Metadata Adaptation.
 
 ## Next Feature
 
-META-001 Metadata Adaptation.
+SQL-001 NL2SQL Adaptation.
 
 ## Last Successful Validation
 
@@ -53,10 +53,19 @@ META-001 Metadata Adaptation.
 - DATA-003 chain validation: 0 Evidence-chain failures, 0 stable-case failures, and 0 degradation-case failures;
 - DATA-003 source integrity: Olist DWD and both accepted DWS summaries remained unchanged; their GMV remains 13,494,400.74;
 - Gate 1: all Data Foundation conditions passed with real import, build, generation, and reconciliation evidence.
+- META-001 tests: 7 passed; full pytest regression: 42 passed;
+- META-001 Ruff/mypy: 51 and 40 respectively, unchanged from the engineering baseline;
+- META-001 target build: 15 table records, 103 column records, 9 metric records, and 21 relationship records in independent `meta_v1_*` tables;
+- META-001 semantic/value indexes: 148 deterministic Qdrant points and 258 Elasticsearch canonical-value documents;
+- META-001 legacy metadata isolation: existing legacy table counts remain 5 tables, 24 columns, 16 metrics, and 27 column-metric links;
+- META-001 retrieval evaluation: 12 fixed cases, Metric Hit@1 1.0000, MRR 1.0000, Table Recall@5 0.9792, Column Recall@10 0.9062, Join-key Recall@5 0.8788, and Value Grounding Accuracy 1.0000;
+- META-001 context evaluation: Precision 0.3406, Recall 0.9267, average estimated context 182.67 tokens, maximum 216 tokens, and Grain Warning Accuracy 1.0000;
+- META-001 source integrity: target database is `data_agent_v1_dw`; accepted valid-order GMV and region DWS GMV both remain 13,494,400.74;
+- Gate 2: all frozen metadata thresholds passed with real MySQL, Qdrant, Elasticsearch, and embedding-service evidence.
 
 ## Last Commit
 
-The DATA-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The META-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -64,13 +73,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None for DATA-003. Synthetic results are deliberately separated from Olist facts and are association-oriented regression fixtures, not causal evidence. Physical MySQL foreign-key constraints remain replaced by mandatory logical-key reconciliation. The repository still has the documented baselines of 51 Ruff diagnostics and 40 mypy errors in 14 files.
+None for META-001. Context Precision is 0.3406 at the evaluated TopK because context intentionally includes safety-relevant JOIN and grain-warning candidates; the fixed-set recall and all Gate 2 thresholds pass. The Qdrant client 1.16.2 reports a version-compatibility warning against server 1.19.0 but all real build and retrieval operations succeed. The repository still has the documented baselines of 51 Ruff diagnostics and 40 mypy errors in 14 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Read and freeze `specs/META-001_metadata_adaptation.md` before implementing META-001.
-5. Inspect the accepted DWD, DWS, Synthetic, and Ground Truth schemas without changing their data.
-6. Implement META-001 only, run the fixed 10-15 sample retrieval evaluation and Gate 2 checks, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/SQL-001_nl2sql_adaptation.md` and its direct sources before implementation.
+5. Inspect the existing NL2SQL retrieval, linking, validation, and execution path without modifying diagnosis or Agent routing logic.
+6. Implement SQL-001 only, run its targeted tests and Gate prerequisites, produce a completion report, create an independent commit, and push.
