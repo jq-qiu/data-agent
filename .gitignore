@@ -21,3 +21,7 @@ logs/*.log
 !.env.example
 conf/app_config.yaml
 
+# Local datasets and database artifacts
+data/raw/
+data/*.db
+data/*.sqlite*

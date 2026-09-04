@@ -1,0 +1,61 @@
+{
+  "batch_id": "71cc91c2-b623-4914-b38f-658bfd91a33c",
+  "status": "success",
+  "reused": true,
+  "files": [
+    {
+      "filename": "olist_customers_dataset.csv",
+      "table_name": "ods_olist_customers",
+      "source_row_count": 99441,
+      "imported_row_count": 99441
+    },
+    {
+      "filename": "olist_geolocation_dataset.csv",
+      "table_name": "ods_olist_geolocation",
+      "source_row_count": 1000163,
+      "imported_row_count": 1000163
+    },
+    {
+      "filename": "olist_order_items_dataset.csv",
+      "table_name": "ods_olist_order_items",
+      "source_row_count": 112650,
+      "imported_row_count": 112650
+    },
+    {
+      "filename": "olist_order_payments_dataset.csv",
+      "table_name": "ods_olist_order_payments",
+      "source_row_count": 103886,
+      "imported_row_count": 103886
+    },
+    {
+      "filename": "olist_order_reviews_dataset.csv",
+      "table_name": "ods_olist_order_reviews",
+      "source_row_count": 99224,
+      "imported_row_count": 99224
+    },
+    {
+      "filename": "olist_orders_dataset.csv",
+      "table_name": "ods_olist_orders",
+      "source_row_count": 99441,
+      "imported_row_count": 99441
+    },
+    {
+      "filename": "olist_products_dataset.csv",
+      "table_name": "ods_olist_products",
+      "source_row_count": 32951,
+      "imported_row_count": 32951
+    },
+    {
+      "filename": "olist_sellers_dataset.csv",
+      "table_name": "ods_olist_sellers",
+      "source_row_count": 3095,
+      "imported_row_count": 3095
+    },
+    {
+      "filename": "product_category_name_translation.csv",
+      "table_name": "ods_olist_product_category_name_translation",
+      "source_row_count": 71,
+      "imported_row_count": 71
+    }
+  ]
+}
