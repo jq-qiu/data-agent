@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-NL2SQL adaptation complete; Gate 3 evaluation pending.
+NL2SQL / Gate 3 complete.
 
 ## Current Feature
 
-SQL-001 NL2SQL Adaptation.
+SQL-002 NL2SQL Evaluation.
 
 ## Feature Status
 
-Completed. The single-turn LangGraph query path uses `metadata-v1` and a versioned AST policy before read-only access to `data_agent_v1_dw`. Unsafe SQL, unregistered schema/JOINs, sensitive projections, invalid metric/grain formulas, and payment-item fanout are rejected; one repair is allowed and must be revalidated. Real retrieval, SQL, and end-to-end LangGraph smoke passed. The status is valid when the SQL-001 completion commit containing this file is present on `origin/main`.
+Completed. The frozen `nl2sql-golden-v1` dataset contains 30 balanced cases and all references passed validation, EXPLAIN, execution, and checksum verification. The real `sql-002-baseline-v1` run recorded all cases, every required metric, 12 rejected safety probes, and fixed error categories. Gate 3 passed its evidence conditions without inventing an accuracy threshold or changing SQL-001 behavior. The status is valid when the SQL-002 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-SQL-001 NL2SQL Adaptation.
+SQL-002 NL2SQL Evaluation.
 
 ## Next Feature
 
-SQL-002 NL2SQL Evaluation.
+ANA-001 Intent Router.
 
 ## Last Successful Validation
 
@@ -69,10 +69,19 @@ SQL-002 NL2SQL Evaluation.
 - SQL-001 real SQL smoke: May 2018 GMV 992,871.75; AOV 145.305393; Top 5 categories returned five rows;
 - SQL-001 real LangGraph smoke: `2018年5月GMV是多少` completed V1 retrieval, generation, validation, EXPLAIN, and controlled execution with the same GMV result;
 - SQL-001 isolation: only `data_agent_v1_dw` was queried; original `dw`, accepted V1 data, and metadata indexes were not changed.
+- SQL-002 targeted tests: 5 passed; full pytest regression: 73 passed;
+- SQL-002 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from SQL-001 and below ENG-001;
+- SQL-002 Golden: 30 cases, six buckets of five, and 30/30 verified reference SQL/result checksums;
+- SQL-002 real baseline: SQL Validity 24/30, Executability 24/30, Execution Accuracy 16/30, Metric Accuracy 23/30, JOIN Accuracy 21/30, and Correction Success 5/6;
+- SQL-002 structure means: Table Precision 0.7333, Table Recall 0.7417, Column Precision 0.7067, and Column Recall 0.7113;
+- SQL-002 safety: 12/12 dangerous probes rejected and dangerous SQL allowed count is 0;
+- SQL-002 errors: 2 Metric Recognition, 7 Schema Linking, 3 SQL Generation, and 5 SQL Execution; every failed layer has one primary category;
+- SQL-002 latency: mean 228.80 seconds, median 133.66 seconds, maximum 926.29 seconds; Token/cost unavailable and explicitly recorded;
+- Gate 3: all frozen evidence conditions passed; the baseline is not claimed as production accuracy.
 
 ## Last Commit
 
-The SQL-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The SQL-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -80,13 +89,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None for SQL-001. SQL-002's 30-case evaluation is not yet implemented, so Gate 3 is not claimed. The Qdrant client 1.16.2 warning against server 1.19.0 remains, but live retrieval succeeds. The repository now reports 31 Ruff diagnostics and 36 mypy errors in 11 files, both below their ENG-001 baselines.
+None blocking ANA-001. SQL-002's first baseline is 16/30 Execution Accuracy; five long-running cases had transient lost-MySQL-connection errors, strict structure metrics penalize alternate valid plans, and Token/cost metadata is unavailable. These are preserved as baseline issues, not hidden or repaired out of scope. Qdrant's 1.16.2/1.19.0 compatibility warning remains. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/SQL-002_nl2sql_evaluation.md` and its direct sources before implementation.
-5. Inspect the accepted SQL-001 runtime and the evaluation requirements without changing diagnosis, AOV decomposition, or API behavior.
-6. Implement SQL-002 only, run the frozen 30-case evaluation and Gate 3 checks, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-001_intent_router.md` and its direct sources before implementation.
+5. Inspect the accepted Query path and frozen QUERY/DIAGNOSIS intent requirements without modifying Analysis Question parsing or later diagnosis methods.
+6. Implement ANA-001 only, run its fixed rewrite/ambiguity/degradation tests, produce a completion report, create an independent commit, and push.

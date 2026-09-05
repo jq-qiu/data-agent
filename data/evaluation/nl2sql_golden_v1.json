@@ -1,0 +1,768 @@
+{
+  "dataset_version": "nl2sql-golden-v1",
+  "cases": [
+    {
+      "case_id": "S01",
+      "bucket": "simple",
+      "question": "列出所有巴西州代码和州名称，按州代码排序",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "dim_region"
+      ],
+      "expected_columns": [
+        "dim_region.state_code",
+        "dim_region.display_name"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT state_code, display_name FROM dim_region ORDER BY state_code",
+      "expected_result_sha256": "5439a6ad8baf4f062787cadb51c891cb99bf2b4e8e93cd05a445be7849485d6f",
+      "risk_tags": [
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "S02",
+      "bucket": "simple",
+      "question": "列出前10个商品品类ID和英文名称，按品类ID排序",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "dim_category"
+      ],
+      "expected_columns": [
+        "dim_category.category_id",
+        "dim_category.category_name_en"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT category_id, category_name_en FROM dim_category ORDER BY category_id LIMIT 10",
+      "expected_result_sha256": "768c73049bcc5f8eba35c2103b643cae1b50207cbcad8e17434b112f43f0b50e",
+      "risk_tags": [
+        "category_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "S03",
+      "bucket": "simple",
+      "question": "Olist订单有哪些订单状态",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_order"
+      ],
+      "expected_columns": [
+        "fact_order.status"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT DISTINCT status FROM fact_order ORDER BY status",
+      "expected_result_sha256": "3bd676cda15c0bc3c22e810d87f79d98727dc29c45d877e430a2dbbfde35775f",
+      "risk_tags": [
+        "canonical_value"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "S04",
+      "bucket": "simple",
+      "question": "支付记录中有哪些付款方式",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_payment"
+      ],
+      "expected_columns": [
+        "fact_payment.payment_type"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT DISTINCT payment_type FROM fact_payment ORDER BY payment_type",
+      "expected_result_sha256": "9a6fda08fb8f4ecbb06f7c5edcc5fbbbc82c87b1fb754acfd7f86ad0e54af65e",
+      "risk_tags": [
+        "canonical_value"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "S05",
+      "bucket": "simple",
+      "question": "按商品ID排序列出前5个商品的ID和重量",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "dim_product"
+      ],
+      "expected_columns": [
+        "dim_product.product_id",
+        "dim_product.weight_g"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT product_id, weight_g FROM dim_product ORDER BY product_id LIMIT 5",
+      "expected_result_sha256": "497c8d8b6d6d2f4569fbde2a891ca822aba861d6df632385fbb0d9d690bc1460",
+      "risk_tags": [
+        "explicit_columns"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "A01",
+      "bucket": "aggregate",
+      "question": "全部有效订单的GMV是多少",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT SUM(gmv) AS total_gmv FROM dws_sales_region_daily",
+      "expected_result_sha256": "6b4dd0438c3a22b0f2e8f7e15f0a637206d64fbd0ba9d4db05b475b5e2a7f1bc",
+      "risk_tags": [
+        "metric_formula",
+        "exclude_freight"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "A02",
+      "bucket": "aggregate",
+      "question": "全部有效订单的整体订单量是多少",
+      "expected_metric_ids": [
+        "order_count"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.order_count"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT SUM(order_count) AS total_order_count FROM dws_sales_region_daily",
+      "expected_result_sha256": "d26d5fc4655976a806ef570c5e52308f3f180cfd998eda7c47b61fb843a7fe90",
+      "risk_tags": [
+        "overall_order_grain"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "A03",
+      "bucket": "aggregate",
+      "question": "所有评价的平均评分是多少",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_review"
+      ],
+      "expected_columns": [
+        "fact_review.score"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT AVG(score) AS average_score FROM fact_review",
+      "expected_result_sha256": "20772fa6bacef4567a50a26f492227098c57bedbd29da3bfc86ee5d365fc4f15",
+      "risk_tags": [
+        "aggregate"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "A04",
+      "bucket": "aggregate",
+      "question": "支付明细一共有多少条记录",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_payment"
+      ],
+      "expected_columns": [
+        "fact_payment.order_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT COUNT(order_id) AS payment_record_count FROM fact_payment",
+      "expected_result_sha256": "ccce0dcf48846f05d7401684cfd1b7ab5f834c7c8c85388d545ff7649679210e",
+      "risk_tags": [
+        "payment_grain"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "A05",
+      "bucket": "aggregate",
+      "question": "订单商品明细一共有多少件",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_order_item"
+      ],
+      "expected_columns": [
+        "fact_order_item.order_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT COUNT(order_id) AS item_record_count FROM fact_order_item",
+      "expected_result_sha256": "c65149df80e4f8aadac699767445dc519c0084bee7e5fe8b790029802f2453cc",
+      "risk_tags": [
+        "order_item_grain"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "T01",
+      "bucket": "time",
+      "question": "2018年5月GMV是多少",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.date_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT SUM(gmv) AS total_gmv FROM dws_sales_region_daily WHERE date_id BETWEEN 20180501 AND 20180531",
+      "expected_result_sha256": "bacf2ad0f1bb0e290562cdf0711c6a002e224591783709e73e53b9b3cfb679d3",
+      "risk_tags": [
+        "time",
+        "metric_formula"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "T02",
+      "bucket": "time",
+      "question": "按月统计2018年的GMV趋势",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.date_id",
+        "dim_date.date_id",
+        "dim_date.month",
+        "dim_date.year"
+      ],
+      "expected_join_relations": [
+        "region_daily_to_date"
+      ],
+      "reference_sql": "SELECT d.month, SUM(r.gmv) AS gmv FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE d.year = 2018 GROUP BY d.month ORDER BY d.month",
+      "expected_result_sha256": "81a098d0da817a8c6ca6889614679e91f88c7da158edb69bc3aaebbb84630f75",
+      "risk_tags": [
+        "time",
+        "join",
+        "trend"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "T03",
+      "bucket": "time",
+      "question": "2018年5月整体订单数是多少",
+      "expected_metric_ids": [
+        "order_count"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT SUM(order_count) AS total_order_count FROM dws_sales_region_daily WHERE date_id BETWEEN 20180501 AND 20180531",
+      "expected_result_sha256": "81ae56aecaca676a0a62480a487791dbe954dbba389fcb7981a8a32e29be7dd6",
+      "risk_tags": [
+        "time",
+        "overall_order_grain"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "T04",
+      "bucket": "time",
+      "question": "2018年第二季度的AOV是多少",
+      "expected_metric_ids": [
+        "aov"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT SUM(gmv) / NULLIF(SUM(order_count), 0) AS aov FROM dws_sales_region_daily WHERE date_id BETWEEN 20180401 AND 20180630",
+      "expected_result_sha256": "cf93901b4c71cf18a3406ddc9b0d0531cb2b92463e626c6ec82e58566d06c3d7",
+      "risk_tags": [
+        "time",
+        "ratio_recompute",
+        "overall_order_grain"
+      ],
+      "result_ordered": false
+    },
+    {
+      "case_id": "T05",
+      "bucket": "time",
+      "question": "列出2018年5月每日GMV，按日期排序",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.date_id",
+        "dws_sales_region_daily.gmv"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT date_id, SUM(gmv) AS daily_gmv FROM dws_sales_region_daily WHERE date_id BETWEEN 20180501 AND 20180531 GROUP BY date_id ORDER BY date_id",
+      "expected_result_sha256": "3a10a6379c6adf23ff4a9213798759c94011cdf52d248ab4817b503a381eee4b",
+      "risk_tags": [
+        "time",
+        "trend"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "J01",
+      "bucket": "join",
+      "question": "按客户所在巴西州统计有效订单GMV",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "fact_order_item",
+        "fact_order",
+        "dim_customer",
+        "dim_region"
+      ],
+      "expected_columns": [
+        "fact_order_item.price",
+        "fact_order_item.order_id",
+        "fact_order.order_id",
+        "fact_order.customer_id",
+        "fact_order.status",
+        "dim_customer.customer_id",
+        "dim_customer.state",
+        "dim_region.state_code"
+      ],
+      "expected_join_relations": [
+        "order_item_to_order",
+        "order_to_customer",
+        "customer_to_region"
+      ],
+      "reference_sql": "SELECT r.state_code, SUM(i.price) AS gmv FROM fact_order_item i JOIN fact_order o ON i.order_id = o.order_id JOIN dim_customer c ON o.customer_id = c.customer_id JOIN dim_region r ON c.state = r.state_code WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY r.state_code ORDER BY r.state_code",
+      "expected_result_sha256": "f74f35c0bd514eb9a43ca541b3e3ddc233eab9c21747dfd9755ac18ebf3cbcbd",
+      "risk_tags": [
+        "join",
+        "one_to_many_join",
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "J02",
+      "bucket": "join",
+      "question": "按商品英文品类统计有效订单GMV",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "fact_order_item",
+        "fact_order",
+        "dim_product",
+        "dim_category"
+      ],
+      "expected_columns": [
+        "fact_order_item.price",
+        "fact_order_item.order_id",
+        "fact_order_item.product_id",
+        "fact_order.order_id",
+        "fact_order.status",
+        "dim_product.product_id",
+        "dim_product.category_id",
+        "dim_category.category_id",
+        "dim_category.category_name_en"
+      ],
+      "expected_join_relations": [
+        "order_item_to_order",
+        "order_item_to_product",
+        "product_to_category"
+      ],
+      "reference_sql": "SELECT c.category_name_en, SUM(i.price) AS gmv FROM fact_order_item i JOIN fact_order o ON i.order_id = o.order_id JOIN dim_product p ON i.product_id = p.product_id JOIN dim_category c ON p.category_id = c.category_id WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY c.category_name_en ORDER BY c.category_name_en",
+      "expected_result_sha256": "0e3fa0aef1a716439781fc3e26d83e6a6bb3e88cb919e4010aa5ceb3882b13a7",
+      "risk_tags": [
+        "join",
+        "one_to_many_join",
+        "category_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "J03",
+      "bucket": "join",
+      "question": "按付款方式统计有效订单的支付明细记录数",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_payment",
+        "fact_order"
+      ],
+      "expected_columns": [
+        "fact_payment.payment_type",
+        "fact_payment.order_id",
+        "fact_order.order_id",
+        "fact_order.status"
+      ],
+      "expected_join_relations": [
+        "payment_to_order"
+      ],
+      "reference_sql": "SELECT p.payment_type, COUNT(p.order_id) AS payment_record_count FROM fact_payment p JOIN fact_order o ON p.order_id = o.order_id WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY p.payment_type ORDER BY p.payment_type",
+      "expected_result_sha256": "07fb24f130e195aedc7616c66ad6c9c57e54f2b3a6ae69341750eba67fd06784",
+      "risk_tags": [
+        "join",
+        "payment_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "J04",
+      "bucket": "join",
+      "question": "按客户所在巴西州统计平均配送延迟天数",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_delivery",
+        "fact_order",
+        "dim_customer",
+        "dim_region"
+      ],
+      "expected_columns": [
+        "fact_delivery.delay_days",
+        "fact_delivery.order_id",
+        "fact_order.order_id",
+        "fact_order.customer_id",
+        "dim_customer.customer_id",
+        "dim_customer.state",
+        "dim_region.state_code"
+      ],
+      "expected_join_relations": [
+        "delivery_to_order",
+        "order_to_customer",
+        "customer_to_region"
+      ],
+      "reference_sql": "SELECT r.state_code, AVG(d.delay_days) AS average_delay_days FROM fact_delivery d JOIN fact_order o ON d.order_id = o.order_id JOIN dim_customer c ON o.customer_id = c.customer_id JOIN dim_region r ON c.state = r.state_code GROUP BY r.state_code ORDER BY r.state_code",
+      "expected_result_sha256": "ccd5a3b34c16a1e8133c5cf62587fd6fec7dbd679f743c1126edeffe9b053746",
+      "risk_tags": [
+        "join",
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "J05",
+      "bucket": "join",
+      "question": "按客户所在巴西州统计评价记录数",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_review",
+        "fact_order",
+        "dim_customer",
+        "dim_region"
+      ],
+      "expected_columns": [
+        "fact_review.review_id",
+        "fact_review.order_id",
+        "fact_order.order_id",
+        "fact_order.customer_id",
+        "dim_customer.customer_id",
+        "dim_customer.state",
+        "dim_region.state_code"
+      ],
+      "expected_join_relations": [
+        "review_to_order",
+        "order_to_customer",
+        "customer_to_region"
+      ],
+      "reference_sql": "SELECT r.state_code, COUNT(v.review_id) AS review_count FROM fact_review v JOIN fact_order o ON v.order_id = o.order_id JOIN dim_customer c ON o.customer_id = c.customer_id JOIN dim_region r ON c.state = r.state_code GROUP BY r.state_code ORDER BY r.state_code",
+      "expected_result_sha256": "578460da2598a549c7064e53d489fa29eaeb4dfcb36622ffd247ee9cfa8849bb",
+      "risk_tags": [
+        "join",
+        "review_grain",
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "N01",
+      "bucket": "topn",
+      "question": "GMV最高的5个客户州是哪些",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.region_id",
+        "dws_sales_region_daily.gmv"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT region_id, SUM(gmv) AS total_gmv FROM dws_sales_region_daily GROUP BY region_id ORDER BY total_gmv DESC LIMIT 5",
+      "expected_result_sha256": "e0a9a3bf3ea1ea5a6c029f14da82f0ad5bfc3449706a27f7430dcb3206fa4617",
+      "risk_tags": [
+        "topn",
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "N02",
+      "bucket": "topn",
+      "question": "2018年5月GMV最高的5个商品品类是什么",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_category_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_category_daily.category_id",
+        "dws_sales_category_daily.gmv",
+        "dws_sales_category_daily.date_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT category_id, SUM(gmv) AS total_gmv FROM dws_sales_category_daily WHERE date_id BETWEEN 20180501 AND 20180531 GROUP BY category_id ORDER BY total_gmv DESC LIMIT 5",
+      "expected_result_sha256": "06e56d216290a4eeb2d59cf5fcd202c6539cbda5d0a7225cb54e950d4d4c805a",
+      "risk_tags": [
+        "topn",
+        "time",
+        "category_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "N03",
+      "bucket": "topn",
+      "question": "有效订单GMV最高的5个卖家是谁",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "fact_order_item",
+        "fact_order"
+      ],
+      "expected_columns": [
+        "fact_order_item.seller_id",
+        "fact_order_item.price",
+        "fact_order_item.order_id",
+        "fact_order.order_id",
+        "fact_order.status"
+      ],
+      "expected_join_relations": [
+        "order_item_to_order"
+      ],
+      "reference_sql": "SELECT i.seller_id, SUM(i.price) AS gmv FROM fact_order_item i JOIN fact_order o ON i.order_id = o.order_id WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY i.seller_id ORDER BY gmv DESC LIMIT 5",
+      "expected_result_sha256": "d78eb0820d181d4414ee92a5241ca7778dcfc1403857736eba082955a4c46cfb",
+      "risk_tags": [
+        "topn",
+        "one_to_many_join",
+        "metric_formula"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "N04",
+      "bucket": "topn",
+      "question": "2018年5月商品项数最多的5个品类是什么",
+      "expected_metric_ids": [
+        "item_count"
+      ],
+      "expected_tables": [
+        "dws_sales_category_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_category_daily.category_id",
+        "dws_sales_category_daily.item_count",
+        "dws_sales_category_daily.date_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT category_id, SUM(item_count) AS total_item_count FROM dws_sales_category_daily WHERE date_id BETWEEN 20180501 AND 20180531 GROUP BY category_id ORDER BY total_item_count DESC LIMIT 5",
+      "expected_result_sha256": "2b82b0d2957a0c598cb33fa9e57e3ff36b577a9cb2f67d8b57bde697093656d4",
+      "risk_tags": [
+        "topn",
+        "time",
+        "category_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "N05",
+      "bucket": "topn",
+      "question": "支付明细记录数最多的3种付款方式是什么",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_payment"
+      ],
+      "expected_columns": [
+        "fact_payment.payment_type",
+        "fact_payment.order_id"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "SELECT payment_type, COUNT(order_id) AS payment_record_count FROM fact_payment GROUP BY payment_type ORDER BY payment_record_count DESC LIMIT 3",
+      "expected_result_sha256": "63f5b0d215591d2156403228e5face55cf21ea9a0981962efb15d08f4d43d57b",
+      "risk_tags": [
+        "topn",
+        "payment_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "C01",
+      "bucket": "comparison",
+      "question": "对比2018年4月和5月的GMV",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.date_id",
+        "dim_date.date_id",
+        "dim_date.month"
+      ],
+      "expected_join_relations": [
+        "region_daily_to_date"
+      ],
+      "reference_sql": "SELECT d.month, SUM(r.gmv) AS gmv FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE d.month IN ('2018-04', '2018-05') GROUP BY d.month ORDER BY d.month",
+      "expected_result_sha256": "cd4aa051fb5040f1d07df682a0215b36ced33c0c1f037b1110fe3cc5c2c5c6a7",
+      "risk_tags": [
+        "comparison",
+        "time",
+        "join"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "C02",
+      "bucket": "comparison",
+      "question": "对比2018年4月和5月的整体订单数",
+      "expected_metric_ids": [
+        "order_count"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id",
+        "dim_date.date_id",
+        "dim_date.month"
+      ],
+      "expected_join_relations": [
+        "region_daily_to_date"
+      ],
+      "reference_sql": "SELECT d.month, SUM(r.order_count) AS order_count FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE d.month IN ('2018-04', '2018-05') GROUP BY d.month ORDER BY d.month",
+      "expected_result_sha256": "1946f24f838a029407832d7de4044774df638b9f7ad5a49157822626748e4d0f",
+      "risk_tags": [
+        "comparison",
+        "time",
+        "overall_order_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "C03",
+      "bucket": "comparison",
+      "question": "对比圣保罗州2018年4月和5月的GMV",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.date_id",
+        "dws_sales_region_daily.region_id",
+        "dim_date.date_id",
+        "dim_date.month"
+      ],
+      "expected_join_relations": [
+        "region_daily_to_date"
+      ],
+      "reference_sql": "SELECT d.month, SUM(r.gmv) AS gmv FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE CONCAT(d.month, ':', r.region_id) IN ('2018-04:SP', '2018-05:SP') GROUP BY d.month ORDER BY d.month",
+      "expected_result_sha256": "5fb8bc72a51243c031cd11f9f2eb46936ad0f5f3fb811f31eb9522b774b7acc6",
+      "risk_tags": [
+        "comparison",
+        "time",
+        "value_grounding",
+        "brazil_region_semantics"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "C04",
+      "bucket": "comparison",
+      "question": "对比2018年4月和5月的AOV",
+      "expected_metric_ids": [
+        "aov"
+      ],
+      "expected_tables": [
+        "dws_sales_region_daily",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "dws_sales_region_daily.gmv",
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id",
+        "dim_date.date_id",
+        "dim_date.month"
+      ],
+      "expected_join_relations": [
+        "region_daily_to_date"
+      ],
+      "reference_sql": "SELECT d.month, SUM(r.gmv) / NULLIF(SUM(r.order_count), 0) AS aov FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE d.month IN ('2018-04', '2018-05') GROUP BY d.month ORDER BY d.month",
+      "expected_result_sha256": "afb9f5a1df6ccd12a20939dd6aa9f4b51ae4f78ed7f62cb0a8764d222b795c2a",
+      "risk_tags": [
+        "comparison",
+        "time",
+        "ratio_recompute",
+        "overall_order_grain"
+      ],
+      "result_ordered": true
+    },
+    {
+      "case_id": "C05",
+      "bucket": "comparison",
+      "question": "对比2018年4月和5月已送达与已取消订单的数量",
+      "expected_metric_ids": [],
+      "expected_tables": [
+        "fact_order",
+        "dim_date"
+      ],
+      "expected_columns": [
+        "fact_order.order_id",
+        "fact_order.status",
+        "fact_order.date_id",
+        "dim_date.date_id",
+        "dim_date.month"
+      ],
+      "expected_join_relations": [
+        "order_to_date"
+      ],
+      "reference_sql": "SELECT d.month, o.status, COUNT(o.order_id) AS order_count FROM fact_order o JOIN dim_date d ON o.date_id = d.date_id WHERE CONCAT(d.month, ':', o.status) IN ('2018-04:delivered', '2018-04:canceled', '2018-05:delivered', '2018-05:canceled') GROUP BY d.month, o.status ORDER BY d.month, o.status",
+      "expected_result_sha256": "12618b0f6e7790e780738b74d763353dab70a0d6f9c549799e8e790b06fe1b38",
+      "risk_tags": [
+        "comparison",
+        "time",
+        "canonical_value",
+        "join"
+      ],
+      "result_ordered": true
+    }
+  ]
+}
