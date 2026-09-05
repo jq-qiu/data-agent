@@ -1,0 +1,241 @@
+{
+  "dataset_version": "analysis-question-parser-golden-v1",
+  "cases": [
+    {
+      "case_id": "P01",
+      "group": "parsed",
+      "question": "为什么2018年5月GMV下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": ["region", "category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P02",
+      "group": "parsed",
+      "question": "分析2018-05成交总额下降的原因",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": ["region", "category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P03",
+      "group": "parsed",
+      "question": "2018年5月哪些品类和州对GMV下降贡献最大？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": ["region", "category"],
+          "requested_factors": []
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P04",
+      "group": "parsed",
+      "question": "2018年5月流量、促销和库存分别发生了什么变化？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": [],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P05",
+      "group": "parsed",
+      "question": "进一步分析2018年5月圣保罗州GMV下降的原因",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": "SP", "category": null},
+          "requested_dimensions": ["category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P06",
+      "group": "parsed",
+      "question": "拆解2018年5月相对4月的GMV变化",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": [],
+          "requested_factors": []
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P07",
+      "group": "parsed",
+      "question": "为什么2019-01 GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2019-01-01", "end": "2019-01-31"},
+          "baseline_period": {"start": "2018-12-01", "end": "2018-12-31"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": ["region", "category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P08",
+      "group": "parsed",
+      "question": "为什么2018年5月电脑配件品类GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": "informatica_acessorios"},
+          "requested_dimensions": ["region"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P09",
+      "group": "parsed",
+      "question": "对比2018年4月和2018年5月的GMV下降原因",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": null, "category": null},
+          "requested_dimensions": ["region", "category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "P10",
+      "group": "parsed",
+      "question": "为什么2018年5月SP的GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "parsed_question": {
+          "target_metric": "gmv",
+          "current_period": {"start": "2018-05-01", "end": "2018-05-31"},
+          "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"},
+          "comparison_type": "previous_period",
+          "scope": {"region": "SP", "category": null},
+          "requested_dimensions": ["category"],
+          "requested_factors": ["traffic", "promotion", "inventory"]
+        },
+        "error": null
+      }
+    },
+    {
+      "case_id": "E01",
+      "group": "error",
+      "question": "为什么2018年5月GMV下降",
+      "intent": "QUERY",
+      "expected": {"parsed_question": null, "error": {"code": "UNSUPPORTED_INTENT", "field": "intent", "reason": "diagnosis_intent_required"}}
+    },
+    {
+      "case_id": "E02",
+      "group": "error",
+      "question": "为什么2018年5月订单量下降，并检查流量、促销和库存",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "UNKNOWN_METRIC", "field": "metric", "reason": "gmv_target_required"}}
+    },
+    {
+      "case_id": "E03",
+      "group": "error",
+      "question": "为什么GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "INVALID_TIME_RANGE", "field": "time", "reason": "missing_current_period"}}
+    },
+    {
+      "case_id": "E04",
+      "group": "error",
+      "question": "为什么2018年13月GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "INVALID_TIME_RANGE", "field": "time", "reason": "invalid_calendar_month"}}
+    },
+    {
+      "case_id": "E05",
+      "group": "error",
+      "question": "为什么2018年5月相比基期GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "MISSING_BASELINE", "field": "baseline", "reason": "explicit_baseline_incomplete"}}
+    },
+    {
+      "case_id": "E06",
+      "group": "error",
+      "question": "对比2018年2月和2018年5月的GMV下降原因",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "INVALID_TIME_RANGE", "field": "time", "reason": "non_adjacent_calendar_months"}}
+    },
+    {
+      "case_id": "E07",
+      "group": "error",
+      "question": "为什么2018年5月圣保罗州和里约热内卢州GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "UNSUPPORTED_INTENT", "field": "scope", "reason": "multiple_scope_values_unsupported"}}
+    },
+    {
+      "case_id": "E08",
+      "group": "error",
+      "question": "为什么2018年5月火星州GMV下降",
+      "intent": "DIAGNOSIS",
+      "expected": {"parsed_question": null, "error": {"code": "UNSUPPORTED_INTENT", "field": "scope", "reason": "unregistered_region_scope"}}
+    }
+  ]
+}
