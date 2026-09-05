@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Diagnosis evaluation complete; Gate 5 failed and downstream work is blocked.
+Diagnosis evaluation complete; Gate 5 passed after isolated remediation.
 
 ## Current Feature
 
-EVAL-001 Diagnosis Regression.
+FIX-001 Gate 5 Remediation.
 
 ## Feature Status
 
-Completed with a real failing baseline. D01-D10 were attempted through the frozen isolated-DW diagnosis chain; 4/10 completed, Numeric Consistency was 4/10, Root Cause Recall@3 was 4/10, Unsupported Claim Count and causal-language violations were both zero, and Gate 5 failed. Five cases stopped at Scope grounding because their Synthetic values are absent from the Metadata Catalog vocabulary; D02 exposed incompatible Category decomposition/Evidence metric lineage. No upstream algorithm was changed to fit labels. The status is valid when the EVAL-001 completion commit containing this file is present on `origin/main`.
+Completed. Five real Synthetic Scope values were added to the shared Metadata Catalog, and the isolated V1 Metadata registries/indexes were rebuilt. Evidence and Report lineage now preserve overall `order_count` versus single-Category `category_order_count` semantics and reject cross-grain contracts. The unchanged D01-D10 regression completed 10/10 cases with Numeric Consistency 10/10, Root Cause Recall@3 10/10, D10 degradation 1/1, zero unsupported claims, and zero causal-language violations. Gate 5 passed without changing Ground Truth, evaluation thresholds, Query Builder SQL, Analyzer math, Evidence ranking, or report wording. The status is valid when the FIX-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-EVAL-001 Diagnosis Regression.
+FIX-001 Gate 5 Remediation.
 
 ## Next Feature
 
-Blocked until Gate 5 remediation is separately scoped and authorized; API-001 must not start while Gate 5 is false.
+API-001 Minimal Demo.
 
 ## Last Successful Validation
 
@@ -133,10 +133,19 @@ Blocked until Gate 5 remediation is separately scoped and authorized; API-001 mu
 - EVAL-001 errors: 5 Schema Linking and 1 Evidence Validation; every failed case has one primary error category;
 - EVAL-001 latency: mean 368.935100 ms, median 293.217500 ms, maximum 1103.221000 ms; Token/cost unavailable because no LLM call was made;
 - Gate 5: failed. The baseline was recorded without changing upstream diagnosis algorithms or inflating functional-regression scores.
+- FIX-001 focused tests: 71 passed; full pytest regression: 228 passed;
+- FIX-001 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from EVAL-001;
+- FIX-001 isolated Metadata rebuild: 15 tables, 103 columns, 9 metrics, 21 relationships, 148 Qdrant points, and 258 Elasticsearch value documents;
+- FIX-001 immutable history: the original EVAL-001 report and three `eval_runs/EVAL-001_v1` artifacts retain their recorded SHA-256 hashes;
+- FIX-001 live regression: all 10 D01-D10 chains completed; Single Cause Hit@1 6/6, Root Cause Recall@3 10/10, Evidence Precision/Recall 10/10, and Numeric Consistency 10/10;
+- FIX-001 boundary checks: D09 no-decline 1/1, D10 degradation 1/1, maximum reconciliation error 0.000000, and all frozen error-category counts 0;
+- FIX-001 claim safety: Unsupported Claim Count 0 and causal-language violations 0;
+- FIX-001 latency: mean 697.149600 ms, median 612.514500 ms, maximum 1222.350000 ms; Token/cost unavailable because no LLM call was made;
+- Gate 5: passed. Results remain limited to the frozen ten-case Synthetic functional regression.
 
 ## Last Commit
 
-The EVAL-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The FIX-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -144,13 +153,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-Gate 5 blocks API-001. D03, D04, D06, D08, and D10 Synthetic Scope values are absent from the current Metadata Catalog value vocabulary. D02 Category-scope decomposition emits `gmv` and `category_order_count` lineage, while the frozen Evidence decomposition contract requires `gmv`, `order_count`, and `aov`. These upstream mismatches require a separately scoped corrective Feature and must not be repaired inside EVAL-001. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking API-001. Gate 5 passed after FIX-001. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, and repository-wide 31 Ruff/36 mypy findings remain documented and are not API-001 blockers.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the EVAL-001 commit is present on `origin/main` and review `EVAL-001_COMPLETION.md` plus the three versioned run artifacts.
-4. Do not start API-001 while Gate 5 is false.
-5. Obtain explicit scope for a corrective upstream Feature, then fully read its Spec and direct sources before changing Metadata Scope vocabulary or Category decomposition/Evidence lineage.
-6. Re-run EVAL-001 unchanged after an accepted corrective Feature; API-001 may begin only when Gate 5 passes.
+3. Verify the FIX-001 commit is present on `origin/main` and review `FIX-001_COMPLETION.md` plus `eval_runs/FIX-001_v1`.
+4. Create and fully read `specs/API-001_minimal_demo.md` and all direct sources before implementation.
+5. Inspect the existing FastAPI/SSE Query path, frozen diagnosis node adapters, dependency lifecycle, request/response compatibility decision, trace safety, and fixed Demo acceptance path.
+6. Implement API-001 only, run the fixed single-turn Demo end to end, record real validation, produce a completion report, create an independent commit, and push.

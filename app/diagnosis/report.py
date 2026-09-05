@@ -350,7 +350,12 @@ class ReportGenerator:
         statements: list[ReportStatement] = []
         for item in supported:
             primary = item.facts[0]
-            orders = _fact(item, "order_count")
+            orders = _fact(
+                item,
+                "category_order_count"
+                if bundle.scope.category is not None
+                else "order_count",
+            )
             conversion = _fact(item, "conversion_rate")
             text = (
                 f"{_factor_label(item)} 为 {item.support_level.value} 级关联候选："

@@ -17,7 +17,7 @@ from app.diagnosis.analyzer import (
     PeriodComparisonValues,
     ReconciliationStatus,
 )
-from app.diagnosis.planner import AnalysisPlan, TaskMethod
+from app.diagnosis.planner import AnalysisPlan, AnalysisTask, TaskMethod
 from app.diagnosis.query import MetricLineage
 from app.diagnosis.question import (
     AnalysisDimension,
@@ -77,6 +77,10 @@ class AnomalyStatus(StrEnum):
     DECLINE_CONFIRMED = "DECLINE_CONFIRMED"
     DECLINE_NOT_CONFIRMED = "DECLINE_NOT_CONFIRMED"
     UNAVAILABLE = "UNAVAILABLE"
+
+
+_OVERALL_DECOMPOSITION_LINEAGE = frozenset({"gmv", "order_count", "aov"})
+_CATEGORY_DECOMPOSITION_LINEAGE = frozenset({"gmv", "category_order_count"})
 
 
 class EvidenceValidationError(ValueError):
@@ -146,16 +150,28 @@ class ValidatedEvidence(BaseModel):
             raise ValueError("Evidence query lineage must be unique")
         if len(self.limitations) != len(set(self.limitations)):
             raise ValueError("Evidence limitations must be unique")
-        lineage_metric_ids = {item.metric_id for item in self.metric_versions}
+        lineage_metric_ids = frozenset(
+            item.metric_id for item in self.metric_versions
+        )
         required_metric_ids = {
             EvidenceType.ANOMALY_CONFIRMATION: {"gmv"},
-            EvidenceType.METRIC_DECOMPOSITION: {"gmv", "order_count", "aov"},
             EvidenceType.DIMENSION_CONTRIBUTION: {"gmv"},
             EvidenceType.CANDIDATE_FACTOR: {
                 fact.metric_id for fact in self.facts
             },
-        }[self.evidence_type]
-        if not required_metric_ids <= lineage_metric_ids:
+        }.get(self.evidence_type)
+        decomposition_lineage_valid = (
+            self.evidence_type is EvidenceType.METRIC_DECOMPOSITION
+            and lineage_metric_ids
+            in {
+                _OVERALL_DECOMPOSITION_LINEAGE,
+                _CATEGORY_DECOMPOSITION_LINEAGE,
+            }
+        )
+        if not decomposition_lineage_valid and (
+            required_metric_ids is None
+            or not required_metric_ids <= lineage_metric_ids
+        ):
             raise ValueError("Evidence facts require matching Metric lineage")
         allowed_claims = {
             EvidenceType.ANOMALY_CONFIRMATION: {
@@ -340,7 +356,14 @@ class EvidenceChecker:
                     raise EvidenceValidationError("candidate_factors_do_not_match_plan")
                 for factor_values in result.values.factors:
                     facts, limitations, support, claim = self._candidate_evidence(
-                        factor_values, anomaly_status, fact_index
+                        factor_values,
+                        anomaly_status,
+                        fact_index,
+                        order_metric_id=(
+                            "category_order_count"
+                            if plan_task.scope.category is not None
+                            else "order_count"
+                        ),
                     )
                     fact_index += len(facts)
                     evidence.append(
@@ -372,19 +395,22 @@ class EvidenceChecker:
     def _validate_result_contract(
         plan: AnalysisPlan, analysis_results: Sequence[AnalysisResult]
     ) -> None:
-        expected_methods: list[AnalysisMethod] = []
+        expected_results: list[tuple[AnalysisMethod, AnalysisTask]] = []
         for task in plan.tasks:
             if task.method is TaskMethod.PERIOD_COMPARISON:
-                expected_methods.append(AnalysisMethod.PERIOD_COMPARISON)
+                expected_results.append((AnalysisMethod.PERIOD_COMPARISON, task))
             elif task.method is TaskMethod.METRIC_DECOMPOSITION:
-                expected_methods.append(AnalysisMethod.GMV_SHAPLEY)
+                expected_results.append((AnalysisMethod.GMV_SHAPLEY, task))
             elif task.method is TaskMethod.DIMENSION_CONTRIBUTION:
-                expected_methods.extend(
-                    AnalysisMethod.DIMENSION_CONTRIBUTION for _ in task.dimensions
+                expected_results.extend(
+                    (AnalysisMethod.DIMENSION_CONTRIBUTION, task)
+                    for _ in task.dimensions
                 )
             else:
-                expected_methods.append(AnalysisMethod.CANDIDATE_FACTORS)
-        if tuple(result.method for result in analysis_results) != tuple(expected_methods):
+                expected_results.append((AnalysisMethod.CANDIDATE_FACTORS, task))
+        if tuple(result.method for result in analysis_results) != tuple(
+            method for method, _ in expected_results
+        ):
             raise EvidenceValidationError("analysis_result_methods_do_not_match_plan")
         expected_ids = tuple(
             f"A{index:03d}" for index in range(1, len(analysis_results) + 1)
@@ -392,7 +418,9 @@ class EvidenceChecker:
         if tuple(result.analysis_result_id for result in analysis_results) != expected_ids:
             raise EvidenceValidationError("analysis_result_ids_not_consecutive")
         versions: dict[str, str] = {}
-        for result in analysis_results:
+        for result, (_, task) in zip(
+            analysis_results, expected_results, strict=True
+        ):
             if not result.input_query_ids or not result.metric_versions:
                 raise EvidenceValidationError("analysis_result_lineage_missing")
             if len(result.input_query_ids) != len(set(result.input_query_ids)):
@@ -402,6 +430,37 @@ class EvidenceChecker:
             ]
             if len(lineage_keys) != len(set(lineage_keys)):
                 raise EvidenceValidationError("analysis_result_metric_lineage_duplicate")
+            if result.method is AnalysisMethod.GMV_SHAPLEY:
+                expected_lineage = (
+                    _CATEGORY_DECOMPOSITION_LINEAGE
+                    if task.scope.category is not None
+                    else _OVERALL_DECOMPOSITION_LINEAGE
+                )
+                if {item.metric_id for item in result.metric_versions} != expected_lineage:
+                    raise EvidenceValidationError(
+                        "decomposition_metric_lineage_scope_mismatch"
+                    )
+            if result.method is AnalysisMethod.CANDIDATE_FACTORS:
+                lineage_metric_ids = {
+                    item.metric_id for item in result.metric_versions
+                }
+                expected_order_metric = (
+                    "category_order_count"
+                    if task.scope.category is not None
+                    else "order_count"
+                )
+                forbidden_order_metric = (
+                    "order_count"
+                    if task.scope.category is not None
+                    else "category_order_count"
+                )
+                if (
+                    expected_order_metric not in lineage_metric_ids
+                    or forbidden_order_metric in lineage_metric_ids
+                ):
+                    raise EvidenceValidationError(
+                        "candidate_metric_lineage_scope_mismatch"
+                    )
             for lineage in result.metric_versions:
                 previous = versions.setdefault(lineage.metric_id, lineage.version)
                 if previous != lineage.version:
@@ -519,6 +578,8 @@ class EvidenceChecker:
         values: CandidateFactorAnalysis,
         anomaly_status: AnomalyStatus,
         fact_index: int,
+        *,
+        order_metric_id: Literal["order_count", "category_order_count"],
     ) -> tuple[
         tuple[EvidenceFact, ...],
         tuple[EvidenceLimitation, ...],
@@ -528,7 +589,11 @@ class EvidenceChecker:
         facts = (
             _change_fact(fact_index, values.primary_change),
             _change_fact(fact_index + 1, values.conversion_rate_change),
-            _change_fact(fact_index + 2, values.order_count_change),
+            _change_fact(
+                fact_index + 2,
+                values.order_count_change,
+                metric_id=order_metric_id,
+            ),
         )
         limitations = [
             EvidenceLimitation.SYNTHETIC_CANDIDATE_DATA,
@@ -623,7 +688,12 @@ class EvidenceCheckerNode:
         return {"validated_evidence": bundle.model_dump(mode="json")}
 
 
-def _change_fact(index: int, change: Any) -> EvidenceFact:
+def _change_fact(
+    index: int,
+    change: Any,
+    *,
+    metric_id: str | None = None,
+) -> EvidenceFact:
     numeric_values = (
         change.baseline_value,
         change.current_value,
@@ -632,7 +702,7 @@ def _change_fact(index: int, change: Any) -> EvidenceFact:
     )
     return EvidenceFact(
         fact_id=f"F{index:03d}",
-        metric_id=change.metric_id,
+        metric_id=metric_id or change.metric_id,
         available=any(value is not None for value in numeric_values),
         baseline_value=change.baseline_value,
         current_value=change.current_value,

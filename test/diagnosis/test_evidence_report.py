@@ -50,6 +50,7 @@ def _task(
     *,
     dimensions: tuple[AnalysisDimension, ...] = (),
     factors: tuple[CandidateFactor, ...] = (),
+    scope: AnalysisScope | None = None,
 ) -> AnalysisTask:
     return AnalysisTask(
         task_id=task_id,
@@ -57,7 +58,7 @@ def _task(
         metric="gmv",
         current_period=DatePeriod(start=date(2018, 5, 1), end=date(2018, 5, 31)),
         baseline_period=DatePeriod(start=date(2018, 4, 1), end=date(2018, 4, 30)),
-        scope=AnalysisScope(region="SP"),
+        scope=scope or AnalysisScope(region="SP"),
         dimensions=dimensions,
         factors=factors,
         depends_on=() if task_id == "T1" else ("T1",),
@@ -115,16 +116,30 @@ def _candidate_contract(
     baseline_gmv: Any = "1000",
     current_gmv: Any = "800",
     missing_evidence: tuple[str, ...] = (),
+    scope: AnalysisScope | None = None,
 ) -> tuple[AnalysisPlan, tuple[AnalysisResult, ...]]:
-    period = _task("T1", TaskMethod.PERIOD_COMPARISON)
+    effective_scope = scope or AnalysisScope(region="SP")
+    period = _task(
+        "T1", TaskMethod.PERIOD_COMPARISON, scope=effective_scope
+    )
     candidate = _task(
-        "T2", TaskMethod.CANDIDATE_VALIDATION, factors=factors
+        "T2",
+        TaskMethod.CANDIDATE_VALIDATION,
+        factors=factors,
+        scope=effective_scope,
     )
     plan = AnalysisPlan(
         tasks=(period, candidate), missing_evidence=missing_evidence
     )
     candidate_metrics = (
-        MetricLineage(metric_id="order_count", version="v1"),
+        MetricLineage(
+            metric_id=(
+                "category_order_count"
+                if effective_scope.category is not None
+                else "order_count"
+            ),
+            version="v1",
+        ),
         MetricLineage(metric_id="visitors", version="v1"),
         MetricLineage(metric_id="conversion_rate", version="v1"),
         MetricLineage(metric_id="promotion_coverage", version="v1"),
@@ -189,6 +204,51 @@ def test_supported_traffic_produces_complete_traceable_report() -> None:
     assert "Evidence:" in report.markdown
     assert "Analysis:" in report.markdown
     assert "Query:" in report.markdown
+
+
+def test_category_candidate_uses_category_order_evidence_lineage() -> None:
+    plan, results = _candidate_contract(
+        _traffic_rows(),
+        scope=AnalysisScope(region="SP", category="informatica_acessorios"),
+    )
+
+    bundle = EvidenceChecker().check(plan, results)
+    traffic = _candidate_evidence(bundle, CandidateFactor.TRAFFIC)
+    report = ReportGenerator().generate(bundle)
+
+    lineage_metric_ids = {item.metric_id for item in traffic.metric_versions}
+    assert "category_order_count" in lineage_metric_ids
+    assert "order_count" not in lineage_metric_ids
+    assert {fact.metric_id for fact in traffic.facts} == {
+        "category_order_count",
+        "visitors",
+        "conversion_rate",
+    }
+    assert report.status is ReportStatus.COMPLETE
+    assert report.candidate_ranking == (traffic.evidence_id,)
+
+
+def test_category_candidate_rejects_overall_order_lineage() -> None:
+    plan, results = _candidate_contract(
+        _traffic_rows(),
+        scope=AnalysisScope(region="SP", category="informatica_acessorios"),
+    )
+    changed_lineage = tuple(
+        MetricLineage(metric_id="order_count", version=item.version)
+        if item.metric_id == "category_order_count"
+        else item
+        for item in results[1].metric_versions
+    )
+    changed = (
+        results[0],
+        results[1].model_copy(update={"metric_versions": changed_lineage}),
+    )
+
+    with pytest.raises(
+        EvidenceValidationError,
+        match="candidate_metric_lineage_scope_mismatch",
+    ):
+        EvidenceChecker().check(plan, changed)
 
 
 def test_no_decline_blocks_candidate_conclusions() -> None:
@@ -437,9 +497,17 @@ def _decomposition_contract(
     current_gmv: int,
     baseline_orders: int,
     current_orders: int,
+    *,
+    scope: AnalysisScope | None = None,
+    versions: tuple[MetricLineage, ...] | None = None,
 ) -> tuple[AnalysisPlan, tuple[AnalysisResult, ...]]:
-    period = _task("T1", TaskMethod.PERIOD_COMPARISON)
-    decomposition = _task("T2", TaskMethod.METRIC_DECOMPOSITION)
+    effective_scope = scope or AnalysisScope(region="SP")
+    period = _task(
+        "T1", TaskMethod.PERIOD_COMPARISON, scope=effective_scope
+    )
+    decomposition = _task(
+        "T2", TaskMethod.METRIC_DECOMPOSITION, scope=effective_scope
+    )
     plan = AnalysisPlan(tasks=(period, decomposition))
     queries = (
         _period_query(period, baseline_gmv, current_gmv),
@@ -459,7 +527,8 @@ def _decomposition_contract(
                     "order_count": current_orders,
                 },
             ],
-            versions=(
+            versions=versions
+            or (
                 MetricLineage(metric_id="gmv", version="v1"),
                 MetricLineage(metric_id="order_count", version="v1"),
                 MetricLineage(metric_id="aov", version="v1"),
@@ -479,6 +548,66 @@ def test_reconciled_shapley_becomes_high_evidence() -> None:
     assert decomposition.claim is EvidenceClaim.GMV_DECOMPOSITION_RECONCILED
     assert decomposition.facts[1].absolute_delta == Decimal("-20.000000")
     assert decomposition.facts[2].absolute_delta == Decimal("0.000000")
+
+
+def test_category_shapley_accepts_category_order_lineage() -> None:
+    category_lineage = (
+        MetricLineage(metric_id="gmv", version="v1"),
+        MetricLineage(metric_id="category_order_count", version="v1"),
+    )
+    plan, results = _decomposition_contract(
+        100,
+        80,
+        10,
+        8,
+        scope=AnalysisScope(region="SP", category="informatica_acessorios"),
+        versions=category_lineage,
+    )
+
+    bundle = EvidenceChecker().check(plan, results)
+
+    assert bundle.evidence[1].metric_versions == category_lineage
+    assert bundle.evidence[1].support_level is EvidenceSupportLevel.HIGH
+
+
+@pytest.mark.parametrize(
+    ("scope", "versions"),
+    (
+        (
+            AnalysisScope(region="SP"),
+            (
+                MetricLineage(metric_id="gmv", version="v1"),
+                MetricLineage(metric_id="category_order_count", version="v1"),
+            ),
+        ),
+        (
+            AnalysisScope(region="SP", category="informatica_acessorios"),
+            (
+                MetricLineage(metric_id="gmv", version="v1"),
+                MetricLineage(metric_id="order_count", version="v1"),
+                MetricLineage(metric_id="aov", version="v1"),
+            ),
+        ),
+    ),
+)
+def test_shapley_rejects_cross_grain_lineage(
+    scope: AnalysisScope,
+    versions: tuple[MetricLineage, ...],
+) -> None:
+    plan, results = _decomposition_contract(
+        100,
+        80,
+        10,
+        8,
+        scope=scope,
+        versions=versions,
+    )
+
+    with pytest.raises(
+        EvidenceValidationError,
+        match="decomposition_metric_lineage_scope_mismatch",
+    ):
+        EvidenceChecker().check(plan, results)
 
 
 def test_zero_order_shapley_becomes_low_evidence() -> None:

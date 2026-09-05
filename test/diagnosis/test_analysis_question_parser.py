@@ -148,6 +148,34 @@ def test_registered_category_scope_is_canonicalized(
     assert result.parsed_question.requested_dimensions == (AnalysisDimension.REGION,)
 
 
+@pytest.mark.parametrize(
+    ("question", "expected_scope"),
+    (
+        ("为什么2018年5月SC州GMV下降", AnalysisScope(region="SC")),
+        ("为什么2018年5月PA州GMV下降", AnalysisScope(region="PA")),
+        ("为什么2018年5月ES州GMV下降", AnalysisScope(region="ES")),
+        (
+            "为什么2018年5月SP州eletrodomesticos品类GMV下降",
+            AnalysisScope(region="SP", category="eletrodomesticos"),
+        ),
+        (
+            "为什么2018年5月SP州cool_stuff品类GMV下降",
+            AnalysisScope(region="SP", category="cool_stuff"),
+        ),
+    ),
+)
+def test_gate_five_scope_values_are_canonicalized(
+    parser: AnalysisQuestionParser,
+    question: str,
+    expected_scope: AnalysisScope,
+) -> None:
+    result = parser.parse(question, Intent.DIAGNOSIS)
+
+    assert result.error is None
+    assert result.parsed_question is not None
+    assert result.parsed_question.scope == expected_scope
+
+
 def test_dimension_contribution_only_requests_explicit_dimensions(
     parser: AnalysisQuestionParser,
 ) -> None:

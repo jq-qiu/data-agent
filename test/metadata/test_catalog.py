@@ -80,13 +80,25 @@ def test_metadata_documents_are_unique_and_cover_every_object() -> None:
 def test_value_aliases_map_to_real_canonical_values() -> None:
     catalog = load_catalog(CONFIG)
     values = {
-        "dim_region.state_code": ["SP", "RJ", "MG", "RS", "PR", "BA"],
+        "dim_region.state_code": [
+            "SP",
+            "RJ",
+            "MG",
+            "RS",
+            "PR",
+            "BA",
+            "SC",
+            "PA",
+            "ES",
+        ],
         "dim_category.category_id": [
             "cama_mesa_banho",
             "beleza_saude",
             "esporte_lazer",
             "moveis_decoracao",
             "informatica_acessorios",
+            "eletrodomesticos",
+            "cool_stuff",
         ],
         "dim_category.category_name_pt": [],
         "dim_category.category_name_en": [],
@@ -118,6 +130,23 @@ def test_value_aliases_map_to_real_canonical_values() -> None:
 
     assert "圣保罗州" in sao_paulo["aliases"]
     assert sao_paulo["canonical_value"] == "SP"
+    assert {
+        "SC",
+        "PA",
+        "ES",
+    } <= {
+        item["canonical_value"]
+        for item in documents
+        if item["column_id"] == "dim_region.state_code"
+    }
+    assert {
+        "eletrodomesticos",
+        "cool_stuff",
+    } <= {
+        item["canonical_value"]
+        for item in documents
+        if item["column_id"] == "dim_category.category_id"
+    }
 
 
 def test_golden_dataset_is_fixed_and_covers_gate_two_categories() -> None:

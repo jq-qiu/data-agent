@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import csv
 import io
@@ -278,17 +279,22 @@ async def _evaluate() -> tuple[dict[str, Any], tuple[DiagnosisCaseObservation, .
 
 
 def _write_artifacts(
-    report: dict[str, Any], observations: tuple[DiagnosisCaseObservation, ...]
+    report: dict[str, Any],
+    observations: tuple[DiagnosisCaseObservation, ...],
+    *,
+    report_path: Path = REPORT_PATH,
+    run_dir: Path = RUN_DIR,
 ) -> None:
-    RUN_DIR.mkdir(parents=True, exist_ok=True)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    run_dir.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
-    REPORT_PATH.write_text(encoded, encoding="utf-8")
+    report_path.write_text(encoded, encoding="utf-8")
     summary_payload = {key: value for key, value in report.items() if key != "cases"}
-    (RUN_DIR / "summary.json").write_text(
+    (run_dir / "summary.json").write_text(
         json.dumps(summary_payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    with (RUN_DIR / "diagnosis_results.csv").open(
+    with (run_dir / "diagnosis_results.csv").open(
         "w", encoding="utf-8", newline=""
     ) as handle:
         writer = csv.DictWriter(
@@ -347,14 +353,25 @@ def _write_artifacts(
         )
     else:
         lines.append("No failed cases; every frozen error-category count is zero.")
-    (RUN_DIR / "error_analysis.md").write_text(
+    (run_dir / "error_analysis.md").write_text(
         "\n".join(lines) + "\n", encoding="utf-8"
     )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Run the D01-D10 V1 diagnosis regression"
+    )
+    parser.add_argument("--report", type=Path, default=REPORT_PATH)
+    parser.add_argument("--run-dir", type=Path, default=RUN_DIR)
+    args = parser.parse_args(argv)
     report, observations = asyncio.run(_evaluate())
-    _write_artifacts(report, observations)
+    _write_artifacts(
+        report,
+        observations,
+        report_path=args.report,
+        run_dir=args.run_dir,
+    )
     summary = report["summary"]
     print(
         json.dumps(

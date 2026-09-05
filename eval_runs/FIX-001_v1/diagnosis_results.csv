@@ -1,0 +1,11 @@
+case_id,expected_factors,predicted_factors,anomaly_status,report_status,numeric_consistent,max_reconciliation_error,unsupported_claim_count,causal_language_violation_count,query_count,elapsed_ms,successful,primary_error,error_type
+D01,traffic,traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,1222.350,True,,
+D02,traffic,traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,5,749.280,True,,
+D03,promotion,promotion,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,602.296,True,,
+D04,promotion,promotion,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,5,741.343,True,,
+D05,inventory,inventory,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,590.614,True,,
+D06,inventory,inventory,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,5,761.184,True,,
+D07,traffic|promotion,promotion|traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,609.297,True,,
+D08,traffic|inventory,inventory|traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,615.732,True,,
+D09,,,DECLINE_NOT_CONFIRMED,NO_DECLINE,True,0.000000,0,0,4,592.392,True,,
+D10,,,DECLINE_CONFIRMED,DEGRADED,True,0.000000,0,0,3,487.008,True,,

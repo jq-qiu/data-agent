@@ -38,6 +38,9 @@ tables:
           RS: [Rio Grande do Sul, 南里奥格兰德]
           PR: [Paraná, Parana, 巴拉那]
           BA: [Bahia, 巴伊亚]
+          SC: [Santa Catarina, 圣卡塔琳娜]
+          PA: [Pará, Para, 帕拉]
+          ES: [Espírito Santo, Espirito Santo, 圣埃斯皮里图]
       - {name: display_name, role: dimension, description: 州的显示名称，当前数据保留真实州代码。, aliases: [州名称, 地区名称]}
 
   - table_name: dim_category
@@ -60,6 +63,8 @@ tables:
           esporte_lazer: [sports leisure, sports_leisure, 运动休闲]
           moveis_decoracao: [furniture decor, furniture_decor, 家具装饰]
           informatica_acessorios: [computers accessories, computers_accessories, 电脑配件]
+          eletrodomesticos: [home appliances, home_appliances, 家用电器]
+          cool_stuff: [cool stuff]
       - {name: category_name_pt, role: dimension, description: 商品品类葡萄牙语名称。, aliases: [葡萄牙语品类], value_index_enabled: true}
       - {name: category_name_en, role: dimension, description: 商品品类英文翻译。, aliases: [英文品类, English category], value_index_enabled: true}
 

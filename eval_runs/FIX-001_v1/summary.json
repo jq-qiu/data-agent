@@ -1,0 +1,73 @@
+{
+  "feature": "EVAL-001",
+  "evaluation_scope": "D01-D10 functional regression; not production generalization",
+  "database": "data_agent_v1_dw",
+  "dataset_version": "2",
+  "generator_version": "synthetic-v1",
+  "metric_registry_version": "metadata-v1",
+  "model": "none",
+  "summary": {
+    "evaluation_version": "diagnosis-regression-v1",
+    "case_count": 10,
+    "successful_cases": 10,
+    "single_cause_hit_at_1": {
+      "numerator": 6,
+      "denominator": 6,
+      "value": "1.000000"
+    },
+    "root_cause_recall_at_3": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "evidence_precision": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "evidence_recall": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "numeric_consistency": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "correct_degradation": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": "1.000000"
+    },
+    "no_decline_correctness": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": "1.000000"
+    },
+    "max_contribution_reconciliation_error": "0.000000",
+    "unsupported_claim_count": 0,
+    "causal_language_violation_count": 0,
+    "latency": {
+      "mean_ms": "697.149600",
+      "median_ms": "612.514500",
+      "max_ms": "1222.350000"
+    },
+    "token_usage": "unavailable_no_llm_calls",
+    "cost": "unavailable_no_llm_calls",
+    "error_counts": {
+      "Metadata Retrieval Error": 0,
+      "Metric Recognition Error": 0,
+      "Schema Linking Error": 0,
+      "SQL Generation Error": 0,
+      "SQL Execution Error": 0,
+      "Analysis Planning Error": 0,
+      "Query Builder Error": 0,
+      "Numeric Analysis Error": 0,
+      "Evidence Validation Error": 0,
+      "Unsupported Claim": 0,
+      "Degradation Error": 0
+    },
+    "gate_5_passed": true
+  }
+}

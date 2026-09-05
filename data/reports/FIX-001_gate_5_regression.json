@@ -1,0 +1,331 @@
+{
+  "feature": "EVAL-001",
+  "evaluation_scope": "D01-D10 functional regression; not production generalization",
+  "database": "data_agent_v1_dw",
+  "dataset_version": "2",
+  "generator_version": "synthetic-v1",
+  "metric_registry_version": "metadata-v1",
+  "model": "none",
+  "summary": {
+    "evaluation_version": "diagnosis-regression-v1",
+    "case_count": 10,
+    "successful_cases": 10,
+    "single_cause_hit_at_1": {
+      "numerator": 6,
+      "denominator": 6,
+      "value": "1.000000"
+    },
+    "root_cause_recall_at_3": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "evidence_precision": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "evidence_recall": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "numeric_consistency": {
+      "numerator": 10,
+      "denominator": 10,
+      "value": "1.000000"
+    },
+    "correct_degradation": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": "1.000000"
+    },
+    "no_decline_correctness": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": "1.000000"
+    },
+    "max_contribution_reconciliation_error": "0.000000",
+    "unsupported_claim_count": 0,
+    "causal_language_violation_count": 0,
+    "latency": {
+      "mean_ms": "697.149600",
+      "median_ms": "612.514500",
+      "max_ms": "1222.350000"
+    },
+    "token_usage": "unavailable_no_llm_calls",
+    "cost": "unavailable_no_llm_calls",
+    "error_counts": {
+      "Metadata Retrieval Error": 0,
+      "Metric Recognition Error": 0,
+      "Schema Linking Error": 0,
+      "SQL Generation Error": 0,
+      "SQL Execution Error": 0,
+      "Analysis Planning Error": 0,
+      "Query Builder Error": 0,
+      "Numeric Analysis Error": 0,
+      "Evidence Validation Error": 0,
+      "Unsupported Claim": 0,
+      "Degradation Error": 0
+    },
+    "gate_5_passed": true
+  },
+  "cases": [
+    {
+      "case_id": "D01",
+      "expected_factors": [
+        "traffic"
+      ],
+      "predicted_factors": [
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1222.350",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D02",
+      "expected_factors": [
+        "traffic"
+      ],
+      "predicted_factors": [
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "749.280",
+      "query_count": 5,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D03",
+      "expected_factors": [
+        "promotion"
+      ],
+      "predicted_factors": [
+        "promotion"
+      ],
+      "supported_evidence_factors": [
+        "promotion"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "602.296",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D04",
+      "expected_factors": [
+        "promotion"
+      ],
+      "predicted_factors": [
+        "promotion"
+      ],
+      "supported_evidence_factors": [
+        "promotion"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "741.343",
+      "query_count": 5,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D05",
+      "expected_factors": [
+        "inventory"
+      ],
+      "predicted_factors": [
+        "inventory"
+      ],
+      "supported_evidence_factors": [
+        "inventory"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "590.614",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D06",
+      "expected_factors": [
+        "inventory"
+      ],
+      "predicted_factors": [
+        "inventory"
+      ],
+      "supported_evidence_factors": [
+        "inventory"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "761.184",
+      "query_count": 5,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D07",
+      "expected_factors": [
+        "traffic",
+        "promotion"
+      ],
+      "predicted_factors": [
+        "promotion",
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic",
+        "promotion"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "609.297",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D08",
+      "expected_factors": [
+        "traffic",
+        "inventory"
+      ],
+      "predicted_factors": [
+        "inventory",
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic",
+        "inventory"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "615.732",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D09",
+      "expected_factors": [],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": true,
+      "anomaly_status": "DECLINE_NOT_CONFIRMED",
+      "report_status": "NO_DECLINE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "592.392",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D10",
+      "expected_factors": [],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": true,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "DEGRADED",
+      "missing_evidence": [
+        "analysis_sales_region_daily.visitors"
+      ],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "487.008",
+      "query_count": 3,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    }
+  ]
+}
