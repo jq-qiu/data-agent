@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Diagnosis Agent implementation in progress; Gate 3 complete.
+Diagnosis Agent components complete; Gate 4 complete.
 
 ## Current Feature
 
-ANA-006 Deterministic Analyzer.
+ANA-007 Evidence Report.
 
 ## Feature Status
 
-Completed. Validated Analysis Query Results now produce strict, serializable numeric results for period changes, GMV Shapley decomposition, Region/Category GMV contributions, and requested Traffic/Promotion/Inventory factor changes. Decimal arithmetic, lineage, reconciliation, near-zero totals, missing denominators, and incomplete dimension sets have explicit closed or degraded behavior. Ten fixed numeric cases passed every contract check. No LLM, Evidence judgment, business conclusion, report generation, Graph wiring, or database access was added. The status is valid when the ANA-006 completion commit containing this file is present on `origin/main`.
+Completed. Two separate deterministic stages now convert Analysis Results into Validated Evidence and render a six-section JSON/Markdown diagnosis report. Every Evidence item and report statement carries Analysis Result, Query, and Metric-version lineage. No-decline, missing-factor, conflicting-chain, incomplete Shapley, and incomplete Dimension cases degrade explicitly; unsupported Evidence cannot enter candidate conclusions, and causal language is rejected. Ten fixed cases passed all Evidence/report checks with zero unsupported conclusions and zero causal-language violations. No Ground Truth runtime lookup, LLM, Graph wiring, API change, or database access was added. The status is valid when the ANA-007 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-006 Deterministic Analyzer.
+ANA-007 Evidence Report.
 
 ## Next Feature
 
-ANA-007 Evidence Report.
+EVAL-001 Diagnosis Regression.
 
 ## Last Successful Validation
 
@@ -116,10 +116,18 @@ ANA-007 Evidence Report.
 - ANA-006 dimension control: appearing/disappearing groups and opposing effects are supported; near-zero totals and incomplete group coverage suppress contribution ratios rather than overclaiming;
 - ANA-006 candidate control: Conversion, Promotion Coverage, and Inventory Fill Rate are calculated only after aggregation; missing or zero denominators return null with a stable warning;
 - ANA-006 safety/isolation: output contains only typed numeric results, input Query IDs, Metric versions, reconciliation, and warnings; no SQL, parameters, trace internals, credentials, LLM calls, database access, or business conclusions were added.
+- ANA-007 targeted tests: 26 passed; full pytest regression: 209 passed;
+- ANA-007 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-006;
+- ANA-007 fixed evaluation: 10/10 exact Evidence/report outcomes, 10/10 consecutive Evidence ID checks, 10/10 complete-lineage checks, and 10/10 safe-output checks;
+- ANA-007 claim safety: Unsupported Evidence conclusion count 0 and causal-language violation count 0;
+- ANA-007 anomaly Gate: a non-decline blocks all candidate conclusions; missing and conflicting candidate chains remain visible as unsupported/degraded Evidence;
+- ANA-007 traceability: every Evidence item and report statement includes Analysis Result IDs, Query IDs, and Metric versions; Report Generator consumes only the Validated Evidence bundle;
+- ANA-007 scope boundary: candidate ordering uses deterministic Evidence strength and primary change rate without reading Ground Truth labels, querying a database, or calling an LLM;
+- Gate 4: bounded planning/querying, deterministic reconciliation, correct near-zero/missing-Evidence degradation, traceable reports, and zero causal-language violations all passed their frozen component and contract evaluations.
 
 ## Last Commit
 
-The ANA-006 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-007 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -127,13 +135,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-007. ANA-006 now provides versioned, traceable deterministic numeric results but intentionally performs no Evidence support/refutation judgment, candidate ranking, causal inference, business conclusion, or report generation. Runtime construction of the request-scoped Data Profile and diagnosis Graph wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking EVAL-001. ANA-007 provides deterministic Validated Evidence and reports but intentionally does not read Ground Truth at runtime or claim statistical generalization. Full D01-D10 regression, error analysis, and Gate 5 metrics remain deferred to EVAL-001. Runtime construction of the request-scoped Data Profile and diagnosis Graph/API wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-007_evidence_report.md` and its direct sources before implementation.
-5. Inspect the accepted Analysis Result contract, Evidence support-level rules, evidence-to-claim constraints, causal-language prohibition, and report traceability without changing Analyzer mathematics.
-6. Implement ANA-007 only, run its Evidence validation, no-evidence degradation, forbidden-claim, and report-lineage tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/EVAL-001_diagnosis_regression.md` and its direct sources before implementation.
+5. Inspect the accepted D01-D10 Ground Truth, full controlled diagnosis component chain, deterministic report outputs, metric definitions, error taxonomy, and run-record requirements without changing feature algorithms to fit labels.
+6. Implement EVAL-001 only, run all ten versioned cases, record real Hit@1/Recall@3/Evidence Precision/Recall/Numeric Consistency/Unsupported Claim/Degradation/Causal-language metrics and error analysis, produce a completion report, create an independent commit, and push.

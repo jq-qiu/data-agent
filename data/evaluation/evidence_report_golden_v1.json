@@ -1,0 +1,197 @@
+{
+  "version": "evidence-report-golden-v1",
+  "cases": [
+    {
+      "case_id": "E01",
+      "group": "traffic_high",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000},
+          {"period_role": "current", "order_count": 80, "visitors": 800}
+        ]
+      },
+      "expected": {
+        "bundle.anomaly_status": "DECLINE_CONFIRMED",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_ASSOCIATED",
+        "report.status": "COMPLETE",
+        "report.candidate_ranking.0": "E002"
+      }
+    },
+    {
+      "case_id": "E02",
+      "group": "traffic_medium_opposing_conversion",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000},
+          {"period_role": "current", "order_count": 90, "visitors": 600}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "medium",
+        "bundle.evidence.1.limitations.2": "CONVERSION_RATE_OPPOSES",
+        "report.status": "COMPLETE"
+      }
+    },
+    {
+      "case_id": "E03",
+      "group": "traffic_missing_degrade",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "missing_evidence": ["visitors"],
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": null},
+          {"period_role": "current", "order_count": 80, "visitors": null}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.facts.0.available": false,
+        "report.status": "DEGRADED",
+        "report.candidate_ranking": []
+      }
+    },
+    {
+      "case_id": "E04",
+      "group": "promotion_high",
+      "kind": "candidate",
+      "input": {
+        "factors": ["promotion"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000, "promoted_sku_count": 50, "active_sku_count": 100},
+          {"period_role": "current", "order_count": 80, "visitors": 1000, "promoted_sku_count": 20, "active_sku_count": 100}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.factor": "promotion",
+        "bundle.evidence.1.support_level": "high",
+        "report.candidate_ranking.0": "E002"
+      }
+    },
+    {
+      "case_id": "E05",
+      "group": "promotion_conflict",
+      "kind": "candidate",
+      "input": {
+        "factors": ["promotion"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000, "promoted_sku_count": 50, "active_sku_count": 100},
+          {"period_role": "current", "order_count": 90, "visitors": 600, "promoted_sku_count": 20, "active_sku_count": 100}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_UNSUPPORTED",
+        "report.status": "DEGRADED"
+      }
+    },
+    {
+      "case_id": "E06",
+      "group": "inventory_high",
+      "kind": "candidate",
+      "input": {
+        "factors": ["inventory"],
+        "baseline_gmv": "1000",
+        "current_gmv": "800",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000, "available_sku_count": 95, "required_sku_count": 100},
+          {"period_role": "current", "order_count": 80, "visitors": 1000, "available_sku_count": 60, "required_sku_count": 100}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.factor": "inventory",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.limitations.1": "NO_CAUSAL_DESIGN"
+      }
+    },
+    {
+      "case_id": "E07",
+      "group": "no_decline_gate",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic"],
+        "baseline_gmv": "1000",
+        "current_gmv": "1100",
+        "rows": [
+          {"period_role": "baseline", "order_count": 100, "visitors": 1000},
+          {"period_role": "current", "order_count": 110, "visitors": 1100}
+        ]
+      },
+      "expected": {
+        "bundle.anomaly_status": "DECLINE_NOT_CONFIRMED",
+        "bundle.evidence.1.support_level": "unsupported",
+        "report.status": "NO_DECLINE",
+        "report.candidate_ranking": []
+      }
+    },
+    {
+      "case_id": "E08",
+      "group": "shapley_reconciled",
+      "kind": "shapley",
+      "input": {
+        "baseline_gmv": 100,
+        "current_gmv": 80,
+        "baseline_orders": 10,
+        "current_orders": 8
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "GMV_DECOMPOSITION_RECONCILED",
+        "bundle.evidence.1.facts.1.absolute_delta": "-20.000000"
+      }
+    },
+    {
+      "case_id": "E09",
+      "group": "dimension_reconciled",
+      "kind": "dimension",
+      "input": {
+        "baseline_gmv": 100,
+        "current_gmv": 80,
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "A", "gmv": 60},
+          {"period_role": "current", "dimension_value": "A", "gmv": 20},
+          {"period_role": "baseline", "dimension_value": "B", "gmv": 40},
+          {"period_role": "current", "dimension_value": "B", "gmv": 60}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "DIMENSION_CONTRIBUTION_RECONCILED",
+        "bundle.evidence.1.facts.0.contribution": "2.000000"
+      }
+    },
+    {
+      "case_id": "E10",
+      "group": "dimension_incomplete",
+      "kind": "dimension",
+      "input": {
+        "baseline_gmv": 100,
+        "current_gmv": 80,
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "A", "gmv": 50},
+          {"period_role": "current", "dimension_value": "A", "gmv": 40}
+        ]
+      },
+      "expected": {
+        "bundle.evidence.1.support_level": "low",
+        "bundle.evidence.1.claim": "DIMENSION_DELTA_ONLY",
+        "bundle.evidence.1.facts.0.contribution": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,232 @@
+{
+  "feature": "ANA-007",
+  "golden_version": "evidence-report-golden-v1",
+  "case_count": 10,
+  "exact_match_count": 10,
+  "valid_evidence_id_count": 10,
+  "complete_lineage_count": 10,
+  "safe_output_count": 10,
+  "unsupported_conclusion_count": 0,
+  "causal_language_violation_count": 0,
+  "passed": true,
+  "cases": [
+    {
+      "case_id": "E01",
+      "group": "traffic_high",
+      "expected": {
+        "bundle.anomaly_status": "DECLINE_CONFIRMED",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_ASSOCIATED",
+        "report.status": "COMPLETE",
+        "report.candidate_ranking.0": "E002"
+      },
+      "actual": {
+        "bundle.anomaly_status": "DECLINE_CONFIRMED",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_ASSOCIATED",
+        "report.status": "COMPLETE",
+        "report.candidate_ranking.0": "E002"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E02",
+      "group": "traffic_medium_opposing_conversion",
+      "expected": {
+        "bundle.evidence.1.support_level": "medium",
+        "bundle.evidence.1.limitations.2": "CONVERSION_RATE_OPPOSES",
+        "report.status": "COMPLETE"
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "medium",
+        "bundle.evidence.1.limitations.2": "CONVERSION_RATE_OPPOSES",
+        "report.status": "COMPLETE"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E03",
+      "group": "traffic_missing_degrade",
+      "expected": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.facts.0.available": false,
+        "report.status": "DEGRADED",
+        "report.candidate_ranking": []
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.facts.0.available": false,
+        "report.status": "DEGRADED",
+        "report.candidate_ranking": []
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E04",
+      "group": "promotion_high",
+      "expected": {
+        "bundle.evidence.1.factor": "promotion",
+        "bundle.evidence.1.support_level": "high",
+        "report.candidate_ranking.0": "E002"
+      },
+      "actual": {
+        "bundle.evidence.1.factor": "promotion",
+        "bundle.evidence.1.support_level": "high",
+        "report.candidate_ranking.0": "E002"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E05",
+      "group": "promotion_conflict",
+      "expected": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_UNSUPPORTED",
+        "report.status": "DEGRADED"
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "unsupported",
+        "bundle.evidence.1.claim": "CANDIDATE_FACTOR_UNSUPPORTED",
+        "report.status": "DEGRADED"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E06",
+      "group": "inventory_high",
+      "expected": {
+        "bundle.evidence.1.factor": "inventory",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.limitations.1": "NO_CAUSAL_DESIGN"
+      },
+      "actual": {
+        "bundle.evidence.1.factor": "inventory",
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.limitations.1": "NO_CAUSAL_DESIGN"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E07",
+      "group": "no_decline_gate",
+      "expected": {
+        "bundle.anomaly_status": "DECLINE_NOT_CONFIRMED",
+        "bundle.evidence.1.support_level": "unsupported",
+        "report.status": "NO_DECLINE",
+        "report.candidate_ranking": []
+      },
+      "actual": {
+        "bundle.anomaly_status": "DECLINE_NOT_CONFIRMED",
+        "bundle.evidence.1.support_level": "unsupported",
+        "report.status": "NO_DECLINE",
+        "report.candidate_ranking": []
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 1
+    },
+    {
+      "case_id": "E08",
+      "group": "shapley_reconciled",
+      "expected": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "GMV_DECOMPOSITION_RECONCILED",
+        "bundle.evidence.1.facts.1.absolute_delta": "-20.000000"
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "GMV_DECOMPOSITION_RECONCILED",
+        "bundle.evidence.1.facts.1.absolute_delta": "-20.000000"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 0
+    },
+    {
+      "case_id": "E09",
+      "group": "dimension_reconciled",
+      "expected": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "DIMENSION_CONTRIBUTION_RECONCILED",
+        "bundle.evidence.1.facts.0.contribution": "2.000000"
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "high",
+        "bundle.evidence.1.claim": "DIMENSION_CONTRIBUTION_RECONCILED",
+        "bundle.evidence.1.facts.0.contribution": "2.000000"
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 0
+    },
+    {
+      "case_id": "E10",
+      "group": "dimension_incomplete",
+      "expected": {
+        "bundle.evidence.1.support_level": "low",
+        "bundle.evidence.1.claim": "DIMENSION_DELTA_ONLY",
+        "bundle.evidence.1.facts.0.contribution": null
+      },
+      "actual": {
+        "bundle.evidence.1.support_level": "low",
+        "bundle.evidence.1.claim": "DIMENSION_DELTA_ONLY",
+        "bundle.evidence.1.facts.0.contribution": null
+      },
+      "exact_match": true,
+      "evidence_ids_valid": true,
+      "lineage_complete": true,
+      "unsupported_conclusion_count": 0,
+      "causal_language_violation_count": 0,
+      "output_safe": true,
+      "candidate_evidence_count": 0
+    }
+  ]
+}

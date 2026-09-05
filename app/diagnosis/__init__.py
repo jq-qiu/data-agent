@@ -11,6 +11,12 @@ from app.diagnosis.capability import (
     CapabilityAssessor,
     DataCapabilityProfile,
 )
+from app.diagnosis.evidence import (
+    EvidenceChecker,
+    EvidenceCheckerNode,
+    ValidatedEvidence,
+    ValidatedEvidenceBundle,
+)
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.planner import (
     AnalysisPlan,
@@ -31,6 +37,7 @@ from app.diagnosis.question import (
     AnalysisQuestionParserNode,
     ParsedAnalysisQuestion,
 )
+from app.diagnosis.report import DiagnosisReport, ReportGenerator, ReportGeneratorNode
 
 __all__ = [
     "AnalysisPlan",
@@ -52,8 +59,15 @@ __all__ = [
     "DataCapabilityProfile",
     "DeterministicAnalyzer",
     "DeterministicAnalyzerNode",
+    "DiagnosisReport",
+    "EvidenceChecker",
+    "EvidenceCheckerNode",
     "Intent",
     "IntentDecision",
     "IntentRouter",
     "ParsedAnalysisQuestion",
+    "ReportGenerator",
+    "ReportGeneratorNode",
+    "ValidatedEvidence",
+    "ValidatedEvidenceBundle",
 ]
