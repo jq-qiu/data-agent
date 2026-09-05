@@ -1,0 +1,385 @@
+{
+  "feature": "ANA-005",
+  "golden_version": "analysis-task-executor-golden-v1",
+  "case_count": 8,
+  "exact_query_contract_count": 8,
+  "bound_parameter_count": 8,
+  "safe_trace_count": 8,
+  "valid_query_id_count": 8,
+  "valid_execution_order_count": 8,
+  "bounded_query_count": 8,
+  "passed": true,
+  "cases": [
+    {
+      "case_id": "Q01",
+      "group": "warehouse_full",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 5
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 5
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q02",
+      "group": "warehouse_region_scope",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 4
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 4
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q03",
+      "group": "warehouse_category_scope",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily"
+        ],
+        "query_count": 5
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily",
+          "dws_sales_category_daily"
+        ],
+        "query_count": 5
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q04",
+      "group": "minimal_plan",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 2
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 2
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q05",
+      "group": "dimension_only",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:category"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily"
+        ],
+        "query_count": 3
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:category"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_category_daily"
+        ],
+        "query_count": 3
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q06",
+      "group": "traffic_only",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 3
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "candidate_validation"
+        ],
+        "tables": [
+          "dws_sales_region_daily",
+          "dws_sales_region_daily",
+          "dws_sales_region_daily"
+        ],
+        "query_count": 3
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q07",
+      "group": "synthetic_full",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "analysis_sales_region_daily",
+          "analysis_sales_region_daily",
+          "analysis_sales_region_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_region_daily"
+        ],
+        "query_count": 5
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "dimension_contribution:category",
+          "candidate_validation"
+        ],
+        "tables": [
+          "analysis_sales_region_daily",
+          "analysis_sales_region_daily",
+          "analysis_sales_region_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_region_daily"
+        ],
+        "query_count": 5
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    },
+    {
+      "case_id": "Q08",
+      "group": "synthetic_category_scope",
+      "expected": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "candidate_validation"
+        ],
+        "tables": [
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily"
+        ],
+        "query_count": 4
+      },
+      "actual": {
+        "roles": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution:region",
+          "candidate_validation"
+        ],
+        "tables": [
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily",
+          "analysis_sales_category_daily"
+        ],
+        "query_count": 4
+      },
+      "match": true,
+      "parameters_bound": true,
+      "trace_safe": true,
+      "query_ids_valid": true,
+      "execution_order_valid": true,
+      "bounded": true
+    }
+  ],
+  "live_smoke": {
+    "database": "data_agent_v1_dw",
+    "source": "synthetic_case",
+    "case_id": "D02",
+    "query_count": 5,
+    "all_queries_returned_rows": true,
+    "passed": true,
+    "queries": [
+      {
+        "query_id": "Q001",
+        "query_role": "period_comparison",
+        "row_count": 2,
+        "sql_fingerprint": "7d8e696bf47c29d6ffe044b2749837bafb9821a05cba1a014b7837d130647e86",
+        "tables": [
+          "analysis_sales_category_daily"
+        ]
+      },
+      {
+        "query_id": "Q002",
+        "query_role": "metric_decomposition",
+        "row_count": 2,
+        "sql_fingerprint": "d1b0a246be1f8684e5191a6316629a5bc4826b8ffe98e77c71faa770455b2d80",
+        "tables": [
+          "analysis_sales_category_daily"
+        ]
+      },
+      {
+        "query_id": "Q003",
+        "query_role": "dimension_contribution:region",
+        "row_count": 2,
+        "sql_fingerprint": "985bbe452c9a61278343b990eb288da3a6dd829b1f1c80b63b9eb86f994c2c8b",
+        "tables": [
+          "analysis_sales_category_daily"
+        ]
+      },
+      {
+        "query_id": "Q004",
+        "query_role": "dimension_contribution:category",
+        "row_count": 2,
+        "sql_fingerprint": "dcf9bd4acf93154a33af0b667c8eb7804db244b2b804df8d737b18e96c4ee426",
+        "tables": [
+          "analysis_sales_category_daily"
+        ]
+      },
+      {
+        "query_id": "Q005",
+        "query_role": "candidate_validation",
+        "row_count": 2,
+        "sql_fingerprint": "9fe4dd16d9f14cde5e7fde165ef30f295ac4aab7b64c696007fc4da496b2fcb4",
+        "tables": [
+          "analysis_sales_category_daily"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "version": "analysis-task-executor-golden-v1",
+  "cases": [
+    {
+      "case_id": "Q01",
+      "group": "warehouse_full",
+      "context": {"source": "warehouse"},
+      "scope": {},
+      "dimensions": ["region", "category"],
+      "factors": ["traffic", "promotion", "inventory"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:region", "dimension_contribution:category", "candidate_validation"], "tables": ["dws_sales_region_daily", "dws_sales_region_daily", "dws_sales_region_daily", "dws_sales_category_daily", "dws_sales_region_daily"], "query_count": 5}
+    },
+    {
+      "case_id": "Q02",
+      "group": "warehouse_region_scope",
+      "context": {"source": "warehouse"},
+      "scope": {"region": "SP"},
+      "dimensions": ["category"],
+      "factors": ["traffic", "inventory"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:category", "candidate_validation"], "tables": ["dws_sales_region_daily", "dws_sales_region_daily", "dws_sales_category_daily", "dws_sales_region_daily"], "query_count": 4}
+    },
+    {
+      "case_id": "Q03",
+      "group": "warehouse_category_scope",
+      "context": {"source": "warehouse"},
+      "scope": {"category": "informatica_acessorios"},
+      "dimensions": ["region", "category"],
+      "factors": ["traffic", "promotion", "inventory"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:region", "dimension_contribution:category", "candidate_validation"], "tables": ["dws_sales_category_daily", "dws_sales_category_daily", "dws_sales_category_daily", "dws_sales_category_daily", "dws_sales_category_daily"], "query_count": 5}
+    },
+    {
+      "case_id": "Q04",
+      "group": "minimal_plan",
+      "context": {"source": "warehouse"},
+      "scope": {},
+      "dimensions": [],
+      "factors": [],
+      "expected": {"roles": ["period_comparison", "metric_decomposition"], "tables": ["dws_sales_region_daily", "dws_sales_region_daily"], "query_count": 2}
+    },
+    {
+      "case_id": "Q05",
+      "group": "dimension_only",
+      "context": {"source": "warehouse"},
+      "scope": {},
+      "dimensions": ["category"],
+      "factors": [],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:category"], "tables": ["dws_sales_region_daily", "dws_sales_region_daily", "dws_sales_category_daily"], "query_count": 3}
+    },
+    {
+      "case_id": "Q06",
+      "group": "traffic_only",
+      "context": {"source": "warehouse"},
+      "scope": {},
+      "dimensions": [],
+      "factors": ["traffic"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "candidate_validation"], "tables": ["dws_sales_region_daily", "dws_sales_region_daily", "dws_sales_region_daily"], "query_count": 3}
+    },
+    {
+      "case_id": "Q07",
+      "group": "synthetic_full",
+      "context": {"source": "synthetic_case", "case_id": "D05"},
+      "scope": {"region": "SP"},
+      "dimensions": ["region", "category"],
+      "factors": ["traffic", "promotion", "inventory"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:region", "dimension_contribution:category", "candidate_validation"], "tables": ["analysis_sales_region_daily", "analysis_sales_region_daily", "analysis_sales_region_daily", "analysis_sales_category_daily", "analysis_sales_region_daily"], "query_count": 5}
+    },
+    {
+      "case_id": "Q08",
+      "group": "synthetic_category_scope",
+      "context": {"source": "synthetic_case", "case_id": "D08"},
+      "scope": {"region": "RJ", "category": "beleza_saude"},
+      "dimensions": ["region"],
+      "factors": ["promotion", "inventory"],
+      "expected": {"roles": ["period_comparison", "metric_decomposition", "dimension_contribution:region", "candidate_validation"], "tables": ["analysis_sales_category_daily", "analysis_sales_category_daily", "analysis_sales_category_daily", "analysis_sales_category_daily"], "query_count": 4}
+    }
+  ]
+}

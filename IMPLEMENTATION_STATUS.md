@@ -6,19 +6,19 @@ Diagnosis Agent implementation in progress; Gate 3 complete.
 
 ## Current Feature
 
-ANA-004 Analysis Planner.
+ANA-005 Analysis Task Executor and Controlled Query Builder.
 
 ## Feature Status
 
-Completed. A strict, deterministic planner now converts accepted Parsed Questions and Capability Assessments into at most four ordered tasks behind a Period Comparison gate. Ten fixed cases passed with 10/10 exact plans, 10/10 bounded task counts, 10/10 valid dependency structures, zero unsupported method selections, and zero SQL fields. The diagnosis Graph remains unwired until later stages exist. The status is valid when the ANA-004 completion commit containing this file is present on `origin/main`.
+Completed. Accepted Analysis Plans now map to at most five Registry-checked, parameterized, read-only queries. Every query passes the shared SQL Validator and Repository EXPLAIN before execution, and outputs expose fingerprints and lineage without raw SQL or bound values. Eight fixed cases passed every contract check, and five real Synthetic Case D02 queries returned rows from the isolated `data_agent_v1_dw`. The diagnosis Graph remains unwired until downstream stages exist. The status is valid when the ANA-005 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-004 Analysis Planner.
+ANA-005 Analysis Task Executor and Controlled Query Builder.
 
 ## Next Feature
 
-ANA-005 Controlled Query Builder.
+ANA-006 Deterministic Analyzer.
 
 ## Last Successful Validation
 
@@ -101,10 +101,17 @@ ANA-005 Controlled Query Builder.
 - ANA-004 safety: unsupported method selections 0 and SQL fields emitted 0;
 - ANA-004 planning: at most one task per frozen class; available dimensions and supported candidate factors are grouped without exceeding four tasks;
 - ANA-004 isolation: no external service or database was accessed; Parser, Capability Assessor, Query Graph, NL2SQL, Metadata configuration, data, and API remain unchanged.
+- ANA-005 targeted tests: 17 passed; ANA-005 plus shared SQL Validator regression: 37 passed; full pytest regression: 161 passed;
+- ANA-005 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-004;
+- ANA-005 fixed evaluation: 8/8 exact query contracts, 8/8 bound-parameter checks, 8/8 safe traces, 8/8 consecutive Query IDs, 8/8 execution-order checks, and 8/8 hard-limit checks;
+- ANA-005 real read-only Smoke: all 5 Synthetic Case D02 queries passed Validator, EXPLAIN, and execution and returned rows from `data_agent_v1_dw`;
+- ANA-005 grain control: overall/Region decomposition uses Region DWS Order Count; Category Order Count is selected only under one Category Scope; candidate ratios remain uncomputed additive components;
+- ANA-005 safety: State traces contain no raw SQL or bound values, and no write SQL or original `dw` access occurred;
+- ANA-005 compatibility: DW Repository gained optional bind parameters; SQL Validator now correctly excludes boolean connectors from callable-function checks without changing the function allowlist.
 
 ## Last Commit
 
-The ANA-004 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-005 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -112,13 +119,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-005. ANA-003 still consumes an injected request-scoped Data Profile; runtime construction is deferred. ANA-004 produces intent-only tasks and intentionally contains no query specification or SQL. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking ANA-006. ANA-005 now provides versioned, traceable additive query inputs but intentionally performs no financial math, contribution calculation, anomaly decision, or Evidence generation. Runtime construction of the request-scoped Data Profile and diagnosis Graph wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-005_controlled_query_builder.md` and its direct sources before implementation.
-5. Inspect the accepted AnalysisTask contract, Metadata Catalog, Metric Registry, grain invariants, and SQL safety boundary without implementing task execution or analysis mathematics.
-6. Implement ANA-005 only, run its Registry, grain, read-only, and no-hallucination tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-006_deterministic_analyzer.md` and its direct sources before implementation.
+5. Inspect the accepted Query Result contract, Decimal policy, Shapley identity, dimension contribution edge cases, and candidate-factor evidence inputs without implementing Evidence validation or report generation.
+6. Implement ANA-006 only, run its numeric reconciliation, zero-denominator, opposing-contribution, and determinism tests, produce a completion report, create an independent commit, and push.

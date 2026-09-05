@@ -13,6 +13,13 @@ from app.diagnosis.planner import (
     AnalysisPlannerNode,
     AnalysisTask,
 )
+from app.diagnosis.query import (
+    AnalysisQueryBuilder,
+    AnalysisQueryContext,
+    AnalysisQueryResult,
+    AnalysisTaskExecutor,
+    AnalysisTaskExecutorNode,
+)
 from app.diagnosis.question import (
     AnalysisQuestionParser,
     AnalysisQuestionParseResult,
@@ -24,10 +31,15 @@ __all__ = [
     "AnalysisPlan",
     "AnalysisPlanner",
     "AnalysisPlannerNode",
+    "AnalysisQueryBuilder",
+    "AnalysisQueryContext",
+    "AnalysisQueryResult",
     "AnalysisQuestionParseResult",
     "AnalysisQuestionParser",
     "AnalysisQuestionParserNode",
     "AnalysisTask",
+    "AnalysisTaskExecutor",
+    "AnalysisTaskExecutorNode",
     "CapabilityAssessment",
     "CapabilityAssessmentNode",
     "CapabilityAssessor",

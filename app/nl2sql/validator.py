@@ -254,6 +254,8 @@ class SQLValidator:
 
     def _validate_functions(self, statement: exp.Expression) -> None:
         for function in statement.find_all(exp.Func):
+            if isinstance(function, exp.Connector):
+                continue
             name = (
                 function.name.casefold()
                 if isinstance(function, exp.Anonymous)

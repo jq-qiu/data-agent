@@ -1,4 +1,6 @@
 import asyncio
+from collections.abc import Mapping
+from typing import Any
 
 from sqlalchemy import Result, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,15 +42,25 @@ class DWMySQLRepository:
         # 3.返回结果
         return {"version": version, "dialect": dialect}
 
-    async def validate_sql(self, validated_sql: ValidatedSQL):
+    async def validate_sql(
+        self,
+        validated_sql: ValidatedSQL,
+        parameters: Mapping[str, object] | None = None,
+    ) -> None:
         await asyncio.wait_for(
-            self.session.execute(text(f"EXPLAIN {validated_sql.sql}")),
+            self.session.execute(
+                text(f"EXPLAIN {validated_sql.sql}"), dict(parameters or {})
+            ),
             timeout=validated_sql.timeout_seconds,
         )
 
-    async def execute_sql(self, validated_sql: ValidatedSQL) -> list[dict]:
+    async def execute_sql(
+        self,
+        validated_sql: ValidatedSQL,
+        parameters: Mapping[str, object] | None = None,
+    ) -> list[dict[str, Any]]:
         result = await asyncio.wait_for(
-            self.session.execute(text(validated_sql.sql)),
+            self.session.execute(text(validated_sql.sql), dict(parameters or {})),
             timeout=validated_sql.timeout_seconds,
         )
         return [
