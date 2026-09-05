@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-NL2SQL / Gate 3 complete.
+Diagnosis Agent implementation in progress; Gate 3 complete.
 
 ## Current Feature
 
-SQL-002 NL2SQL Evaluation.
+ANA-001 Intent Router.
 
 ## Feature Status
 
-Completed. The frozen `nl2sql-golden-v1` dataset contains 30 balanced cases and all references passed validation, EXPLAIN, execution, and checksum verification. The real `sql-002-baseline-v1` run recorded all cases, every required metric, 12 rejected safety probes, and fixed error categories. Gate 3 passed its evidence conditions without inventing an accuracy threshold or changing SQL-001 behavior. The status is valid when the SQL-002 completion commit containing this file is present on `origin/main`.
+Completed. A validated, deterministic `QUERY | DIAGNOSIS | UNSUPPORTED` router now freezes the V1 single-turn boundary without changing the accepted Query Graph. Eighteen fixed cases passed with 18/18 Intent and Reason accuracy, zero diagnosis false positives, and 6/6 correct degradation. The DIAGNOSIS branch is not wired until ANA-002 exists. The status is valid when the ANA-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-SQL-002 NL2SQL Evaluation.
+ANA-001 Intent Router.
 
 ## Next Feature
 
-ANA-001 Intent Router.
+ANA-002 Analysis Question Parser.
 
 ## Last Successful Validation
 
@@ -78,10 +78,15 @@ ANA-001 Intent Router.
 - SQL-002 errors: 2 Metric Recognition, 7 Schema Linking, 3 SQL Generation, and 5 SQL Execution; every failed layer has one primary category;
 - SQL-002 latency: mean 228.80 seconds, median 133.66 seconds, maximum 926.29 seconds; Token/cost unavailable and explicitly recorded;
 - Gate 3: all frozen evidence conditions passed; the baseline is not claimed as production accuracy.
+- ANA-001 targeted tests: 17 passed; full pytest regression: 90 passed;
+- ANA-001 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from SQL-002;
+- ANA-001 fixed evaluation: 18/18 Intent Accuracy, 18/18 Reason Accuracy, and 6/6 recall for each of QUERY, DIAGNOSIS, and UNSUPPORTED;
+- ANA-001 safety boundary: 0 diagnosis false positives, 0 low-confidence diagnosis routes, and 6/6 unsupported cases correctly degraded;
+- ANA-001 architecture: pure serializable router node and stable branch mapping added without wiring or modifying the existing Query Graph.
 
 ## Last Commit
 
-The SQL-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -89,13 +94,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-001. SQL-002's first baseline is 16/30 Execution Accuracy; five long-running cases had transient lost-MySQL-connection errors, strict structure metrics penalize alternate valid plans, and Token/cost metadata is unavailable. These are preserved as baseline issues, not hidden or repaired out of scope. Qdrant's 1.16.2/1.19.0 compatibility warning remains. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking ANA-002. ANA-001 deliberately degrades novel or ambiguous phrasings rather than using an LLM and has not wired the future diagnosis branch into the production Graph. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-001_intent_router.md` and its direct sources before implementation.
-5. Inspect the accepted Query path and frozen QUERY/DIAGNOSIS intent requirements without modifying Analysis Question parsing or later diagnosis methods.
-6. Implement ANA-001 only, run its fixed rewrite/ambiguity/degradation tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-002_analysis_question_parser.md` and its direct sources before implementation.
+5. Inspect the accepted Intent Schema and frozen parser output contract without implementing capability assessment or planning.
+6. Implement ANA-002 only, run its structure/time/scope/error-path tests, produce a completion report, create an independent commit, and push.

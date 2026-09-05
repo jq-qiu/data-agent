@@ -1,0 +1,25 @@
+{
+  "dataset_version": "intent-router-golden-v1",
+  "cases": [
+    {"case_id": "Q01", "group": "query", "question": "2018年5月GMV是多少？", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+    {"case_id": "Q02", "group": "query", "question": "2018年5月GMV相比4月变化了多少？", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+    {"case_id": "Q03", "group": "query", "question": "2018年5月各品类GMV排名", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+    {"case_id": "Q04", "group": "query", "question": "圣保罗州每月订单量趋势", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+    {"case_id": "Q05", "group": "query", "question": "支付记录中有哪些付款方式", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+    {"case_id": "Q06", "group": "query", "question": "所有评价的平均评分是多少", "expected_intent": "QUERY", "expected_reason": "explicit_data_query"},
+
+    {"case_id": "D01", "group": "diagnosis", "question": "为什么2018年5月GMV下降？", "expected_intent": "DIAGNOSIS", "expected_reason": "gmv_diagnosis_request"},
+    {"case_id": "D02", "group": "diagnosis", "question": "分析2018年5月成交总额下降的原因", "expected_intent": "DIAGNOSIS", "expected_reason": "gmv_diagnosis_request"},
+    {"case_id": "D03", "group": "diagnosis", "question": "拆解2018年5月相对4月的GMV变化", "expected_intent": "DIAGNOSIS", "expected_reason": "gmv_diagnosis_request"},
+    {"case_id": "D04", "group": "diagnosis", "question": "2018年5月哪些品类和州对GMV下降贡献最大？", "expected_intent": "DIAGNOSIS", "expected_reason": "gmv_diagnosis_request"},
+    {"case_id": "D05", "group": "diagnosis", "question": "2018年5月流量、促销和库存分别发生了什么变化？", "expected_intent": "DIAGNOSIS", "expected_reason": "candidate_factor_diagnosis_request"},
+    {"case_id": "D06", "group": "diagnosis", "question": "进一步分析2018年5月圣保罗州GMV下降的原因", "expected_intent": "DIAGNOSIS", "expected_reason": "gmv_diagnosis_request"},
+
+    {"case_id": "U01", "group": "unsupported", "question": "预测明年销量并自动调价", "expected_intent": "UNSUPPORTED", "expected_reason": "future_or_external_action_unsupported"},
+    {"case_id": "U02", "group": "unsupported", "question": "证明促销结束导致了GMV下降", "expected_intent": "UNSUPPORTED", "expected_reason": "strict_causal_request_unsupported"},
+    {"case_id": "U03", "group": "unsupported", "question": "那圣保罗州呢？", "expected_intent": "UNSUPPORTED", "expected_reason": "multi_turn_anaphora_unsupported"},
+    {"case_id": "U04", "group": "unsupported", "question": "为什么2018年5月订单量下降？", "expected_intent": "UNSUPPORTED", "expected_reason": "non_gmv_diagnosis_unsupported"},
+    {"case_id": "U05", "group": "unsupported", "question": "帮我看看这个情况", "expected_intent": "UNSUPPORTED", "expected_reason": "ambiguous_or_incomplete_question"},
+    {"case_id": "U06", "group": "unsupported", "question": "   ", "expected_intent": "UNSUPPORTED", "expected_reason": "empty_question"}
+  ]
+}
