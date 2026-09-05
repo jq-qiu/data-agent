@@ -1,0 +1,179 @@
+{
+  "version": "deterministic-analyzer-golden-v1",
+  "cases": [
+    {
+      "case_id": "P01",
+      "group": "period_decline",
+      "kind": "period",
+      "input": {"baseline": "100", "current": "80"},
+      "expected": {
+        "0.method": "period_comparison",
+        "0.values.change.absolute_delta": "-20",
+        "0.values.change.change_rate": "-0.200000"
+      }
+    },
+    {
+      "case_id": "P02",
+      "group": "period_zero_baseline",
+      "kind": "period",
+      "input": {"baseline": "0", "current": "10"},
+      "expected": {
+        "0.values.change.absolute_delta": "10",
+        "0.values.change.change_rate": null,
+        "0.warnings.0": "BASELINE_ZERO"
+      }
+    },
+    {
+      "case_id": "S01",
+      "group": "shapley_reconciliation",
+      "kind": "shapley",
+      "input": {
+        "baseline_gmv": "100",
+        "current_gmv": "144",
+        "baseline_orders": 10,
+        "current_orders": 12
+      },
+      "expected": {
+        "1.method": "gmv_shapley",
+        "1.values.order_count_contribution": "22.000000",
+        "1.values.aov_contribution": "22.000000",
+        "1.reconciliation.status": "PASS",
+        "1.reconciliation.difference": "0.000000"
+      }
+    },
+    {
+      "case_id": "S02",
+      "group": "shapley_zero_order_degradation",
+      "kind": "shapley",
+      "input": {
+        "baseline_gmv": "0",
+        "current_gmv": "100",
+        "baseline_orders": 0,
+        "current_orders": 10
+      },
+      "expected": {
+        "1.values.baseline_aov": null,
+        "1.values.order_count_contribution": null,
+        "1.reconciliation": null,
+        "1.warnings.0": "AOV_DENOMINATOR_ZERO"
+      }
+    },
+    {
+      "case_id": "D01",
+      "group": "dimension_opposing_effects",
+      "kind": "dimension",
+      "input": {
+        "dimension": "region",
+        "overall_baseline": "100",
+        "overall_current": "80",
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "A", "gmv": "60"},
+          {"period_role": "current", "dimension_value": "A", "gmv": "20"},
+          {"period_role": "baseline", "dimension_value": "B", "gmv": "40"},
+          {"period_role": "current", "dimension_value": "B", "gmv": "60"}
+        ]
+      },
+      "expected": {
+        "1.values.members.0.contribution": "2.000000",
+        "1.values.members.1.contribution": "-1.000000",
+        "1.reconciliation.status": "PASS"
+      }
+    },
+    {
+      "case_id": "D02",
+      "group": "dimension_members_appear_disappear",
+      "kind": "dimension",
+      "input": {
+        "dimension": "category",
+        "overall_baseline": "100",
+        "overall_current": "80",
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "old", "gmv": "100"},
+          {"period_role": "current", "dimension_value": "new", "gmv": "80"}
+        ]
+      },
+      "expected": {
+        "1.values.members.0.dimension_value": "new",
+        "1.values.members.0.absolute_delta": "80",
+        "1.values.members.1.dimension_value": "old",
+        "1.values.members.1.absolute_delta": "-100"
+      }
+    },
+    {
+      "case_id": "D03",
+      "group": "dimension_incomplete_degradation",
+      "kind": "dimension",
+      "input": {
+        "dimension": "region",
+        "overall_baseline": "100",
+        "overall_current": "80",
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "A", "gmv": "50"},
+          {"period_role": "current", "dimension_value": "A", "gmv": "40"}
+        ]
+      },
+      "expected": {
+        "1.values.members.0.contribution": null,
+        "1.reconciliation.status": "DEGRADED",
+        "1.warnings.0": "DIMENSION_TOTAL_MISMATCH"
+      }
+    },
+    {
+      "case_id": "D04",
+      "group": "dimension_near_zero_total",
+      "kind": "dimension",
+      "input": {
+        "dimension": "region",
+        "overall_baseline": "20",
+        "overall_current": "20",
+        "rows": [
+          {"period_role": "baseline", "dimension_value": "A", "gmv": "10"},
+          {"period_role": "current", "dimension_value": "A", "gmv": "5"},
+          {"period_role": "baseline", "dimension_value": "B", "gmv": "10"},
+          {"period_role": "current", "dimension_value": "B", "gmv": "15"}
+        ]
+      },
+      "expected": {
+        "1.values.total_delta": "0",
+        "1.values.members.0.contribution": null,
+        "1.warnings.0": "TOTAL_DELTA_NEAR_ZERO"
+      }
+    },
+    {
+      "case_id": "C01",
+      "group": "candidate_post_aggregation_ratios",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic", "promotion", "inventory"],
+        "rows": [
+          {"period_role": "baseline", "order_count": 50, "visitors": 100, "promoted_sku_count": 2, "active_sku_count": 10, "available_sku_count": 8, "required_sku_count": 10},
+          {"period_role": "current", "order_count": 45, "visitors": 120, "promoted_sku_count": 3, "active_sku_count": 10, "available_sku_count": 9, "required_sku_count": 10}
+        ]
+      },
+      "expected": {
+        "1.method": "candidate_factors",
+        "1.values.factors.0.primary_change.change_rate": "0.200000",
+        "1.values.factors.0.conversion_rate_change.absolute_delta": "-0.125000",
+        "1.values.factors.1.primary_change.absolute_delta": "0.100000",
+        "1.values.factors.2.primary_change.absolute_delta": "0.100000"
+      }
+    },
+    {
+      "case_id": "C02",
+      "group": "candidate_missing_denominator",
+      "kind": "candidate",
+      "input": {
+        "factors": ["traffic"],
+        "rows": [
+          {"period_role": "baseline", "order_count": 10, "visitors": null},
+          {"period_role": "current", "order_count": 8, "visitors": 0}
+        ]
+      },
+      "expected": {
+        "1.values.factors.0.primary_change.absolute_delta": null,
+        "1.values.factors.0.conversion_rate_change.absolute_delta": null,
+        "1.warnings.0": "RATIO_DENOMINATOR_ZERO_OR_MISSING"
+      }
+    }
+  ]
+}

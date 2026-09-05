@@ -1,5 +1,10 @@
 """Controlled diagnosis components introduced feature by feature."""
 
+from app.diagnosis.analyzer import (
+    AnalysisResult,
+    DeterministicAnalyzer,
+    DeterministicAnalyzerNode,
+)
 from app.diagnosis.capability import (
     CapabilityAssessment,
     CapabilityAssessmentNode,
@@ -37,6 +42,7 @@ __all__ = [
     "AnalysisQuestionParseResult",
     "AnalysisQuestionParser",
     "AnalysisQuestionParserNode",
+    "AnalysisResult",
     "AnalysisTask",
     "AnalysisTaskExecutor",
     "AnalysisTaskExecutorNode",
@@ -44,6 +50,8 @@ __all__ = [
     "CapabilityAssessmentNode",
     "CapabilityAssessor",
     "DataCapabilityProfile",
+    "DeterministicAnalyzer",
+    "DeterministicAnalyzerNode",
     "Intent",
     "IntentDecision",
     "IntentRouter",

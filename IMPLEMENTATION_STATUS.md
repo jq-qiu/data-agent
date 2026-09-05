@@ -6,19 +6,19 @@ Diagnosis Agent implementation in progress; Gate 3 complete.
 
 ## Current Feature
 
-ANA-005 Analysis Task Executor and Controlled Query Builder.
+ANA-006 Deterministic Analyzer.
 
 ## Feature Status
 
-Completed. Accepted Analysis Plans now map to at most five Registry-checked, parameterized, read-only queries. Every query passes the shared SQL Validator and Repository EXPLAIN before execution, and outputs expose fingerprints and lineage without raw SQL or bound values. Eight fixed cases passed every contract check, and five real Synthetic Case D02 queries returned rows from the isolated `data_agent_v1_dw`. The diagnosis Graph remains unwired until downstream stages exist. The status is valid when the ANA-005 completion commit containing this file is present on `origin/main`.
+Completed. Validated Analysis Query Results now produce strict, serializable numeric results for period changes, GMV Shapley decomposition, Region/Category GMV contributions, and requested Traffic/Promotion/Inventory factor changes. Decimal arithmetic, lineage, reconciliation, near-zero totals, missing denominators, and incomplete dimension sets have explicit closed or degraded behavior. Ten fixed numeric cases passed every contract check. No LLM, Evidence judgment, business conclusion, report generation, Graph wiring, or database access was added. The status is valid when the ANA-006 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-005 Analysis Task Executor and Controlled Query Builder.
+ANA-006 Deterministic Analyzer.
 
 ## Next Feature
 
-ANA-006 Deterministic Analyzer.
+ANA-007 Evidence Report.
 
 ## Last Successful Validation
 
@@ -108,10 +108,18 @@ ANA-006 Deterministic Analyzer.
 - ANA-005 grain control: overall/Region decomposition uses Region DWS Order Count; Category Order Count is selected only under one Category Scope; candidate ratios remain uncomputed additive components;
 - ANA-005 safety: State traces contain no raw SQL or bound values, and no write SQL or original `dw` access occurred;
 - ANA-005 compatibility: DW Repository gained optional bind parameters; SQL Validator now correctly excludes boolean connectors from callable-function checks without changing the function allowlist.
+- ANA-006 targeted tests: 22 passed; full pytest regression: 183 passed;
+- ANA-006 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-005;
+- ANA-006 fixed evaluation: 10/10 exact numeric scenarios, 10/10 consecutive Analysis Result ID checks, 10/10 complete-lineage checks, 10/10 hard-limit checks, and 10/10 safe-output checks;
+- ANA-006 arithmetic: Decimal precision 28, six-decimal derived values, and 0.01 absolute reconciliation tolerance are frozen;
+- ANA-006 Shapley: Order Count and AOV contributions reconcile to the GMV delta; zero-order/zero-GMV periods degrade explicitly and inconsistent inputs fail closed;
+- ANA-006 dimension control: appearing/disappearing groups and opposing effects are supported; near-zero totals and incomplete group coverage suppress contribution ratios rather than overclaiming;
+- ANA-006 candidate control: Conversion, Promotion Coverage, and Inventory Fill Rate are calculated only after aggregation; missing or zero denominators return null with a stable warning;
+- ANA-006 safety/isolation: output contains only typed numeric results, input Query IDs, Metric versions, reconciliation, and warnings; no SQL, parameters, trace internals, credentials, LLM calls, database access, or business conclusions were added.
 
 ## Last Commit
 
-The ANA-005 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-006 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -119,13 +127,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-006. ANA-005 now provides versioned, traceable additive query inputs but intentionally performs no financial math, contribution calculation, anomaly decision, or Evidence generation. Runtime construction of the request-scoped Data Profile and diagnosis Graph wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking ANA-007. ANA-006 now provides versioned, traceable deterministic numeric results but intentionally performs no Evidence support/refutation judgment, candidate ranking, causal inference, business conclusion, or report generation. Runtime construction of the request-scoped Data Profile and diagnosis Graph wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-006_deterministic_analyzer.md` and its direct sources before implementation.
-5. Inspect the accepted Query Result contract, Decimal policy, Shapley identity, dimension contribution edge cases, and candidate-factor evidence inputs without implementing Evidence validation or report generation.
-6. Implement ANA-006 only, run its numeric reconciliation, zero-denominator, opposing-contribution, and determinism tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-007_evidence_report.md` and its direct sources before implementation.
+5. Inspect the accepted Analysis Result contract, Evidence support-level rules, evidence-to-claim constraints, causal-language prohibition, and report traceability without changing Analyzer mathematics.
+6. Implement ANA-007 only, run its Evidence validation, no-evidence degradation, forbidden-claim, and report-lineage tests, produce a completion report, create an independent commit, and push.
