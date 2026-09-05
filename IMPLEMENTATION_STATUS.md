@@ -6,19 +6,19 @@ Diagnosis Agent implementation in progress; Gate 3 complete.
 
 ## Current Feature
 
-ANA-002 Analysis Question Parser.
+ANA-003 Capability Assessment.
 
 ## Feature Status
 
-Completed. A strict, deterministic parser now extracts the frozen V1 GMV diagnosis structure from DIAGNOSIS requests using Metadata Catalog-backed Metric and Scope aliases. Eighteen fixed cases passed with 18/18 exact outcomes, including 10/10 successful structures and 8/8 structured error paths. The diagnosis Graph remains unwired until the later stages exist. The status is valid when the ANA-002 completion commit containing this file is present on `origin/main`.
+Completed. A strict, deterministic capability assessor now validates request-scoped Data Profiles against the Metadata Catalog and gates each V1 method on period coverage, grain-specific non-empty fields, and data quality. Thirteen fixed cases passed with 13/13 exact assessments and 8/8 correct degradation; causal inference was never opened. The diagnosis Graph remains unwired until later stages exist. The status is valid when the ANA-003 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-002 Analysis Question Parser.
+ANA-003 Capability Assessment.
 
 ## Next Feature
 
-ANA-003 Capability Assessment.
+ANA-004 Analysis Planner.
 
 ## Last Successful Validation
 
@@ -89,10 +89,16 @@ ANA-003 Capability Assessment.
 - ANA-002 parsing: adjacent calendar-month boundaries, previous-month derivation, cross-year rollover, Metric, Scope, dimensions, and factors are deterministic;
 - ANA-002 safety: wrong Intent, non-GMV target, missing/invalid time, incomplete/non-adjacent baseline, multiple Scope values, and unregistered Scope all stop with structured errors;
 - ANA-002 isolation: no external service or database was accessed; Query Graph, NL2SQL, Metadata configuration, data, and API remain unchanged.
+- ANA-003 targeted tests: 15 passed; full pytest regression: 124 passed;
+- ANA-003 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-002;
+- ANA-003 fixed evaluation: 13/13 exact assessments and 8/8 correct degradation cases;
+- ANA-003 safety: causal method allowed 0/13 and methods allowed on failed data quality 0/1;
+- ANA-003 grain control: region/overall methods require region DWS fields; category-order components are accepted only within a single Category Scope;
+- ANA-003 isolation: no external service or database was accessed; Parser, Query Graph, SQL, Metadata configuration, data, and API remain unchanged.
 
 ## Last Commit
 
-The ANA-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -100,13 +106,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-003. ANA-002 deliberately supports only adjacent calendar months and Catalog-registered Scope aliases, and the diagnosis branch is not wired until all required downstream nodes exist. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking ANA-004. ANA-003 consumes an injected request-scoped Data Profile; runtime construction is deferred, and the Planner must intersect requested dimensions with `available_dimensions` and choose only `supported_methods`. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-003_capability_assessment.md` and its direct sources before implementation.
-5. Inspect the accepted Parsed Question Schema, Metric/Relationship Registry, data availability, Evidence fields, and data-quality contracts without implementing planning.
-6. Implement ANA-003 only, run its Supported/Unsupported Methods and degradation tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-004_analysis_planner.md` and its direct sources before implementation.
+5. Inspect the accepted Parsed Question and Capability schemas plus the four-task contract without implementing task execution.
+6. Implement ANA-004 only, run its Supported-Methods, task-limit, dependency, and no-SQL tests, produce a completion report, create an independent commit, and push.

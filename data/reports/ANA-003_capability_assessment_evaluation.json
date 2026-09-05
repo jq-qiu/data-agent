@@ -1,0 +1,634 @@
+{
+  "run_id": "ana-003-capability-assessment-v1",
+  "generated_at_utc": "2026-09-05T04:19:02.708409+00:00",
+  "source_commit": "86ac0ab7c7fecfc3ef15d8eced55dcbf3ef393a4",
+  "assessor_version": "capability-assessor-v1",
+  "dataset_version": "capability-assessment-golden-v1",
+  "dataset_sha256": "03606f257a96d4a67cd9521dd7ac5e5c292d65c4fcc606caea016efd60a17113",
+  "metadata_version": "metadata-v1",
+  "case_count": 13,
+  "group_counts": {
+    "blocked_metric": 1,
+    "blocked_period": 1,
+    "blocked_quality": 1,
+    "category_scope": 1,
+    "causal_boundary": 1,
+    "full": 1,
+    "partial_dimension": 1,
+    "partial_evidence": 3,
+    "requested_subset": 2,
+    "synthetic_degrade": 1
+  },
+  "metrics": {
+    "exact_match_count": 13,
+    "correct_degradation_count": 8,
+    "causal_method_allowed_count": 0,
+    "failed_quality_method_allowed_count": 0
+  },
+  "failure_count": 0,
+  "failures": [],
+  "cases": [
+    {
+      "case_id": "C01",
+      "group": "full",
+      "source": "warehouse",
+      "expected": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C02",
+      "group": "requested_subset",
+      "source": "warehouse",
+      "expected": {
+        "level": "metric_decomposition",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "metric_decomposition",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C03",
+      "group": "requested_subset",
+      "source": "warehouse",
+      "expected": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C04",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "expected": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "promotion_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "promotion_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C05",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "expected": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation"
+        ],
+        "unsupported_methods": [
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.required_sku_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation"
+        ],
+        "unsupported_methods": [
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.required_sku_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C06",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "expected": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "metric_decomposition",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.order_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "metric_decomposition",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.order_count"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C07",
+      "group": "partial_dimension",
+      "source": "warehouse",
+      "expected": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region"
+        ],
+        "missing_evidence": [
+          "dws_sales_category_daily.gmv"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region"
+        ],
+        "missing_evidence": [
+          "dws_sales_category_daily.gmv"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C08",
+      "group": "blocked_period",
+      "source": "warehouse",
+      "expected": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "baseline_period"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "baseline_period"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C09",
+      "group": "blocked_metric",
+      "source": "warehouse",
+      "expected": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.gmv"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "category"
+        ],
+        "missing_evidence": [
+          "dws_sales_region_daily.gmv"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C10",
+      "group": "blocked_quality",
+      "source": "warehouse",
+      "expected": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "data_quality_failed",
+          "gmv_reconciliation_failed"
+        ],
+        "data_quality_status": "fail"
+      },
+      "actual": {
+        "level": "unsupported",
+        "supported_methods": [],
+        "unsupported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "data_quality_failed",
+          "gmv_reconciliation_failed"
+        ],
+        "data_quality_status": "fail"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C11",
+      "group": "causal_boundary",
+      "source": "warehouse",
+      "expected": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C12",
+      "group": "synthetic_degrade",
+      "source": "synthetic_case",
+      "expected": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "analysis_sales_region_daily.visitors"
+        ],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "dimension_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "unsupported_methods": [
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation",
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [
+          "analysis_sales_region_daily.visitors"
+        ],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    },
+    {
+      "case_id": "C13",
+      "group": "category_scope",
+      "source": "warehouse",
+      "expected": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "actual": {
+        "level": "association_diagnosis",
+        "supported_methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "traffic_validation",
+          "promotion_validation",
+          "inventory_validation"
+        ],
+        "unsupported_methods": [
+          "causal_inference"
+        ],
+        "available_dimensions": [
+          "region",
+          "category"
+        ],
+        "missing_evidence": [],
+        "data_quality_status": "pass"
+      },
+      "exact_match": true
+    }
+  ]
+}

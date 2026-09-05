@@ -1,0 +1,108 @@
+{
+  "dataset_version": "capability-assessment-golden-v1",
+  "default_available_period": {"start": "2018-04-01", "end": "2018-05-31"},
+  "cases": [
+    {
+      "case_id": "C01",
+      "group": "full",
+      "source": "warehouse",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C02",
+      "group": "requested_subset",
+      "source": "warehouse",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": [], "requested_factors": []},
+      "expected": {"level": "metric_decomposition", "supported_methods": ["period_comparison", "metric_decomposition"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C03",
+      "group": "requested_subset",
+      "source": "warehouse",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": []},
+      "expected": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C04",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_region_daily.promoted_sku_count"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "inventory_validation"], "unsupported_methods": ["promotion_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.promoted_sku_count"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C05",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_region_daily.required_sku_count"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation"], "unsupported_methods": ["inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.required_sku_count"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C06",
+      "group": "partial_evidence",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_region_daily.order_count"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "dimension_contribution"], "unsupported_methods": ["metric_decomposition", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.order_count"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C07",
+      "group": "partial_dimension",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_category_daily.gmv"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": []},
+      "expected": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region"], "missing_evidence": ["dws_sales_category_daily.gmv"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C08",
+      "group": "blocked_period",
+      "source": "warehouse",
+      "available_period": {"start": "2018-05-01", "end": "2018-05-31"},
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "unsupported", "supported_methods": [], "unsupported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["baseline_period"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C09",
+      "group": "blocked_metric",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_region_daily.gmv"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "unsupported", "supported_methods": [], "unsupported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["category"], "missing_evidence": ["dws_sales_region_daily.gmv"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C10",
+      "group": "blocked_quality",
+      "source": "warehouse",
+      "data_quality_status": "fail",
+      "data_quality_issues": ["gmv_reconciliation_failed"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "unsupported", "supported_methods": [], "unsupported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["data_quality_failed", "gmv_reconciliation_failed"], "data_quality_status": "fail"}
+    },
+    {
+      "case_id": "C11",
+      "group": "causal_boundary",
+      "source": "warehouse",
+      "experimental_design_present": true,
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C12",
+      "group": "synthetic_degrade",
+      "source": "synthetic_case",
+      "empty_columns": ["analysis_sales_region_daily.visitors"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": "ES", "category": null}, "requested_dimensions": ["category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "unsupported_methods": ["traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["analysis_sales_region_daily.visitors"], "data_quality_status": "pass"}
+    },
+    {
+      "case_id": "C13",
+      "group": "category_scope",
+      "source": "warehouse",
+      "empty_columns": ["dws_sales_region_daily.order_count"],
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": "informatica_acessorios"}, "requested_dimensions": ["region"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "expected": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"}
+    }
+  ]
+}
