@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Diagnosis Agent components complete; Gate 4 complete.
+Diagnosis evaluation complete; Gate 5 failed and downstream work is blocked.
 
 ## Current Feature
 
-ANA-007 Evidence Report.
+EVAL-001 Diagnosis Regression.
 
 ## Feature Status
 
-Completed. Two separate deterministic stages now convert Analysis Results into Validated Evidence and render a six-section JSON/Markdown diagnosis report. Every Evidence item and report statement carries Analysis Result, Query, and Metric-version lineage. No-decline, missing-factor, conflicting-chain, incomplete Shapley, and incomplete Dimension cases degrade explicitly; unsupported Evidence cannot enter candidate conclusions, and causal language is rejected. Ten fixed cases passed all Evidence/report checks with zero unsupported conclusions and zero causal-language violations. No Ground Truth runtime lookup, LLM, Graph wiring, API change, or database access was added. The status is valid when the ANA-007 completion commit containing this file is present on `origin/main`.
+Completed with a real failing baseline. D01-D10 were attempted through the frozen isolated-DW diagnosis chain; 4/10 completed, Numeric Consistency was 4/10, Root Cause Recall@3 was 4/10, Unsupported Claim Count and causal-language violations were both zero, and Gate 5 failed. Five cases stopped at Scope grounding because their Synthetic values are absent from the Metadata Catalog vocabulary; D02 exposed incompatible Category decomposition/Evidence metric lineage. No upstream algorithm was changed to fit labels. The status is valid when the EVAL-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-007 Evidence Report.
+EVAL-001 Diagnosis Regression.
 
 ## Next Feature
 
-EVAL-001 Diagnosis Regression.
+Blocked until Gate 5 remediation is separately scoped and authorized; API-001 must not start while Gate 5 is false.
 
 ## Last Successful Validation
 
@@ -124,10 +124,19 @@ EVAL-001 Diagnosis Regression.
 - ANA-007 traceability: every Evidence item and report statement includes Analysis Result IDs, Query IDs, and Metric versions; Report Generator consumes only the Validated Evidence bundle;
 - ANA-007 scope boundary: candidate ordering uses deterministic Evidence strength and primary change rate without reading Ground Truth labels, querying a database, or calling an LLM;
 - Gate 4: bounded planning/querying, deterministic reconciliation, correct near-zero/missing-Evidence degradation, traceable reports, and zero causal-language violations all passed their frozen component and contract evaluations.
+- EVAL-001 targeted tests: 9 passed; full pytest regression: 218 passed;
+- EVAL-001 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-007;
+- EVAL-001 live isolated-DW regression: 10 attempted, 4 complete successful chains;
+- EVAL-001 metrics: Single Cause Hit@1 2/6, Root Cause Recall@3 4/10, Evidence Precision 4/4, Evidence Recall 4/10, and Numeric Consistency 4/10;
+- EVAL-001 safety: Unsupported Claim Count 0, causal-language violations 0, and no raw SQL, rows, bind parameters, connection details, or credentials persisted;
+- EVAL-001 boundaries: D09 no-decline 1/1; D10 degradation 0/1 because Scope grounding stopped first;
+- EVAL-001 errors: 5 Schema Linking and 1 Evidence Validation; every failed case has one primary error category;
+- EVAL-001 latency: mean 368.935100 ms, median 293.217500 ms, maximum 1103.221000 ms; Token/cost unavailable because no LLM call was made;
+- Gate 5: failed. The baseline was recorded without changing upstream diagnosis algorithms or inflating functional-regression scores.
 
 ## Last Commit
 
-The ANA-007 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The EVAL-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -135,13 +144,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking EVAL-001. ANA-007 provides deterministic Validated Evidence and reports but intentionally does not read Ground Truth at runtime or claim statistical generalization. Full D01-D10 regression, error analysis, and Gate 5 metrics remain deferred to EVAL-001. Runtime construction of the request-scoped Data Profile and diagnosis Graph/API wiring remain deferred. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+Gate 5 blocks API-001. D03, D04, D06, D08, and D10 Synthetic Scope values are absent from the current Metadata Catalog value vocabulary. D02 Category-scope decomposition emits `gmv` and `category_order_count` lineage, while the frozen Evidence decomposition contract requires `gmv`, `order_count`, and `aov`. These upstream mismatches require a separately scoped corrective Feature and must not be repaired inside EVAL-001. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/EVAL-001_diagnosis_regression.md` and its direct sources before implementation.
-5. Inspect the accepted D01-D10 Ground Truth, full controlled diagnosis component chain, deterministic report outputs, metric definitions, error taxonomy, and run-record requirements without changing feature algorithms to fit labels.
-6. Implement EVAL-001 only, run all ten versioned cases, record real Hit@1/Recall@3/Evidence Precision/Recall/Numeric Consistency/Unsupported Claim/Degradation/Causal-language metrics and error analysis, produce a completion report, create an independent commit, and push.
+3. Verify the EVAL-001 commit is present on `origin/main` and review `EVAL-001_COMPLETION.md` plus the three versioned run artifacts.
+4. Do not start API-001 while Gate 5 is false.
+5. Obtain explicit scope for a corrective upstream Feature, then fully read its Spec and direct sources before changing Metadata Scope vocabulary or Category decomposition/Evidence lineage.
+6. Re-run EVAL-001 unchanged after an accepted corrective Feature; API-001 may begin only when Gate 5 passes.

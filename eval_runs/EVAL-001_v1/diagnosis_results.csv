@@ -1,0 +1,11 @@
+case_id,expected_factors,predicted_factors,anomaly_status,report_status,numeric_consistent,max_reconciliation_error,unsupported_claim_count,causal_language_violation_count,query_count,elapsed_ms,successful,primary_error,error_type
+D01,traffic,traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,1103.221,True,,
+D02,traffic,,,,False,0,0,0,5,752.670,False,Evidence Validation Error,ValidationError
+D03,promotion,,,,False,0,0,0,0,1.411,False,Schema Linking Error,ValueError
+D04,promotion,,,,False,0,0,0,0,1.450,False,Schema Linking Error,ValueError
+D05,inventory,inventory,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,626.108,True,,
+D06,inventory,,,,False,0,0,0,0,1.580,False,Schema Linking Error,ValueError
+D07,traffic|promotion,promotion|traffic,DECLINE_CONFIRMED,COMPLETE,True,0.000000,0,0,4,615.018,True,,
+D08,traffic|inventory,,,,False,0,0,0,0,1.458,False,Schema Linking Error,ValueError
+D09,,,DECLINE_NOT_CONFIRMED,NO_DECLINE,True,0.000000,0,0,4,584.846,True,,
+D10,,,,,False,0,0,0,0,1.589,False,Schema Linking Error,ValueError

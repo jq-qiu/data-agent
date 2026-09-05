@@ -1,0 +1,18 @@
+{
+  "version": "diagnosis-regression-v1",
+  "dataset_version": "2",
+  "generator_version": "synthetic-v1",
+  "metric_registry_version": "metadata-v1",
+  "cases": [
+    {"case_id":"D01","question":"为什么2018年5月相比2018年4月PR州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"PR"},"expected_factors":["traffic"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D02","question":"为什么2018年5月相比2018年4月SP州informatica_acessorios品类GMV下降？请按地区、按品类分析流量、促销和库存。","scope":{"region":"SP","category":"informatica_acessorios"},"expected_factors":["traffic"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D03","question":"为什么2018年5月相比2018年4月SC州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"SC"},"expected_factors":["promotion"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D04","question":"为什么2018年5月相比2018年4月SP州eletrodomesticos品类GMV下降？请按地区、按品类分析流量、促销和库存。","scope":{"region":"SP","category":"eletrodomesticos"},"expected_factors":["promotion"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D05","question":"为什么2018年5月相比2018年4月SP州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"SP"},"expected_factors":["inventory"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D06","question":"为什么2018年5月相比2018年4月SP州cool_stuff品类GMV下降？请按地区、按品类分析流量、促销和库存。","scope":{"region":"SP","category":"cool_stuff"},"expected_factors":["inventory"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D07","question":"为什么2018年5月相比2018年4月MG州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"MG"},"expected_factors":["traffic","promotion"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D08","question":"为什么2018年5月相比2018年4月PA州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"PA"},"expected_factors":["traffic","inventory"],"expected_degradation":false,"expected_no_decline":false},
+    {"case_id":"D09","question":"为什么2018年5月相比2018年4月RJ州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"RJ"},"expected_factors":[],"expected_degradation":false,"expected_no_decline":true},
+    {"case_id":"D10","question":"为什么2018年5月相比2018年4月ES州GMV下降？请按地区分析流量、促销和库存。","scope":{"region":"ES"},"expected_factors":[],"expected_degradation":true,"expected_no_decline":false}
+  ]
+}

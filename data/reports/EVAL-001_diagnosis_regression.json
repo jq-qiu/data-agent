@@ -1,0 +1,307 @@
+{
+  "feature": "EVAL-001",
+  "evaluation_scope": "D01-D10 functional regression; not production generalization",
+  "database": "data_agent_v1_dw",
+  "dataset_version": "2",
+  "generator_version": "synthetic-v1",
+  "metric_registry_version": "metadata-v1",
+  "model": "none",
+  "summary": {
+    "evaluation_version": "diagnosis-regression-v1",
+    "case_count": 10,
+    "successful_cases": 4,
+    "single_cause_hit_at_1": {
+      "numerator": 2,
+      "denominator": 6,
+      "value": "0.333333"
+    },
+    "root_cause_recall_at_3": {
+      "numerator": 4,
+      "denominator": 10,
+      "value": "0.400000"
+    },
+    "evidence_precision": {
+      "numerator": 4,
+      "denominator": 4,
+      "value": "1.000000"
+    },
+    "evidence_recall": {
+      "numerator": 4,
+      "denominator": 10,
+      "value": "0.400000"
+    },
+    "numeric_consistency": {
+      "numerator": 4,
+      "denominator": 10,
+      "value": "0.400000"
+    },
+    "correct_degradation": {
+      "numerator": 0,
+      "denominator": 1,
+      "value": "0.000000"
+    },
+    "no_decline_correctness": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": "1.000000"
+    },
+    "max_contribution_reconciliation_error": "0.000000",
+    "unsupported_claim_count": 0,
+    "causal_language_violation_count": 0,
+    "latency": {
+      "mean_ms": "368.935100",
+      "median_ms": "293.217500",
+      "max_ms": "1103.221000"
+    },
+    "token_usage": "unavailable_no_llm_calls",
+    "cost": "unavailable_no_llm_calls",
+    "error_counts": {
+      "Metadata Retrieval Error": 0,
+      "Metric Recognition Error": 0,
+      "Schema Linking Error": 5,
+      "SQL Generation Error": 0,
+      "SQL Execution Error": 0,
+      "Analysis Planning Error": 0,
+      "Query Builder Error": 0,
+      "Numeric Analysis Error": 0,
+      "Evidence Validation Error": 1,
+      "Unsupported Claim": 0,
+      "Degradation Error": 0
+    },
+    "gate_5_passed": false
+  },
+  "cases": [
+    {
+      "case_id": "D01",
+      "expected_factors": [
+        "traffic"
+      ],
+      "predicted_factors": [
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1103.221",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D02",
+      "expected_factors": [
+        "traffic"
+      ],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "752.670",
+      "query_count": 5,
+      "successful": false,
+      "primary_error": "Evidence Validation Error",
+      "error_type": "ValidationError"
+    },
+    {
+      "case_id": "D03",
+      "expected_factors": [
+        "promotion"
+      ],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1.411",
+      "query_count": 0,
+      "successful": false,
+      "primary_error": "Schema Linking Error",
+      "error_type": "ValueError"
+    },
+    {
+      "case_id": "D04",
+      "expected_factors": [
+        "promotion"
+      ],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1.450",
+      "query_count": 0,
+      "successful": false,
+      "primary_error": "Schema Linking Error",
+      "error_type": "ValueError"
+    },
+    {
+      "case_id": "D05",
+      "expected_factors": [
+        "inventory"
+      ],
+      "predicted_factors": [
+        "inventory"
+      ],
+      "supported_evidence_factors": [
+        "inventory"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "626.108",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D06",
+      "expected_factors": [
+        "inventory"
+      ],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1.580",
+      "query_count": 0,
+      "successful": false,
+      "primary_error": "Schema Linking Error",
+      "error_type": "ValueError"
+    },
+    {
+      "case_id": "D07",
+      "expected_factors": [
+        "traffic",
+        "promotion"
+      ],
+      "predicted_factors": [
+        "promotion",
+        "traffic"
+      ],
+      "supported_evidence_factors": [
+        "traffic",
+        "promotion"
+      ],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": "DECLINE_CONFIRMED",
+      "report_status": "COMPLETE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "615.018",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D08",
+      "expected_factors": [
+        "traffic",
+        "inventory"
+      ],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1.458",
+      "query_count": 0,
+      "successful": false,
+      "primary_error": "Schema Linking Error",
+      "error_type": "ValueError"
+    },
+    {
+      "case_id": "D09",
+      "expected_factors": [],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": false,
+      "expected_no_decline": true,
+      "anomaly_status": "DECLINE_NOT_CONFIRMED",
+      "report_status": "NO_DECLINE",
+      "missing_evidence": [],
+      "numeric_consistent": true,
+      "max_reconciliation_error": "0.000000",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "584.846",
+      "query_count": 4,
+      "successful": true,
+      "primary_error": null,
+      "error_type": null
+    },
+    {
+      "case_id": "D10",
+      "expected_factors": [],
+      "predicted_factors": [],
+      "supported_evidence_factors": [],
+      "expected_degradation": true,
+      "expected_no_decline": false,
+      "anomaly_status": null,
+      "report_status": null,
+      "missing_evidence": [],
+      "numeric_consistent": false,
+      "max_reconciliation_error": "0",
+      "unsupported_claim_count": 0,
+      "causal_language_violation_count": 0,
+      "elapsed_ms": "1.589",
+      "query_count": 0,
+      "successful": false,
+      "primary_error": "Schema Linking Error",
+      "error_type": "ValueError"
+    }
+  ]
+}
