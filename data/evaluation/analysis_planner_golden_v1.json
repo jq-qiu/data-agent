@@ -1,0 +1,75 @@
+{
+  "version": "analysis-planner-golden-v1",
+  "cases": [
+    {
+      "case_id": "P01",
+      "group": "full_plan",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2", "T3", "T4"], "methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "candidate_validation"], "dimensions": ["region", "category"], "factors": ["traffic", "promotion", "inventory"], "stop_reason": null, "missing_evidence": []}
+    },
+    {
+      "case_id": "P02",
+      "group": "requested_boundary",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": "SP", "category": null}, "requested_dimensions": [], "requested_factors": []},
+      "capability": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2"], "methods": ["period_comparison", "metric_decomposition"], "dimensions": [], "factors": [], "stop_reason": null, "missing_evidence": []}
+    },
+    {
+      "case_id": "P03",
+      "group": "partial_factors",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation"], "unsupported_methods": ["promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.promoted_sku_count", "dws_sales_region_daily.required_sku_count"], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2", "T3", "T4"], "methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "candidate_validation"], "dimensions": ["region"], "factors": ["traffic"], "stop_reason": null, "missing_evidence": ["dws_sales_region_daily.promoted_sku_count", "dws_sales_region_daily.required_sku_count"]}
+    },
+    {
+      "case_id": "P04",
+      "group": "partial_factors",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "inventory_validation"], "unsupported_methods": ["promotion_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.promoted_sku_count"], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2", "T3", "T4"], "methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "candidate_validation"], "dimensions": ["category"], "factors": ["traffic", "inventory"], "stop_reason": null, "missing_evidence": ["dws_sales_region_daily.promoted_sku_count"]}
+    },
+    {
+      "case_id": "P05",
+      "group": "partial_dimensions",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": []},
+      "capability": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region"], "missing_evidence": ["dws_sales_category_daily.gmv"], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2", "T3"], "methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "dimensions": ["region"], "factors": [], "stop_reason": null, "missing_evidence": ["dws_sales_category_daily.gmv"]}
+    },
+    {
+      "case_id": "P06",
+      "group": "partial_methods",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "dimension_contribution"], "unsupported_methods": ["metric_decomposition", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["dws_sales_region_daily.order_count"], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2"], "methods": ["period_comparison", "dimension_contribution"], "dimensions": ["region", "category"], "factors": [], "stop_reason": null, "missing_evidence": ["dws_sales_region_daily.order_count"]}
+    },
+    {
+      "case_id": "P07",
+      "group": "period_gate",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "unsupported", "supported_methods": [], "unsupported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["baseline_period"], "data_quality_status": "pass"},
+      "expected": {"task_ids": [], "methods": [], "dimensions": [], "factors": [], "stop_reason": "INSUFFICIENT_DATA", "missing_evidence": ["baseline_period"]}
+    },
+    {
+      "case_id": "P08",
+      "group": "quality_gate",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": null}, "requested_dimensions": ["region", "category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "unsupported", "supported_methods": [], "unsupported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution", "traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["data_quality_failed", "gmv_reconciliation_failed"], "data_quality_status": "fail"},
+      "expected": {"task_ids": [], "methods": [], "dimensions": [], "factors": [], "stop_reason": "DATA_QUALITY_FAILED", "missing_evidence": ["data_quality_failed", "gmv_reconciliation_failed"]}
+    },
+    {
+      "case_id": "P09",
+      "group": "synthetic_degrade",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": "ES", "category": null}, "requested_dimensions": ["category"], "requested_factors": ["traffic", "promotion", "inventory"]},
+      "capability": {"level": "dimension_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "unsupported_methods": ["traffic_validation", "promotion_validation", "inventory_validation", "causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": ["analysis_sales_region_daily.visitors"], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2", "T3"], "methods": ["period_comparison", "metric_decomposition", "dimension_contribution"], "dimensions": ["category"], "factors": [], "stop_reason": null, "missing_evidence": ["analysis_sales_region_daily.visitors"]}
+    },
+    {
+      "case_id": "P10",
+      "group": "causal_boundary",
+      "question": {"target_metric": "gmv", "current_period": {"start": "2018-05-01", "end": "2018-05-31"}, "baseline_period": {"start": "2018-04-01", "end": "2018-04-30"}, "comparison_type": "previous_period", "scope": {"region": null, "category": "informatica_acessorios"}, "requested_dimensions": [], "requested_factors": []},
+      "capability": {"level": "association_diagnosis", "supported_methods": ["period_comparison", "metric_decomposition", "traffic_validation", "promotion_validation", "inventory_validation"], "unsupported_methods": ["causal_inference"], "available_dimensions": ["region", "category"], "missing_evidence": [], "data_quality_status": "pass"},
+      "expected": {"task_ids": ["T1", "T2"], "methods": ["period_comparison", "metric_decomposition"], "dimensions": [], "factors": [], "stop_reason": null, "missing_evidence": []}
+    }
+  ]
+}

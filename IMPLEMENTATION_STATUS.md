@@ -6,19 +6,19 @@ Diagnosis Agent implementation in progress; Gate 3 complete.
 
 ## Current Feature
 
-ANA-003 Capability Assessment.
+ANA-004 Analysis Planner.
 
 ## Feature Status
 
-Completed. A strict, deterministic capability assessor now validates request-scoped Data Profiles against the Metadata Catalog and gates each V1 method on period coverage, grain-specific non-empty fields, and data quality. Thirteen fixed cases passed with 13/13 exact assessments and 8/8 correct degradation; causal inference was never opened. The diagnosis Graph remains unwired until later stages exist. The status is valid when the ANA-003 completion commit containing this file is present on `origin/main`.
+Completed. A strict, deterministic planner now converts accepted Parsed Questions and Capability Assessments into at most four ordered tasks behind a Period Comparison gate. Ten fixed cases passed with 10/10 exact plans, 10/10 bounded task counts, 10/10 valid dependency structures, zero unsupported method selections, and zero SQL fields. The diagnosis Graph remains unwired until later stages exist. The status is valid when the ANA-004 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-ANA-003 Capability Assessment.
+ANA-004 Analysis Planner.
 
 ## Next Feature
 
-ANA-004 Analysis Planner.
+ANA-005 Controlled Query Builder.
 
 ## Last Successful Validation
 
@@ -95,10 +95,16 @@ ANA-004 Analysis Planner.
 - ANA-003 safety: causal method allowed 0/13 and methods allowed on failed data quality 0/1;
 - ANA-003 grain control: region/overall methods require region DWS fields; category-order components are accepted only within a single Category Scope;
 - ANA-003 isolation: no external service or database was accessed; Parser, Query Graph, SQL, Metadata configuration, data, and API remain unchanged.
+- ANA-004 targeted tests: 20 passed; full pytest regression: 144 passed;
+- ANA-004 Ruff/mypy: 31 diagnostics and 36 errors in 11 files, unchanged from ANA-003;
+- ANA-004 fixed evaluation: 10/10 exact planning outcomes, 10/10 bounded plans, 10/10 valid dependency structures, and 10/10 parsed parameter reuse;
+- ANA-004 safety: unsupported method selections 0 and SQL fields emitted 0;
+- ANA-004 planning: at most one task per frozen class; available dimensions and supported candidate factors are grouped without exceeding four tasks;
+- ANA-004 isolation: no external service or database was accessed; Parser, Capability Assessor, Query Graph, NL2SQL, Metadata configuration, data, and API remain unchanged.
 
 ## Last Commit
 
-The ANA-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ANA-004 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
@@ -106,13 +112,13 @@ Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and thi
 
 ## Known Blockers
 
-None blocking ANA-004. ANA-003 consumes an injected request-scoped Data Profile; runtime construction is deferred, and the Planner must intersect requested dimensions with `available_dimensions` and choose only `supported_methods`. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
+None blocking ANA-005. ANA-003 still consumes an injected request-scoped Data Profile; runtime construction is deferred. ANA-004 produces intent-only tasks and intentionally contains no query specification or SQL. SQL-002 baseline limitations and the Qdrant compatibility warning remain documented. The repository reports 31 Ruff diagnostics and 36 mypy errors in 11 files.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
 3. Query the current Codex usage limit and update the Heartbeat to two minutes after the latest `resetsAt`.
-4. Create and fully read `specs/ANA-004_analysis_planner.md` and its direct sources before implementation.
-5. Inspect the accepted Parsed Question and Capability schemas plus the four-task contract without implementing task execution.
-6. Implement ANA-004 only, run its Supported-Methods, task-limit, dependency, and no-SQL tests, produce a completion report, create an independent commit, and push.
+4. Create and fully read `specs/ANA-005_controlled_query_builder.md` and its direct sources before implementation.
+5. Inspect the accepted AnalysisTask contract, Metadata Catalog, Metric Registry, grain invariants, and SQL safety boundary without implementing task execution or analysis mathematics.
+6. Implement ANA-005 only, run its Registry, grain, read-only, and no-hallucination tests, produce a completion report, create an independent commit, and push.

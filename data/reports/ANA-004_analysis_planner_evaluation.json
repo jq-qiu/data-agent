@@ -1,0 +1,481 @@
+{
+  "feature": "ANA-004",
+  "golden_version": "analysis-planner-golden-v1",
+  "case_count": 10,
+  "exact_match_count": 10,
+  "exact_match_rate": 1.0,
+  "bounded_plan_count": 10,
+  "valid_dependency_count": 10,
+  "parameter_reuse_count": 10,
+  "unsupported_method_selection_count": 0,
+  "sql_field_count": 0,
+  "passed": true,
+  "cases": [
+    {
+      "case_id": "P01",
+      "group": "full_plan",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "region",
+          "category"
+        ],
+        "factors": [
+          "traffic",
+          "promotion",
+          "inventory"
+        ],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "region",
+          "category"
+        ],
+        "factors": [
+          "traffic",
+          "promotion",
+          "inventory"
+        ],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P02",
+      "group": "requested_boundary",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P03",
+      "group": "partial_factors",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "region"
+        ],
+        "factors": [
+          "traffic"
+        ],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count",
+          "dws_sales_region_daily.required_sku_count"
+        ]
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "region"
+        ],
+        "factors": [
+          "traffic"
+        ],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count",
+          "dws_sales_region_daily.required_sku_count"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P04",
+      "group": "partial_factors",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "category"
+        ],
+        "factors": [
+          "traffic",
+          "inventory"
+        ],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count"
+        ]
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3",
+          "T4"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution",
+          "candidate_validation"
+        ],
+        "dimensions": [
+          "category"
+        ],
+        "factors": [
+          "traffic",
+          "inventory"
+        ],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.promoted_sku_count"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P05",
+      "group": "partial_dimensions",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "region"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_category_daily.gmv"
+        ]
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "region"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_category_daily.gmv"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P06",
+      "group": "partial_methods",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "region",
+          "category"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.order_count"
+        ]
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "region",
+          "category"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "dws_sales_region_daily.order_count"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P07",
+      "group": "period_gate",
+      "expected": {
+        "task_ids": [],
+        "methods": [],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": "INSUFFICIENT_DATA",
+        "missing_evidence": [
+          "baseline_period"
+        ]
+      },
+      "actual": {
+        "task_ids": [],
+        "methods": [],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": "INSUFFICIENT_DATA",
+        "missing_evidence": [
+          "baseline_period"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P08",
+      "group": "quality_gate",
+      "expected": {
+        "task_ids": [],
+        "methods": [],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": "DATA_QUALITY_FAILED",
+        "missing_evidence": [
+          "data_quality_failed",
+          "gmv_reconciliation_failed"
+        ]
+      },
+      "actual": {
+        "task_ids": [],
+        "methods": [],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": "DATA_QUALITY_FAILED",
+        "missing_evidence": [
+          "data_quality_failed",
+          "gmv_reconciliation_failed"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P09",
+      "group": "synthetic_degrade",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "category"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "analysis_sales_region_daily.visitors"
+        ]
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2",
+          "T3"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition",
+          "dimension_contribution"
+        ],
+        "dimensions": [
+          "category"
+        ],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": [
+          "analysis_sales_region_daily.visitors"
+        ]
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    },
+    {
+      "case_id": "P10",
+      "group": "causal_boundary",
+      "expected": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "actual": {
+        "task_ids": [
+          "T1",
+          "T2"
+        ],
+        "methods": [
+          "period_comparison",
+          "metric_decomposition"
+        ],
+        "dimensions": [],
+        "factors": [],
+        "stop_reason": null,
+        "missing_evidence": []
+      },
+      "match": true,
+      "bounded": true,
+      "dependencies_valid": true,
+      "parameters_reused": true,
+      "unsupported_selected": 0,
+      "sql_fields": 0
+    }
+  ]
+}
