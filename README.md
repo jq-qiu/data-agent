@@ -16,25 +16,26 @@ V1 实现的是指标拆解、变化贡献和关联诊断，不是严格的因�
 
 ## 2. 当前真实状态
 
-当前仓库已有一条可复用的单轮 NL2SQL 链路，包括：
+当前 MVP V1 已完成并验证以下链路：
 
 - 关键词抽取与扩展；
 - Qdrant 表字段与指标语义召回；
 - Elasticsearch 字段值召回；
 - Schema Linking 上下文组装；
 - SQL 生成、静态校验、纠错和执行；
-- FastAPI SSE 查询接口。
+- Olist 隔离数仓、诊断 DWS 与可复现 Synthetic Evidence；
+- 确定性的诊断意图、问题解析、能力评估和分析规划；
+- 受控查询、确定性计算、Evidence 校验和诊断报告；
+- FastAPI SSE 单轮查询与诊断接口。
 
-当前尚未实现：
+API-001 的六个固定问题已通过真实服务依赖的 HTTP/SSE 演示。真实
+Olist DWS 中 Traffic、Promotion 和 Inventory 候选字段为空时，诊断会明确
+降级，不会伪造 Evidence。当前仍不支持：
 
-- Olist 数据导入与新数仓；
-- 两张诊断 DWS；
-- Synthetic Evidence 与 Ground Truth；
-- 诊断意图路由和分析规划；
-- 指标拆解、维度贡献和证据报告；
-- 多轮会话。
-
-因此，设计目标与已实现能力必须在报告和面试中严格区分。
+- 省略式多轮会话；
+- 登录、租户、权限和附件；
+- 严格因果推断或自动经营动作；
+- 前端重构（需作为独立 Feature 另行实施）。
 
 ## 3. V1 核心场景
 

@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-Diagnosis evaluation complete; Gate 5 passed after isolated remediation.
+MVP V1 complete through the minimal API and fixed Demo.
 
 ## Current Feature
 
-FIX-001 Gate 5 Remediation.
+API-001 Minimal API and Demo.
 
 ## Feature Status
 
-Completed. Five real Synthetic Scope values were added to the shared Metadata Catalog, and the isolated V1 Metadata registries/indexes were rebuilt. Evidence and Report lineage now preserve overall `order_count` versus single-Category `category_order_count` semantics and reject cross-grain contracts. The unchanged D01-D10 regression completed 10/10 cases with Numeric Consistency 10/10, Root Cause Recall@3 10/10, D10 degradation 1/1, zero unsupported claims, and zero causal-language violations. Gate 5 passed without changing Ground Truth, evaluation thresholds, Query Builder SQL, Analyzer math, Evidence ranking, or report wording. The status is valid when the FIX-001 completion commit containing this file is present on `origin/main`.
+Completed. `POST /api/query` now accepts canonical `question` and compatible legacy `query` requests, routes QUERY/DIAGNOSIS/UNSUPPORTED deterministically, preserves the accepted NL2SQL Graph, and runs the seven accepted diagnosis stages in a bounded graph. Runtime diagnosis derives capability from validated read-only aggregate probes against `data_agent_v1_dw` and degrades when real candidate Evidence columns are empty. The six fixed V1 questions completed 6/6 through the FastAPI HTTP/SSE path with safe public traces. Full pytest passed; Ruff improved to 22 existing diagnostics and mypy remained at the accepted 36-error baseline. The status is valid when the API-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-FIX-001 Gate 5 Remediation.
+API-001 Minimal API and Demo.
 
 ## Next Feature
 
-API-001 Minimal Demo.
+None in the current MVP V1 plan. Frontend work requires a new separately scoped Feature.
 
 ## Last Successful Validation
 
@@ -142,24 +142,31 @@ API-001 Minimal Demo.
 - FIX-001 claim safety: Unsupported Claim Count 0 and causal-language violations 0;
 - FIX-001 latency: mean 697.149600 ms, median 612.514500 ms, maximum 1222.350000 ms; Token/cost unavailable because no LLM call was made;
 - Gate 5: passed. Results remain limited to the frozen ten-case Synthetic functional regression.
+- API-001 targeted tests: 14 passed; full pytest regression: 242 passed.
+- API-001 Ruff: 22 existing diagnostics, below the accepted 31-diagnostic baseline; all API-001 files pass targeted Ruff.
+- API-001 mypy: 36 errors in 11 files, unchanged from the accepted baseline; no API-001 mypy finding remains.
+- API-001 fixed HTTP/SSE Demo: 6/6 successful terminal results, including 2 QUERY and 4 DIAGNOSIS requests.
+- API-001 trace safety: 6/6 cases contain no forbidden public Trace key; all 6 responses used SSE with HTTP 200.
+- API-001 diagnosis outcomes: three `DEGRADED` reports correctly reflect unavailable real candidate fields; the scoped São Paulo request returned `NO_DECLINE` for the real Olist period.
+- API-001 latency: mean 58,467.103 ms and maximum 208,327.703 ms; external LLM calls dominate the two QUERY requests.
+- API-001 isolation: runtime capability and diagnosis accessed only validated read-only aggregates in `data_agent_v1_dw`; no Ground Truth or Synthetic Case ID was used by the API.
 
 ## Last Commit
 
-The FIX-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The API-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main`. If Git metadata disagrees, Git is authoritative and this field must be corrected before starting another Feature.
+Pushed to `origin/main` after the API-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking API-001. Gate 5 passed after FIX-001. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, and repository-wide 31 Ruff/36 mypy findings remain documented and are not API-001 blockers.
+None blocking the completed MVP V1. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Frontend implementation is outside the completed API-001 scope.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the FIX-001 commit is present on `origin/main` and review `FIX-001_COMPLETION.md` plus `eval_runs/FIX-001_v1`.
-4. Create and fully read `specs/API-001_minimal_demo.md` and all direct sources before implementation.
-5. Inspect the existing FastAPI/SSE Query path, frozen diagnosis node adapters, dependency lifecycle, request/response compatibility decision, trace safety, and fixed Demo acceptance path.
-6. Implement API-001 only, run the fixed single-turn Demo end to end, record real validation, produce a completion report, create an independent commit, and push.
+3. Verify the API-001 commit is present on `origin/main` and review `API-001_COMPLETION.md` plus `data/reports/API-001_minimal_demo.json`.
+4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
+5. If frontend work is requested, inspect `D:\py project\data-agent-front` read-only first and define a separate frontend Feature; do not mix it into API-001 history.

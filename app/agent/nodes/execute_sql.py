@@ -11,7 +11,9 @@ async def execute_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
 
     try:
         # 1.获取业务SQL
-        sql = state["validated_sql"]
+        # Revalidate the exact source accepted by validate_sql. Re-parsing the
+        # normalized rendering can change an allowlisted IF node into CASE.
+        sql = state["sql"]
         metric_ids = tuple(item["id"] for item in state.get("metric_infos", []))
         validated_sql = runtime.context["sql_validator"].validate(sql, metric_ids)
         # 2.调用数仓持久层执行SQL

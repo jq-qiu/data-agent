@@ -22,7 +22,6 @@ async def validate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         await dw_mysql_repository.validate_sql(validated_sql)
         write({"type": "progress", "step": "验证SQL", "status": "success"})
         return {
-            "sql": validated_sql.sql,
             "validated_sql": validated_sql.sql,
             "validation_trace": validated_sql.as_trace(),
             "error": None,

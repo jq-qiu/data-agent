@@ -1,7 +1,28 @@
-#导入pydantic的BaseModel基类，用于定义数据验证模型
-from pydantic import BaseModel
+from __future__ import annotations
 
-# 定义查询请求的数据模型（用于接口入参校验）
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
 class QuerySchema(BaseModel):
-    # 接收用户输入的查询字符串，会自动校验字段类型和非空
-    query: str
+    """Single-turn API input with a canonical field and legacy compatibility."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str | None = Field(default=None, max_length=2000)
+    query: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def validate_single_question(self) -> QuerySchema:
+        provided = [value for value in (self.question, self.query) if value is not None]
+        if len(provided) != 1 or not provided[0].strip():
+            raise ValueError("exactly one non-empty question or query is required")
+        value = provided[0].strip()
+        if self.question is not None:
+            self.question = value
+        else:
+            self.query = value
+        return self
+
+    @property
+    def resolved_question(self) -> str:
+        return self.question if self.question is not None else str(self.query)

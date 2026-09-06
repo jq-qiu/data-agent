@@ -1,10 +1,26 @@
+from __future__ import annotations
+
 import json
+from collections.abc import AsyncIterator, Mapping
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 
 from app.agent.context import DataAgentContext
-from app.agent.graph import graph
+from app.agent.diagnosis_graph import build_diagnosis_graph
+from app.agent.graph import graph as nl2sql_graph
 from app.agent.state import DataAgentState
+from app.core.log import logger
+from app.diagnosis.capability import CapabilityAssessor
+from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
+from app.diagnosis.query import (
+    AnalysisQueryBuilder,
+    AnalysisQueryContext,
+    AnalysisTaskExecutor,
+    QueryDataSource,
+)
+from app.diagnosis.question import AnalysisQuestionParser
+from app.diagnosis.runtime import WarehouseCapabilityProfileProvider
 from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
@@ -32,8 +48,39 @@ class QueryService:
         self.dw_mysql_repository = dw_mysql_repository
         self.sql_validator = sql_validator
 
-    async def query_answer(self, query: str):
-        state = DataAgentState(query=query, repair_attempts=0)
+    async def query_answer(self, question: str) -> AsyncIterator[str]:
+        decision = IntentRouter().route(question)
+        yield _event(
+            {"type": "progress", "step": "识别请求意图", "status": "running"}
+        )
+        yield _event(
+            {"type": "progress", "step": "识别请求意图", "status": "success"}
+        )
+        try:
+            if decision.intent is Intent.QUERY:
+                async for event in self._query_events(question, decision):
+                    yield _event(event)
+            elif decision.intent is Intent.DIAGNOSIS:
+                async for event in self._diagnosis_events(question, decision):
+                    yield _event(event)
+            else:
+                yield _event(_unsupported_result(decision))
+        except Exception as error:  # noqa: BLE001 - public stream must terminate safely
+            logger.error("API request failed with error type {}", type(error).__name__)
+            yield _event(
+                {
+                    "type": "error",
+                    "code": "REQUEST_EXECUTION_FAILED",
+                    "message": "请求未能安全完成，请检查服务依赖或请求范围。",
+                }
+            )
+
+    async def _query_events(
+        self,
+        question: str,
+        decision: IntentDecision,
+    ) -> AsyncIterator[dict[str, Any]]:
+        state = DataAgentState(query=question, repair_attempts=0)
         context = DataAgentContext(
             meta_mysql_repository=self.meta_mysql_repository,
             dw_mysql_repository=self.dw_mysql_repository,
@@ -43,5 +90,269 @@ class QueryService:
             value_es_repository=self.value_es_repository,
             sql_validator=self.sql_validator,
         )
-        async for chunk in graph.astream(input=state, context=context, stream_mode="custom"):
-            yield f"data: {json.dumps(chunk, ensure_ascii=False, default=str)}\n\n"
+        async for chunk in nl2sql_graph.astream(
+            input=state,
+            context=context,
+            stream_mode="custom",
+        ):
+            if not isinstance(chunk, Mapping):
+                continue
+            event = dict(chunk)
+            if event.get("type") == "result":
+                validation = _safe_validation(event.get("validation"))
+                event.update(
+                    {
+                        "intent": decision.intent.value,
+                        "answer": None,
+                        "analysis_trace": [
+                            _intent_trace(decision),
+                            {
+                                "stage": "query_execution",
+                                "status": "success",
+                                "validation": validation,
+                            },
+                        ],
+                        "evidence": [],
+                        "limitations": [],
+                    }
+                )
+            yield event
+
+    async def _diagnosis_events(
+        self,
+        question: str,
+        decision: IntentDecision,
+    ) -> AsyncIterator[dict[str, Any]]:
+        profile_step = "读取运行时数据能力"
+        yield {"type": "progress", "step": profile_step, "status": "running"}
+        profile = await WarehouseCapabilityProfileProvider(
+            self.sql_validator.catalog,
+            self.sql_validator,
+            self.dw_mysql_repository,
+        ).load()
+        yield {"type": "progress", "step": profile_step, "status": "success"}
+
+        parser = AnalysisQuestionParser.from_catalog(self.sql_validator.catalog)
+        assessor = CapabilityAssessor(self.sql_validator.catalog)
+        query_builder = AnalysisQueryBuilder(
+            self.sql_validator.catalog,
+            AnalysisQueryContext(source=QueryDataSource.WAREHOUSE),
+        )
+        executor = AnalysisTaskExecutor(
+            query_builder,
+            self.sql_validator,
+            self.dw_mysql_repository,
+        )
+        diagnosis_graph = build_diagnosis_graph(parser, assessor, profile, executor)
+        latest_state: dict[str, Any] = {
+            "question": question,
+            "intent": decision.intent.value,
+        }
+        async for mode, chunk in diagnosis_graph.astream(
+            input=latest_state,
+            stream_mode=["custom", "values"],
+        ):
+            if mode == "custom" and isinstance(chunk, Mapping):
+                yield dict(chunk)
+            elif mode == "values" and isinstance(chunk, Mapping):
+                latest_state = dict(chunk)
+        yield _diagnosis_result(decision, latest_state)
+
+
+def _event(payload: Mapping[str, Any]) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
+
+
+def _intent_trace(decision: IntentDecision) -> dict[str, Any]:
+    return {
+        "stage": "intent_router",
+        "status": "success",
+        "intent": decision.intent.value,
+        "confidence": decision.confidence,
+        "reason": decision.reason,
+    }
+
+
+def _unsupported_result(decision: IntentDecision) -> dict[str, Any]:
+    return {
+        "type": "result",
+        "intent": decision.intent.value,
+        "answer": "当前请求超出 V1 单轮问数与 GMV 关联诊断范围。",
+        "data": [],
+        "analysis_trace": [_intent_trace(decision)],
+        "evidence": [],
+        "limitations": [decision.reason],
+    }
+
+
+def _diagnosis_result(
+    decision: IntentDecision,
+    state: Mapping[str, Any],
+) -> dict[str, Any]:
+    bundle = state.get("validated_evidence")
+    evidence = []
+    limitations = list(state.get("api_limitations") or [])
+    if isinstance(bundle, Mapping):
+        raw_evidence = bundle.get("evidence")
+        if isinstance(raw_evidence, list):
+            evidence = raw_evidence
+            for item in raw_evidence:
+                if isinstance(item, Mapping):
+                    values = item.get("limitations")
+                    if isinstance(values, list):
+                        limitations.extend(str(value) for value in values)
+        missing = bundle.get("missing_evidence")
+        if isinstance(missing, list):
+            limitations.extend(str(value) for value in missing)
+    report = state.get("final_report")
+    report_status = report.get("status") if isinstance(report, Mapping) else "DEGRADED"
+    return {
+        "type": "result",
+        "intent": decision.intent.value,
+        "answer": str(state.get("final_answer") or "当前诊断无法安全完成。"),
+        "report_status": report_status,
+        "analysis_trace": _diagnosis_trace(decision, state),
+        "evidence": evidence,
+        "limitations": list(dict.fromkeys(limitations)),
+    }
+
+
+def _diagnosis_trace(
+    decision: IntentDecision,
+    state: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    trace: list[dict[str, Any]] = [_intent_trace(decision)]
+    parsed = state.get("parsed_question")
+    if isinstance(parsed, Mapping):
+        trace.append(
+            {
+                "stage": "analysis_question_parser",
+                "status": "success",
+                "parsed_question": dict(parsed),
+            }
+        )
+    capability = state.get("capability")
+    if isinstance(capability, Mapping):
+        trace.append(
+            {
+                "stage": "capability_assessment",
+                "status": "success",
+                "capability": dict(capability),
+            }
+        )
+    plan = state.get("analysis_plan")
+    if isinstance(plan, Mapping):
+        trace.append(
+            {
+                "stage": "analysis_planner",
+                "status": "success",
+                "plan": dict(plan),
+            }
+        )
+    queries = state.get("query_results")
+    if isinstance(queries, list):
+        trace.append(
+            {
+                "stage": "analysis_task_executor",
+                "status": "success",
+                "queries": [_safe_query_trace(item) for item in queries],
+            }
+        )
+    analyses = state.get("analysis_results")
+    if isinstance(analyses, list):
+        trace.append(
+            {
+                "stage": "deterministic_analyzer",
+                "status": "success",
+                "results": [_safe_analysis_trace(item) for item in analyses],
+            }
+        )
+    bundle = state.get("validated_evidence")
+    if isinstance(bundle, Mapping):
+        raw_evidence = bundle.get("evidence")
+        evidence_items = raw_evidence if isinstance(raw_evidence, list) else []
+        trace.append(
+            {
+                "stage": "evidence_checker",
+                "status": "success",
+                "evidence": [
+                    {
+                        key: item.get(key)
+                        for key in (
+                            "evidence_id",
+                            "evidence_type",
+                            "support_level",
+                            "analysis_result_ids",
+                            "query_ids",
+                        )
+                    }
+                    for item in evidence_items
+                    if isinstance(item, Mapping)
+                ],
+            }
+        )
+    report = state.get("final_report")
+    if isinstance(report, Mapping):
+        trace.append(
+            {
+                "stage": "report_generator",
+                "status": "success",
+                "report_status": report.get("status"),
+            }
+        )
+    return trace
+
+
+def _safe_query_trace(item: Any) -> dict[str, Any]:
+    if not isinstance(item, Mapping):
+        return {}
+    return {
+        key: item.get(key)
+        for key in (
+            "query_id",
+            "task_id",
+            "method",
+            "query_role",
+            "catalog_version",
+            "metric_versions",
+        )
+    } | {"validation": _safe_validation(item.get("validation"))}
+
+
+def _safe_analysis_trace(item: Any) -> dict[str, Any]:
+    if not isinstance(item, Mapping):
+        return {}
+    reconciliation = item.get("reconciliation")
+    safe_reconciliation = None
+    if isinstance(reconciliation, Mapping):
+        safe_reconciliation = {
+            key: reconciliation.get(key)
+            for key in ("status", "difference", "tolerance")
+        }
+    return {
+        key: item.get(key)
+        for key in (
+            "analysis_result_id",
+            "method",
+            "input_query_ids",
+            "metric_versions",
+            "warnings",
+        )
+    } | {"reconciliation": safe_reconciliation}
+
+
+def _safe_validation(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        return {}
+    return {
+        key: value.get(key)
+        for key in (
+            "tables",
+            "columns",
+            "join_relations",
+            "grain_warnings",
+            "policy_version",
+            "max_rows",
+            "timeout_seconds",
+        )
+    }
