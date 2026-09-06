@@ -28,6 +28,7 @@ V1 实现的是指标拆解、变化贡献和关联诊断，不是严格的因�
 - 受控查询、确定性计算、Evidence 校验和诊断报告；
 - FastAPI SSE 单轮查询与诊断接口。
 - Vue 3/Vite 单轮经营分析前端，支持流式进度、问数表格与证据化诊断展示。
+- FastAPI 同源托管前端与 API 的单进程本地运行方式。
 
 API-001 的六个固定问题已通过真实服务依赖的 HTTP/SSE 演示。真实
 Olist DWS 中 Traffic、Promotion 和 Inventory 候选字段为空时，诊断会明确
@@ -201,22 +202,34 @@ ENG-001 Engineering Baseline
 
 测试、Lint 或类型检查存在存量问题时，应真实记录基线，不得伪造全绿结果，也不得在无关 Feature 中顺手重构业务代码。
 
-## 10. 本地前端
+## 10. 本地运行
 
-先在一个终端启动后端：
+运行前需要准备：
+
+- 已安装项目 Python 依赖，以及 Node.js/npm；
+- 本地忽略的 `conf/app_config.yaml`；
+- 配置中的 DW 数据库必须是隔离库 `data_agent_v1_dw`；
+- MySQL、Qdrant、Elasticsearch、Embedding 和 LLM 服务已经可访问。
+
+推荐使用单进程启动命令：
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m app.scripts.serve
 ```
 
-再在另一个终端安装依赖并启动前端：
+启动器会在前端依赖缺失时执行锁文件安装，生成新的生产构建，然后由 FastAPI 在同一端口托管网页和 `/api/query`。默认访问地址是 `http://127.0.0.1:8000`。
+
+只执行安全预检和构建、不启动服务：
 
 ```powershell
-npm install --prefix frontend
-npm run dev --prefix frontend
+.\.venv\Scripts\python.exe -m app.scripts.serve --check
 ```
 
-浏览器访问 `http://127.0.0.1:5173`。开发服务器会将同源 `/api` 请求代理到本地后端。前端只发送单轮问题，不保存问题、响应或凭据。
+可选参数：`--install` 强制重新执行 `npm ci`；`--skip-build` 使用已经存在且验证通过的 `frontend/dist`；`--host` 和 `--port` 修改监听地址。默认仅绑定本机回环地址，部署到网络接口必须由操作者显式选择。
+
+`GET /api/health/live` 只表示 Web 进程存活，不代表数据库、检索服务或模型服务已经就绪。当前方式面向单机和受控环境，不包含 TLS、域名、反向代理、高可用或生产 SLA。
+
+前端开发时仍可分别运行 FastAPI 与 `npm run dev --prefix frontend`，Vite 会将 `/api` 代理到本地 8000 端口。
 
 ## 11. 安全与配置
 

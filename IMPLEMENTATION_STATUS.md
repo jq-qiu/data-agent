@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, and versioned frontend.
+MVP V1 complete through the minimal API, fixed Demo, versioned frontend, and single-process local runtime.
 
 ## Current Feature
 
-FRONT-001 MVP Frontend.
+DEPLOY-001 Single-process Runtime.
 
 ## Feature Status
 
-Completed. A versioned Vue 3/Vite application now lives under `frontend/` and sends canonical single-turn `question` requests through the local `/api/query` proxy. It reconstructs arbitrarily chunked SSE, exposes progress and cancellation, and safely renders QUERY tables or DIAGNOSIS report status, Evidence, limitations, and public Trace without raw HTML. The six fixed questions are available as standalone examples. Five deterministic frontend tests and the production build passed; a real diagnosis completed visibly through the proxy with nine progress steps, a degraded report, Evidence, limitations, and eight public Trace stages. Backend pytest passed; Ruff and mypy remain at the accepted 22/36 baselines. The status is valid when the FRONT-001 completion commit containing this file is present on `origin/main`.
+Completed. The Python launcher validates the ignored local configuration and exact `data_agent_v1_dw` isolation, installs locked frontend dependencies only when required, builds the Vue application, and starts one Uvicorn worker. FastAPI serves the built frontend and unchanged `/api/query` on one origin, exposes process-only liveness at `/api/health/live`, and no longer registers the legacy test router or password-echo route. Seven deployment tests, five frontend tests, the frontend production build, and all 249 backend tests passed. A real single-process smoke verified the page, asset, liveness, hidden test routes, and a deterministic diagnosis terminal result. Ruff and mypy remain at the accepted 22/36 baselines. The status is valid when the DEPLOY-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-FRONT-001 MVP Frontend.
+DEPLOY-001 Single-process Runtime.
 
 ## Next Feature
 
-None in the current MVP V1 plan. Deployment, V1.1 conversation support, or backend refinement requires a separately scoped Feature.
+None in the current MVP V1 plan. Public hosting infrastructure, production hardening, monitoring, CI/CD, V1.1 conversation support, or backend refinement requires a separately scoped Feature.
 
 ## Last Successful Validation
 
@@ -156,23 +156,31 @@ None in the current MVP V1 plan. Deployment, V1.1 conversation support, or backe
 - FRONT-001 UI safety: diagnosis Markdown is rendered as text nodes without `v-html`; no raw SQL, parameters, credentials, connection details, or persisted response payload was added.
 - FRONT-001 backend regression: 242 passed; Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files.
 - FRONT-001 isolation: no backend Python, business logic, data, database, or the unversioned `D:\py project\data-agent-front` reference was changed.
+- DEPLOY-001 targeted tests: 7/7 passed; targeted Ruff and mypy both passed.
+- DEPLOY-001 launcher preflight/build: passed for the ignored local configuration, exact `data_agent_v1_dw` selection, npm availability, and Vite production output.
+- DEPLOY-001 forced locked install: `--install --check` added 35 packages from the lockfile, reported 0 known vulnerabilities, rebuilt successfully, and did not start the server.
+- DEPLOY-001 full regression: 249 passed; frontend tests 5/5 passed and Vite 7.3.6 transformed 11 modules successfully.
+- DEPLOY-001 real single-process smoke: root page 200, built JavaScript asset 200, liveness `ok`, API SSE 200, 18 progress events, a `DIAGNOSIS`/`DEGRADED` terminal result, 4 Evidence items, and 8 public Trace stages.
+- DEPLOY-001 route boundary: `/hello/...` and `/test_query` returned 404; `POST /login` returned 405 from the static root mount and no legacy test route is registered.
+- DEPLOY-001 isolation: no external service, database, data, Metadata index, API contract, diagnosis logic, or frontend interaction behavior was modified.
+- DEPLOY-001 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 104 source files.
 
 ## Last Commit
 
-The FRONT-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The DEPLOY-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the FRONT-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the DEPLOY-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking the completed MVP V1. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Production deployment is outside FRONT-001.
+None blocking the completed single-host runtime. External services and the ignored local configuration remain prerequisites. Docker is not installed on the validated host. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Public hosting and production hardening are outside DEPLOY-001.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the FRONT-001 commit is present on `origin/main` and review `FRONT-001_COMPLETION.md` plus `specs/FRONT-001_mvp_frontend.md`.
+3. Verify the DEPLOY-001 commit is present on `origin/main` and review `DEPLOY-001_COMPLETION.md` plus `specs/DEPLOY-001_single_process_runtime.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. Do not modify the read-only reference at `D:\py project\data-agent-front`; future frontend changes require a separate Feature under the versioned `frontend/` package.
+5. Use `python -m app.scripts.serve --check` for safe runtime preflight. Do not claim external-service readiness from the process-only liveness endpoint.
