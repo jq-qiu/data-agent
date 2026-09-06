@@ -237,3 +237,46 @@ eval_runs/<run_id>/
 
 每次迭代只修改一个主要假设，例如 TopK、别名、Prompt、规则或算法，并在完整固定数据集上回归。
 
+## 10. 语义规划评测契约
+
+`SEM-001` 只定义后续评测口径，本 Feature 未运行 LLM Planner 评测，也不能把设计目标写成实测结果。
+
+### 10.1 Semantic Grounding
+
+固定样本应覆盖指标别名、维度别名、州代码与中英文名、品类值、时间范围、歧义值、未知值和高基数噪声。至少报告：
+
+```text
+Metric Binding Accuracy
+Dimension Binding Accuracy
+Dimension Value Binding Accuracy
+Time Resolution Accuracy
+Scope Validation Accuracy
+Ambiguity Rejection Accuracy
+```
+
+### 10.2 PlannerSemanticContext
+
+逐例执行确定性契约检查：
+
+- 必需分析关系、可用维度、因素、工具和限制是否完整；
+- 物理表、字段、JOIN、SQL、原始行、Ground Truth 和秘密信息泄漏数是否为 0；
+- 真实 Olist 缺失 Evidence 时是否关闭对应能力；
+- Synthetic 数据是否只开放其实际存在的 Evidence；
+- 上下文 Token、构建延迟和版本是否有记录。
+
+### 10.3 Plan 与回退
+
+后续 `PLAN-LLM-001` 至少报告：
+
+```text
+Supported Method Precision = 100%
+Metric/Time/Scope Mutation Count = 0
+Task Limit Violation Count = 0
+Invalid Dependency Count = 0
+Schema Leakage Count = 0
+Deterministic Fallback Success Rate = 100%
+Planner Model Calls <= 1
+Total Attribution Model Calls <= 2
+```
+
+同时记录确定性路径比例、LLM 路径比例、Validator 拒绝原因、回退原因、规划延迟、Token 和费用。模型输出正确性必须与相同 Golden Dataset 上的确定性基线对比；没有真实运行不得宣称提升。

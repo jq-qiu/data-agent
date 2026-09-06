@@ -147,3 +147,29 @@ V1.1 才考虑：
 - 更复杂的动态下钻。
 
 严格因果推断只有在引入处理组、对照组、实验或准实验设计以后才能立项，不属于当前路线的默认升级。
+
+## 7. MVP 后的归因规划演进
+
+以下路线服务于项目面试展示和企业级可扩展性，但仍遵守“一个任务只实现一个 Feature”。除已完成项外，均不得描述为当前运行时能力：
+
+```text
+SEM-001 Analysis Semantic Context Design
+        ↓
+SEM-002 Semantic Registry and Context Builder
+        ↓
+PLAN-LLM-001 Bounded LLM Planner and Plan Validator
+        ↓
+PLAN-UI-001 Analysis Plan Trace
+        ↓
+INTERVIEW-001 Demo Script and Architecture Narrative
+```
+
+| Feature | 目标 | 改善内容 | 状态边界 |
+|---|---|---|---|
+| SEM-001 | 冻结语义绑定、分析语义和规划上下文 | 回答字段、指标、字段取值和当前能力如何进入归因规划 | 只做设计与契约测试 |
+| SEM-002 | 实现 Registry 投影与 `PlannerSemanticContext` Builder | 统一 NL2SQL、Planner、Report 的语义来源，避免把全量 Schema 交给模型 | 未授权、未实现 |
+| PLAN-LLM-001 | 实现确定性优先、最多一次模型规划、Validator 与回退 | 让复杂问题能在有限合法路径中动态取舍，同时保持可控和可审计 | 未授权、未实现 |
+| PLAN-UI-001 | 展示规范问题、能力、计划、回退与 Evidence Trace | 让演示和问题定位更直观 | 未授权、未实现 |
+| INTERVIEW-001 | 固化演示脚本和架构讲解 | 清晰说明 LLM 与确定性模块的职责边界 | 未授权、未实现 |
+
+`AnalysisTask` 继续作为类型化工具调用；后续不另建一套重复的通用 ToolCall。`SEM-002` 只有在用户明确授权后才能开始。

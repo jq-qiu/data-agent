@@ -2,26 +2,31 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, grouped TopN query support, reactive SSE progress rendering, and a synthetic diagnosis demo.
+MVP V1 is complete through the synthetic diagnosis demo. SEM-001 has now frozen the post-MVP attribution semantic grounding, analysis semantic context, bounded planning, validation, and fallback design without changing runtime behavior.
 
 ## Current Feature
 
-REPORT-002 Candidate Section Readability.
+SEM-001 Analysis Semantic Context Design.
 
 ## Feature Status
 
-Completed. The Vue frontend creates each request's `exchange` object with `reactive({...})` before inserting it into `exchanges`. Incremental SSE progress events now trigger Vue rendering immediately instead of appearing only after the request finishes. Five frontend Node tests pass and Vite builds 11 modules successfully. Backend streaming was independently verified: `text/event-stream` events arrive progressively from about 0.4 seconds through the final result.
+Completed. The repository now defines Semantic Grounding, analysis semantic Registry contracts, request-scoped `PlannerSemanticContext`, deterministic-first Planner Policy, `AnalysisPlanValidator`, model-call limits, and deterministic fallback. This Feature is documentation-only: the current diagnosis runtime remains deterministic, and no LLM Planner or Context Builder was implemented.
 
 ## Last Completed Feature
 
-REPORT-001 Localized Evidence Limitations.
+REPORT-002 Candidate Section Readability, including the non-causal most-likely-candidate follow-up.
 
 ## Next Feature
 
-A separately scoped latency improvement or browser demonstration walkthrough if authorized.
+SEM-002 Semantic Registry and Context Builder, only after explicit user authorization.
 
 ## Last Successful Validation
 
+- SEM-001 documentation contract: 21 passed;
+- SEM-001 full pytest regression: 293 passed;
+- SEM-001 Ruff: 23 existing diagnostics; no runtime file was changed;
+- SEM-001 mypy: 36 existing errors in 11 files while checking 107 source files; no runtime file was changed;
+- SEM-001 evaluation: not run because this Feature freezes design only; future semantic-planning metrics are defined in `docs/06_evaluation.md`;
 - DOC-001 documentation contract: 19 passed;
 - full pytest regression: 23 passed;
 - Ruff: 51 existing diagnostics, unchanged from ENG-001;
@@ -187,11 +192,11 @@ A separately scoped latency improvement or browser demonstration walkthrough if 
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The FRONT-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The SEM-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the FRONT-002 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the SEM-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
@@ -201,6 +206,6 @@ None blocking deterministic routing. Semantic fallback requires the configured e
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the ROUTE-001 commit is present on `origin/main` and review `ROUTE-001_COMPLETION.md` plus `specs/ROUTE-001_hybrid_intent_router.md`.
+3. Review `SEM-001_COMPLETION.md` and `specs/SEM-001_analysis_semantic_context_design.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. If SQL-003 is authorized, first freeze grouped TopN/comparison SQL semantics and evaluation cases; do not treat a QUERY route as proof of SQL correctness.
+5. If SEM-002 is authorized, implement only the semantic Registry projection and `PlannerSemanticContext` Builder; do not implement the LLM Planner in the same Feature.

@@ -8,6 +8,8 @@
 - V1 单轮完成，禁止无上限自主循环；
 - 所有节点输入输出使用可校验结构。
 
+当前 V1 的 Analysis Question Parser、Capability Assessment 和 Analysis Planner 均为确定性实现。这里“LLM 负责规划”描述的是受限的后续演进方向，不表示当前诊断运行时已经调用 LLM 规划。
+
 ## 2. V1 Graph
 
 ```text
@@ -289,3 +291,73 @@ V1 停止条件：
 
 当前已有 API 使用 `query` 字段。是否保持兼容或迁移到 `question` 必须在 API-001 单独决策，不能在分析 Feature 中顺手修改。
 
+## 12. 目标语义规划流程
+
+`SEM-001` 冻结的目标流程如下；新增节点均为后续 Feature，当前运行时流程仍以第 2 节为准。
+
+```text
+用户自然语言
+  ↓
+Semantic Grounding（语义绑定）
+  ├─ 指标绑定
+  ├─ 维度绑定
+  ├─ 维度值绑定
+  ├─ 时间绑定
+  └─ Scope 校验
+  ↓
+ParsedAnalysisQuestion（规范化分析问题）
+  ↓
+Analysis Semantic Registry（静态分析知识）
+  +
+RuntimeCapability（当前数据可用能力）
+  ↓
+PlannerSemanticContext Builder
+  ↓
+PlannerSemanticContext（单次请求规划说明书）
+  ↓
+Planner Policy
+  ├─ 唯一合法路径：Deterministic Planner
+  └─ 多个合法路径：LLM Planner，最多一次
+  ↓
+AnalysisPlanValidator
+  ├─ 通过：Validated AnalysisPlan
+  └─ 失败/超时/模型不可用：不重试模型，确定性回退
+  ↓
+AnalysisTask Tool Dispatcher
+  ↓
+Controlled Query Builder / Executor
+  ↓
+Deterministic Analyzer
+  ↓
+Evidence Checker
+  ↓
+Report Generator
+```
+
+### 12.1 PlannerSemanticContext Builder
+
+Builder 只组合已验证业务对象，不做指标计算或数据访问。输入是 `ParsedAnalysisQuestion`、静态分析语义和 `RuntimeCapability`；输出是不可变、可序列化的 `PlannerSemanticContext`。上下文不暴露物理表、字段、JOIN、SQL、数据库连接、原始行或 Ground Truth。
+
+### 12.2 Planner Policy 与模型调用预算
+
+- 标准问题只有唯一合法路径时使用确定性 Planner，规划阶段模型调用为 0；
+- 存在多个合法路径且确实需要语义取舍时，LLM Planner 最多调用一次；
+- 如果意图本身存在允许澄清的歧义，整次归因请求最多再调用一次，因此模型调用总上限为 2；
+- LLM 不写 SQL、不选择物理表列、不计算指标或贡献率；
+- 模型输出无效、超时或不可用时，不进行模型重试，直接使用确定性回退。
+
+### 12.3 AnalysisPlanValidator
+
+Validator 必须拒绝：
+
+- `RuntimeCapability.supported_methods` 之外的方法；
+- Registry 未开放的维度、候选因素或参数；
+- 改变原问题指标、时间、基期或 Scope 的任务；
+- 超过最大任务数、非法依赖、循环依赖或无停止条件的计划；
+- SQL、表名、列名、JOIN 或任意命令。
+
+通过后的 `AnalysisPlan` 才能进入执行链。现有 `AnalysisTask` 本身就是类型化工具调用，由 Tool Dispatcher 按 `method` 路由到受控 Builder，不新增重复协议。
+
+### 12.4 实现状态
+
+`SEM-001` 只完成设计冻结。语义 Registry 与 Context Builder 计划在 `SEM-002` 实现，受限 LLM Planner 与 Validator 计划在 `PLAN-LLM-001` 实现；在这些 Feature 完成并实测前，不得对外宣称运行时已使用 LLM 进行归因规划。

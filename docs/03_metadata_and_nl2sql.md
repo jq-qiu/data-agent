@@ -210,3 +210,50 @@ AnalysisTask
 
 RAGAS 可辅助评估 Context Precision、Context Recall、Faithfulness 和 Answer Relevancy，但不能替代字段、JOIN、指标公式和 SQL 执行结果的确定性检查。
 
+## 9. 分析语义层与语义绑定
+
+### 9.1 同一事实源的三种投影
+
+Metadata Catalog 继续作为表、字段、JOIN、粒度、指标物理公式和规范字段值的事实源。归因分析在其上增加业务分析语义，但不能复制或改写物理定义：
+
+| 消费者 | 获得的投影 | 不应获得的内容 |
+|---|---|---|
+| NL2SQL | 表、字段、JOIN、粒度、指标公式和值候选 | 密钥、连接串、无关全库 Schema |
+| Planner | 指标分析关系、可下钻维度、候选因素、分析工具和运行时限制 | 物理表列、JOIN、SQL、数据库连接和原始行 |
+| Report | 显示名、口径版本、声明类型、Evidence 引用和限制 | 未校验查询结果和 Ground Truth 标签 |
+
+因此，Planner 不通过读取全部数据库 Schema 自由设计分析。物理公式仍由 Metric Registry 提供，分析语义只用规范 ID 关联这些定义。
+
+### 9.2 Semantic Grounding（语义绑定）
+
+进入 Planner 之前，系统必须把自然语言绑定为规范业务对象：
+
+```text
+用户问题
+  ↓
+Metric Resolver（指标绑定）
+Dimension Resolver（维度绑定）
+Dimension Value Resolver（维度值绑定）
+Time Resolver（时间与基期绑定）
+Scope Validator（分析范围校验）
+  ↓
+ParsedAnalysisQuestion（规范化分析问题）
+```
+
+绑定优先级为“精确规范值 → 受控别名 → 受控检索候选 → 结构化歧义或不支持”。检索只能召回 Registry 已存在的对象，不能创造指标、维度、字段值或时间范围。当前诊断 Parser 已实现确定性规范值和别名绑定；受控检索兜底属于后续 Feature，尚未实现。
+
+维度值绑定需要保留业务角色。例如问题中的 `PR` 在当前 Olist 诊断口径中绑定为客户所在州，不得因为物理库同时存在卖家州就自动改写 Scope。高基数字段只能按当前问题检索少量候选，不能把完整值域塞入模型上下文。
+
+### 9.3 PlannerSemanticContext（规划器语义上下文）
+
+`PlannerSemanticContext` 是针对单次请求生成的、紧凑、不可变、可序列化的业务分析说明书，包含：
+
+- 已绑定的指标、时间、基期和 Scope；
+- 指标允许的分析恒等式和拆解关系；
+- 当前可用维度、候选因素和分析工具；
+- 缺失 Evidence、数据质量和非因果限制；
+- 最大任务数、任务依赖和停止规则。
+
+它不包含物理表名、列名、JOIN、SQL、数据库连接、原始查询行、完整高基数字段值列表或 Synthetic Ground Truth 原因标签。后续物理字段映射只能在已校验计划之后由受控 Query Builder 完成。
+
+本节是 `SEM-001` 的设计冻结。`PlannerSemanticContext` 构建器、检索兜底和 LLM Planner 当前尚未实现；现有诊断运行时仍使用确定性 Parser、Capability Assessment 和 Planner。

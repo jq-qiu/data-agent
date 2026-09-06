@@ -107,6 +107,8 @@ Intent Router
 
 意图路由优先使用确定性规则识别 Top/Bottom N、聚合、同比/环比、占比、分布和阈值等问数表达。只有无法由规则判定的请求才调用结构化语义分类器；预测、外部动作、省略式追问和严格因果等强边界不会交给模型覆盖。路由为 QUERY 只表示请求进入 NL2SQL 链路。SQL-003 已将受控分组 TopN（ROW_NUMBER 窗口、每组至多 N 行、稳定标识打破并列）纳入只读校验和固定评测。
 
+`SEM-001` 已冻结后续归因规划的设计：先把指标、维度、维度值、时间和 Scope 绑定为规范业务对象，再将分析语义与当前数据能力压缩为 `PlannerSemanticContext`。未来 LLM 只在存在多个合法分析路径时选择结构化 `AnalysisTask`，不接触物理 Schema、不写 SQL、不做数学计算，并必须经过计划校验和确定性回退。该语义上下文构建器和 LLM Planner 当前尚未实现；现有诊断运行时仍使用确定性 Parser、Capability Assessment 和 Planner。
+
 ## 5. 数据方案
 
 项目采用 Olist 匿名电商数据作为真实业务数据主体，并补充可复现的 Synthetic Evidence。
@@ -189,6 +191,9 @@ ENG-001 Engineering Baseline
   → ANA-001 ... ANA-007 Diagnosis Agent
   → EVAL-001 Diagnosis Regression
   → Minimal API and Demo
+  → SEM-001 Analysis Semantic Context Design
+  → SEM-002 Semantic Registry and Context Builder（待授权）
+  → PLAN-LLM-001 Bounded LLM Planner（待授权）
 ```
 
 任何前置 Gate 未通过时，不得提前实现下游 Feature。

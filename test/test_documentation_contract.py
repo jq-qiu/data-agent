@@ -18,6 +18,7 @@ AUTHORITATIVE_DOCUMENTS = (
     Path("docs/06_evaluation.md"),
 )
 MARKDOWN_LINK_PATTERN = re.compile(r"\[[^]]+]\(([^)]+)\)")
+SEMANTIC_DESIGN_SPEC = Path("specs/SEM-001_analysis_semantic_context_design.md")
 
 
 @pytest.mark.parametrize("relative_path", AUTHORITATIVE_DOCUMENTS)
@@ -64,3 +65,45 @@ def test_gate_zero_facts_are_frozen() -> None:
     assert "单轮 Query API" in product_scope
     assert "严格因果推断 | 不支持" in product_scope
     assert "当前第一个执行任务" not in readme
+
+
+def test_semantic_planning_design_is_frozen() -> None:
+    spec = (REPOSITORY_ROOT / SEMANTIC_DESIGN_SPEC).read_text(encoding="utf-8")
+    metadata_design = (
+        REPOSITORY_ROOT / "docs/03_metadata_and_nl2sql.md"
+    ).read_text(encoding="utf-8")
+    methodology = (
+        REPOSITORY_ROOT / "docs/04_analysis_methodology.md"
+    ).read_text(encoding="utf-8")
+    workflow = (REPOSITORY_ROOT / "docs/05_agent_workflow.md").read_text(
+        encoding="utf-8"
+    )
+    evaluation = (REPOSITORY_ROOT / "docs/06_evaluation.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "`Semantic Grounding`（语义绑定）" in spec
+    assert "`PlannerSemanticContext`（规划器语义上下文）" in spec
+    assert "物理表名、列名、JOIN、SQL" in spec
+    assert "分析恒等式" in metadata_design
+    assert "当前诊断 Parser 已实现确定性规范值和别名绑定" in metadata_design
+    assert "客户所在州" in methodology
+    assert "`AnalysisTask` 已是类型化工具调用" in methodology
+    assert "Planner Model Calls <= 1" in evaluation
+    assert "Total Attribution Model Calls <= 2" in evaluation
+    assert "Schema Leakage Count = 0" in evaluation
+    assert "确定性回退" in workflow
+
+
+def test_future_llm_planner_is_not_claimed_as_implemented() -> None:
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+    workflow = (REPOSITORY_ROOT / "docs/05_agent_workflow.md").read_text(
+        encoding="utf-8"
+    )
+    implementation_plan = (
+        REPOSITORY_ROOT / "IMPLEMENTATION_PLAN.md"
+    ).read_text(encoding="utf-8")
+
+    assert "语义上下文构建器和 LLM Planner 当前尚未实现" in readme
+    assert "当前运行时流程仍以第 2 节为准" in workflow
+    assert "`SEM-002` 只有在用户明确授权后才能开始" in implementation_plan

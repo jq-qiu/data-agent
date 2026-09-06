@@ -206,3 +206,56 @@ Evidence 示例：
 
 报告中的每一个关键数字必须带 `query_id` 或 `analysis_result_id`，关键结论必须引用一个或多个 Validated Evidence。
 
+## 10. 分析语义契约
+
+### 10.1 四类静态定义
+
+分析语义 Registry 只描述业务分析知识，并通过规范 ID 引用物理 Metadata：
+
+```text
+MetricAnalysisDefinition
+  指标显示名、分析恒等式、允许拆解、可下钻维度、可验证因素
+
+DimensionDefinition
+  维度业务角色、值域来源、是否互斥完备、允许的方法
+
+CandidateFactorDefinition
+  候选因素、主要指标、辅助指标、最低 Evidence 条件、限制
+
+AnalysisToolDefinition
+  方法、参数协议、前置能力、输出类型、依赖和停止规则
+```
+
+`MetricAnalysisDefinition` 中的 `GMV = Order Count × AOV` 是分析恒等式；`GMV = SUM(item_sales_amount)` 和 `AOV = GMV / COUNT(DISTINCT order_id)` 仍是 Metric Registry 中唯一的物理计算口径，不能在分析语义中另写一套公式。
+
+`DimensionDefinition` 必须区分同名业务概念的角色。V1 地区贡献和 Scope 使用客户所在州；卖家所在州即使存在物理字段，也不能自动作为同一维度开放。
+
+候选因素最低 Evidence 契约为：
+
+| 候选因素 | 主要指标 | 辅助链路 | 最低结论强度 |
+|---|---|---|---|
+| Traffic | Visitors | Conversion Rate、Order Count | 关联候选 |
+| Promotion | Promotion Coverage | Conversion Rate、Order Count | 关联候选 |
+| Inventory | Inventory Fill Rate | Conversion Rate、Order Count | 关联候选 |
+
+### 10.2 静态语义与 RuntimeCapability
+
+静态 Registry 回答“系统理论上允许怎样分析”；`RuntimeCapability`（当前运行时能力）回答“这个问题在当前数据切片上实际能做什么”。后者至少校验期间覆盖、非空 Evidence、可用维度、数据质量、支持方法和因果条件。Planner 只能使用二者的交集。
+
+真实 Olist 数据中三类候选因素字段为空时，`RuntimeCapability` 应关闭相应验证并报告缺失；Synthetic 数据存在固定 Seed 和版本化 Evidence 时，可以开放完整候选因素验证。Synthetic Ground Truth 仅用于生成与评测，不能进入 Planner 或 Report 上下文。
+
+### 10.3 声明类型
+
+Evidence 和报告至少区分：
+
+- `FACT`：直接由已验证数据支持的事实；
+- `ASSOCIATION`：时间、范围和指标链一致的候选关联；
+- `CAUSAL`：需要实验或准实验设计支持的因果声明。
+
+当前 V1 只允许 `FACT` 和 `ASSOCIATION`。没有实验或准实验设计时，`CAUSAL` 必须被 Capability、Plan Validator 和 Evidence Checker 拒绝。
+
+### 10.4 类型化分析工具
+
+现有 `AnalysisTask` 已是类型化工具调用：`method` 选择 Registry 中的分析能力，其余字段是白名单参数。Planner 只负责组合 `AnalysisTask`，Query Builder 负责物理字段映射，Analyzer 负责计算。后续不再增加一套语义重复的通用 `ToolCall`。
+
+本节只冻结后续实现契约，不表示分析语义 Registry、`RuntimeCapability` 新字段或 LLM Planner 已经实现。
