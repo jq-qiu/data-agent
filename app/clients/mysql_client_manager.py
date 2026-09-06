@@ -1,8 +1,12 @@
 import asyncio
-from typing import Union, Optional
 
-from sqlalchemy import text, Result
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import Result, text
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.conf.app_config import DBConfig, app_config
 
@@ -14,15 +18,27 @@ class MysqlClientManager:
 
     def __init__(self, db_config: DBConfig):
         self.db_config = db_config
-        self.engine: Optional[AsyncEngine] = None
-        self.session_factory = None
+        self._engine: AsyncEngine | None = None
+        self._session_factory: async_sessionmaker[AsyncSession] | None = None
+
+    @property
+    def engine(self) -> AsyncEngine:
+        if self._engine is None:
+            raise RuntimeError("MySQL engine is not initialized; call init() first")
+        return self._engine
+
+    @property
+    def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        if self._session_factory is None:
+            raise RuntimeError("MySQL session factory is not initialized; call init() first")
+        return self._session_factory
 
     def _get_url(self):
         return f"mysql+asyncmy://{self.db_config.user}:{self.db_config.password}@{self.db_config.host}:{self.db_config.port}/{self.db_config.database}?charset=utf8mb4"
 
     def init(self):
         """创建引擎对象，用于创建数据库连接,内部集成连接池"""
-        self.engine: AsyncEngine = create_async_engine(
+        self._engine = create_async_engine(
             url=self._get_url(),
             echo=False,
             pool_size=10,
@@ -31,7 +47,7 @@ class MysqlClientManager:
             pool_timeout=30
         )
         # 创建Session工厂
-        self.session_factory = async_sessionmaker(
+        self._session_factory = async_sessionmaker(
             # 绑定异步引擎
             bind=self.engine,
             # 只有你手动调用 session.flush() 或 session.commit() 时，才会把内存中的对象变更同步到数据库；
@@ -41,8 +57,8 @@ class MysqlClientManager:
         )
 
     async def close(self):
-        if self.engine:
-            await self.engine.dispose()
+        if self._engine:
+            await self._engine.dispose()
 
 
 # 操作数仓mySQL客户端管理器对象

@@ -49,6 +49,7 @@ API-001 Minimal Demo
 | Feature | 目标 | 主要产物 | Gate 证据 |
 |---|---|---|---|
 | ENG-001 | 建立 Git、测试和静态检查基线 | 配置、工具链、Baseline 报告 | 三项命令可执行并记录真实结果 |
+| ENG-002 | 清理存量 Ruff/mypy 诊断 | 全部静态检查清零 | Ruff 0 项、mypy 0 项、每批全量回归 |
 | DOC-001 | 冻结唯一事实源 | README、AGENTS、实施计划、6 份设计文档 | 引用有效、口径无冲突 |
 | DATA-001 | 导入 Olist | Raw 表、导入脚本、行数报告 | 原始文件与导入行数一致 |
 | DATA-002 | 建立 DWD 和两张 DWS | DDL、ETL、对账 SQL | 粒度、PK/FK、GMV、Order Count 对账 |

@@ -179,15 +179,17 @@ async def _evaluate() -> tuple[dict[str, Any], tuple[DiagnosisCaseObservation, .
                         if item.evidence_type is EvidenceType.CANDIDATE_FACTOR
                     }
                     predicted = tuple(
-                        candidate_by_id[evidence_id].factor
+                        factor
                         for evidence_id in report.candidate_ranking
-                        if candidate_by_id[evidence_id].factor is not None
+                        for factor in [candidate_by_id[evidence_id].factor]
+                        if factor is not None
                     )
                     supported = tuple(
-                        item.factor
+                        factor
                         for item in candidate_by_id.values()
                         if item.support_level is not EvidenceSupportLevel.UNSUPPORTED
-                        and item.factor is not None
+                        for factor in [item.factor]
+                        if factor is not None
                     )
                     differences = [
                         abs(result.reconciliation.difference)

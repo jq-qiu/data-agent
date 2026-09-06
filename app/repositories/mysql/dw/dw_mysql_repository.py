@@ -28,7 +28,7 @@ class DWMySQLRepository:
         sql = f"SELECT distinct {column_name} from {table_id} limit {limit}"
         result: Result = await self.session.execute(text(sql))
         # 结果：一列多行
-        return result.scalars().fetchall()
+        return list(result.scalars().fetchall())
 
     async def get_db_info(self) -> dict[str, str]:
         """查询数仓数据库版本以及SQL方言"""
@@ -40,7 +40,7 @@ class DWMySQLRepository:
         dialect = self.session.get_bind().dialect.name
 
         # 3.返回结果
-        return {"version": version, "dialect": dialect}
+        return {"version": str(version), "dialect": str(dialect)}
 
     async def validate_sql(
         self,

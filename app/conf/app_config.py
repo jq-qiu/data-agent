@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 from omegaconf import OmegaConf
 
@@ -87,4 +88,6 @@ context = OmegaConf.load(Path(__file__).parents[2] / 'conf' / 'app_config.yaml')
 structured = OmegaConf.structured(AppConfig)
 
 # 3.合并内容跟结构化对象，转为dataclass对象
-app_config: AppConfig = OmegaConf.to_object(OmegaConf.merge(structured, context))
+app_config = cast(
+    AppConfig, OmegaConf.to_object(OmegaConf.merge(structured, context))
+)

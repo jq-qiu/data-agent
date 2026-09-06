@@ -6,6 +6,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -105,8 +106,18 @@ class LiveGraphRunner:
                     stream_mode=["updates", "custom"],
                 ):
                     if mode == "custom":
+                        if not isinstance(chunk, Mapping):
+                            continue
                         if chunk.get("type") == "result":
-                            run.rows = [dict(row) for row in chunk["data"]]
+                            data = chunk.get("data")
+                            if isinstance(data, list):
+                                run.rows = [
+                                    dict(row)
+                                    for row in data
+                                    if isinstance(row, Mapping)
+                                ]
+                        continue
+                    if not isinstance(chunk, Mapping):
                         continue
                     for node_name, update in chunk.items():
                         if not isinstance(update, dict):

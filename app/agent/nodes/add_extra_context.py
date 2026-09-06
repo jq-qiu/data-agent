@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from langgraph.runtime import Runtime
 
@@ -13,8 +13,8 @@ async def add_extra_context(state: DataAgentState, runtime: Runtime[DataAgentCon
 
     try:
         # 1.封装日期信息
-        # 1.1 获取当天对象
-        today = datetime.today()
+        # 1.1 获取当天对象（保留本地日期语义，使用带时区写法）
+        today = datetime.now(UTC).astimezone()
         # 1.2 获取日期、星期数
         date = today.strftime("%Y-%m-%d")
         weekday = today.strftime("%A")

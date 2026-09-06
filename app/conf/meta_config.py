@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 """用于接受元信息转为对象"""
 
@@ -30,5 +29,5 @@ class MetricConfig:
 
 @dataclass
 class MetaConfig:
-    tables: Optional[list[TableConfig]] = None
-    metrics: Optional[list[MetricConfig]] = None
+    tables: list[TableConfig] | None = None
+    metrics: list[MetricConfig] | None = None

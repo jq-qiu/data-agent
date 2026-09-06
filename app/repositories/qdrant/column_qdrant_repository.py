@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import Any
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.models import (
@@ -13,6 +14,13 @@ from qdrant_client.http.models import (
 
 from app.conf.app_config import app_config
 from app.entities.column_info import ColumnInfo
+
+
+def _payload(point: Any) -> dict[str, Any]:
+    payload = point.payload
+    if not isinstance(payload, dict):
+        raise TypeError("Qdrant point returned no valid payload")
+    return payload
 
 
 class ColumnQdrantRepository:
@@ -73,7 +81,7 @@ class ColumnQdrantRepository:
             limit=limit,
         )
         # **point.payload  解构表达式 将Qdrant中payload字典{id:"abc"}转为id="abc"
-        return [ColumnInfo(**point.payload) for point in result.points]
+        return [ColumnInfo(**_payload(point)) for point in result.points]
 
     async def search_v1_ids(self, embedding: list[float], limit: int = 10) -> list[str]:
         result = await self.client.query_points(

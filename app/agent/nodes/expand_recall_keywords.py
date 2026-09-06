@@ -41,7 +41,7 @@ async def expand_recall_keywords(state: DataAgentState, runtime: Runtime[DataAge
         })
 
         if not isinstance(result, dict):
-            raise ValueError("统一关键词扩展结果必须是JSON对象")
+            raise TypeError("统一关键词扩展结果必须是JSON对象")
 
         column_keywords = normalize_keywords(result.get("column_keywords"))
         metric_keywords = normalize_keywords(result.get("metric_keywords"))

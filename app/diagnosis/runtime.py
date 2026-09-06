@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import date
 import re
+from datetime import date
 from typing import Any
 
 from app.diagnosis.capability import (

@@ -1,9 +1,16 @@
 import asyncio
-from typing import Optional
 
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.http.models import VectorParams, Distance, PointStruct, UpdateResult, QueryResponse, Filter, \
-    FieldCondition, MatchValue
+from qdrant_client.http.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    QueryResponse,
+    UpdateResult,
+    VectorParams,
+)
 
 from app.clients.embedding_client_manager import embedding_client_manager
 from app.conf.app_config import QdrantConfig, app_config
@@ -13,20 +20,26 @@ class QdrantClientManager:
 
     def __init__(self, config: QdrantConfig):
         self.config = config
-        self.client: Optional[AsyncQdrantClient] = None
+        self._client: AsyncQdrantClient | None = None
+
+    @property
+    def client(self) -> AsyncQdrantClient:
+        if self._client is None:
+            raise RuntimeError("Qdrant client is not initialized; call init() first")
+        return self._client
 
     def _get_url(self):
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
-        self.client = AsyncQdrantClient(
+        self._client = AsyncQdrantClient(
             url=self._get_url(),
             timeout=600
         )
 
     async def close(self):
-        if self.client:
-            await self.client.close()
+        if self._client:
+            await self._client.close()
 
 
 qdrant_client_manager = QdrantClientManager(app_config.qdrant)

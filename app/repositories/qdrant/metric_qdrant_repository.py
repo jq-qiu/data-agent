@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from typing import Any
 
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.models import (
@@ -13,6 +14,13 @@ from qdrant_client.http.models import (
 
 from app.conf.app_config import app_config
 from app.entities.metric_info import MetricInfo
+
+
+def _payload(point: Any) -> dict[str, Any]:
+    payload = point.payload
+    if not isinstance(payload, dict):
+        raise TypeError("Qdrant point returned no valid payload")
+    return payload
 
 
 class MetricQdrantRepository:
@@ -74,7 +82,7 @@ class MetricQdrantRepository:
             score_threshold=score_threshold,
             limit=limit,
         )
-        return [MetricInfo(**point.payload) for point in result.points]
+        return [MetricInfo(**_payload(point)) for point in result.points]
 
     async def search_v1_ids(self, embedding: list[float], limit: int = 5) -> list[str]:
         result = await self.client.query_points(

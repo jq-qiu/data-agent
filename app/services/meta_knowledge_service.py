@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from typing import cast
 
 from langchain_core.embeddings import Embeddings
 from omegaconf import OmegaConf
@@ -11,7 +12,6 @@ from app.entities.column_metric import ColumnMetric
 from app.entities.metric_info import MetricInfo
 from app.entities.table_info import TableInfo
 from app.entities.value_info import ValueInfo
-from app.models.column_info_mysql import ColumnInfoMySQL
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
@@ -47,7 +47,9 @@ class MetaKnowledgeService:
         structured = OmegaConf.structured(MetaConfig)
 
         # 1.3 将dataclass对象结构跟yaml文件信息合并，转为dataclass对象
-        meta_config: MetaConfig = OmegaConf.to_object(OmegaConf.merge(structured, context))
+        meta_config = cast(
+            MetaConfig, OmegaConf.to_object(OmegaConf.merge(structured, context))
+        )
 
         # 2. 处理表格信息
         if meta_config.tables:
@@ -56,15 +58,15 @@ class MetaKnowledgeService:
 
             # 2.1 将表格（表信息、字段信息）信息存入到meta元数据库
             column_infos: list[ColumnInfo] = await self._save_table_info_to_meta_db(meta_config)
-            logger.info(f"批量保存表信息成功")
+            logger.info("批量保存表信息成功")
 
             # 2.2  为字段信息建立向量索引 存入 Qdrant
             await self._save_column_info_to_qdrant(column_infos)
-            logger.info(f"为字段信息建立向量索引成功")
+            logger.info("为字段信息建立向量索引成功")
 
             # 2.3 为字段取值建立全文索引 存入 ES
             await self._save_value_info_to_es(meta_config, column_infos)
-            logger.info(f"为字段取值建立全文索引成功 ")
+            logger.info("为字段取值建立全文索引成功 ")
 
         # 3. 处理指标信息
         if meta_config.metrics:
@@ -129,35 +131,26 @@ class MetaKnowledgeService:
         await self.column_qdrant_repository.ensure_collection()
 
         # 2. 准备向量库持久层所需要向量数据点 ID，向量，元数据（业务数据）
-        points = []
+        ids: list[str] = []
+        embedding_texts: list[str] = []
+        payloads: list[ColumnInfo] = []
         # 2.1 遍历字段信息列表
         for column_info in column_infos:
-            points.append({
-                "id": uuid.uuid4(),
-                "embedding_text": column_info.name,
-                "payload": column_info
-            })
-            points.append({
-                "id": uuid.uuid4(),
-                "embedding_text": column_info.description,
-                "payload": column_info
-            })
-            for alias in column_info.alias:
-                points.append({
-                    "id": uuid.uuid4(),
-                    "embedding_text": alias,
-                    "payload": column_info
-                })
+            for embedding_text in (
+                column_info.name,
+                column_info.description,
+                *column_info.alias,
+            ):
+                ids.append(str(uuid.uuid4()))
+                embedding_texts.append(embedding_text)
+                payloads.append(column_info)
         # 2.2 将"向量点"中文本转为向量 采用分批次处理
-        embeddings = []
+        embeddings: list[list[float]] = []
         batch_size = 10
-        embedding_texts = [point["embedding_text"] for point in points]
         for i in range(0, len(embedding_texts), batch_size):
             batch_embedding = embedding_texts[i: i + batch_size]
             batch_embeddings = await self.embedding_client.aembed_documents(batch_embedding)
             embeddings.extend(batch_embeddings)
-        ids = [point["id"] for point in points]
-        payloads = [point["payload"] for point in points]
         # 3. 完整构建时先清理旧集合，再批量保存，保证脚本可以重复执行
         await self.column_qdrant_repository.reset_collection()
         await self.column_qdrant_repository.upsert(ids, embeddings, payloads)
@@ -170,7 +163,7 @@ class MetaKnowledgeService:
         # 2.从人工配置元信息得到需要同步到ES字段列表
         columns_to_sync = {
             f"{table.name}.{column.name}"
-            for table in meta_config.tables
+            for table in meta_config.tables or []
             for column in table.columns
             if column.sync
         }
@@ -202,7 +195,7 @@ class MetaKnowledgeService:
         column_metrics: list[ColumnMetric] = []
 
         # 2.遍历获取yaml人工配置中指标列表
-        for metric in meta_config.metrics:
+        for metric in meta_config.metrics or []:
             #2.1 获取指标信息
             metric_info = MetricInfo(
                 id = metric.name,
@@ -231,35 +224,26 @@ class MetaKnowledgeService:
         await self.metric_qdrant_repository.ensure_collection()
 
         # 2. 准备向量库持久层所需要向量数据点 ID，向量，元数据（业务数据）
-        points = []
+        ids: list[str] = []
+        embedding_texts: list[str] = []
+        payloads: list[MetricInfo] = []
         # 2.1 遍历字段信息列表
         for metric_info in metric_infos:
-            points.append({
-                "id": uuid.uuid4(),
-                "embedding_text": metric_info.name,
-                "payload": metric_info
-            })
-            points.append({
-                "id": uuid.uuid4(),
-                "embedding_text": metric_info.description,
-                "payload": metric_info
-            })
-            for alias in metric_info.alias:
-                points.append({
-                    "id": uuid.uuid4(),
-                    "embedding_text": alias,
-                    "payload": metric_info
-                })
+            for embedding_text in (
+                metric_info.name,
+                metric_info.description,
+                *metric_info.alias,
+            ):
+                ids.append(str(uuid.uuid4()))
+                embedding_texts.append(embedding_text)
+                payloads.append(metric_info)
         # 2.2 将"向量点"中文本转为向量 采用分批次处理
-        embeddings = []
+        embeddings: list[list[float]] = []
         batch_size = 10
-        embedding_texts = [point["embedding_text"] for point in points]
         for i in range(0, len(embedding_texts), batch_size):
             batch_embedding = embedding_texts[i: i + batch_size]
             batch_embeddings = await self.embedding_client.aembed_documents(batch_embedding)
             embeddings.extend(batch_embeddings)
-        ids = [point["id"] for point in points]
-        payloads = [point["payload"] for point in points]
         # 3. 完整构建时先清理旧集合，再批量保存，保证脚本可以重复执行
         await self.metric_qdrant_repository.reset_collection()
         await self.metric_qdrant_repository.upsert(ids, embeddings, payloads)

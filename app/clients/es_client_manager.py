@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 from elasticsearch import AsyncElasticsearch
 
@@ -9,20 +8,26 @@ from app.conf.app_config import ESConfig, app_config
 class ESClientManager:
     def __init__(self, config: ESConfig):
         self.config = config
-        self.client: Optional[AsyncElasticsearch] = None
+        self._client: AsyncElasticsearch | None = None
+
+    @property
+    def client(self) -> AsyncElasticsearch:
+        if self._client is None:
+            raise RuntimeError("Elasticsearch client is not initialized; call init() first")
+        return self._client
 
     def _get_url(self):
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
-        self.client = AsyncElasticsearch(
+        self._client = AsyncElasticsearch(
             hosts=self._get_url(),
             request_timeout=600
         )
 
     async def close(self):
-        if self.client:
-            await self.client.close()
+        if self._client:
+            await self._client.close()
 
 
 es_client_manager = ESClientManager(app_config.es)

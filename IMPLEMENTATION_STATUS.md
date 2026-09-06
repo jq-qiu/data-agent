@@ -2,19 +2,19 @@
 
 ## Current Phase
 
-MVP V1 now exposes SEM-002 semantic grounding through the single-round production API and frontend. Incomplete or ambiguous diagnosis requests return an actionable clarification card before any diagnosis data access; unsupported requests return a bounded ability message; complete requests continue through the existing deterministic diagnosis Graph unchanged.
+MVP V1 已完成澄清响应集成；ENG-002 进一步清理了仓库全部存量静态问题，`ruff check .` 与 `mypy app` 现在均为 0 项。运行时功能、诊断链路与既有测试保持不变。
 
 ## Current Feature
 
-CLARIFY-001 Clarification Response Integration.
+ENG-002 Lint and Type Cleanup.
 
 ## Feature Status
 
-Completed. The production DIAGNOSIS branch runs `SemanticGrounder` before runtime capability and diagnosis data access. `READY` continues to the existing Graph; retrieval-completed bindings are converted to an equivalent canonical question and reparsed without changing the Graph, Parser, or diagnosis algorithms. `CLARIFICATION_REQUIRED` and `UNSUPPORTED` terminate as controlled SSE `result` events with stable reasons, missing/ambiguous fields, logical candidates, a suggested complete question, and safe trace. The frontend distinguishes query, diagnosis, clarification, unsupported, and error terminal states, and offers a fill-only suggestion button with no conversation memory. No LLM Planner was added.
+Completed. 23 项 Ruff 与 36 项 mypy 存量诊断全部清零：先 Ruff 自动修复，再按 client managers、mappers、repositories/LLM、配置与旧元数据服务四批修复 mypy，每批均通过全量 pytest。client managers 改为显式“初始化后可访问”的属性约束，未初始化访问给出明确 RuntimeError；mappers 对空值/JSON 字段做显式校验；Qdrant payload、DW 查询返回、LLM api_key 与配置加载均完成类型收窄。M1 同时暴露并修复了 `evaluate_diagnosis_v1.py` 与 `evaluate_nl2sql_v1.py` 的 4 个潜在类型问题。
 
 ## Last Completed Feature
 
-SEM-002 Semantic Registry and Context Builder.
+CLARIFY-001 Clarification Response Integration.
 
 ## Next Feature
 
@@ -22,12 +22,19 @@ PLAN-LLM-001 Bounded LLM Planner and Plan Validator, only after explicit user au
 
 ## Last Successful Validation
 
+- ENG-002 Ruff: `ruff check .` returns 0 findings;
+- ENG-002 mypy: `mypy app` returns `Success: no issues found in 110 source files`;
+- ENG-002 full pytest regression: 317 passed after every batch (R、M1、M2、M3、M4);
+- ENG-002 frontend Node tests: 5 passed and Vite production build passed;
+- ENG-002 client managers: 未初始化访问会抛出明确 RuntimeError，正常 lifespan 初始化路径行为不变；
+- ENG-002 hidden issues exposed by M1: `evaluate_diagnosis_v1.py` 候选因素元组与 `evaluate_nl2sql_v1.py` 流 chunk 类型已修复；
+- ENG-002 date semantics: `add_extra_context` 仍输出本地日期/星期/季度，仅改为带时区等价写法；
 - CLARIFY-001 targeted API tests: 31 passed (includes three binding outcomes, no-data-access guard, logical-candidate sanitization, canonical-question reparse, and existing QUERY/UNSUPPORTED regression);
 - CLARIFY-001 frontend Node tests: 5 passed and Vite production build passed; terminal classification now covers clarification and unsupported states;
 - CLARIFY-001 full pytest regression: 317 passed;
 - CLARIFY-001 real API smoke: the incomplete question `为什么GMV下降？` returns `binding_status=CLARIFICATION_REQUIRED` with `missing_fields=["time"]` and a suggested complete question before diagnosis data access;
 - CLARIFY-001 external retrieval evaluation: not run; Qdrant/Elasticsearch behavior remains covered only by SEM-002 Stub contract and is not claimed as real recall accuracy;
-- CLARIFY-001 static baselines: repository Ruff remains 23 existing diagnostics and mypy remains 36 errors in 11 files while checking 110 source files; all changed Python files pass targeted Ruff and introduce no new mypy finding;
+- CLARIFY-001 static baselines: repository Ruff was 23 existing diagnostics and mypy was 36 errors in 11 files before ENG-002 cleanup;
 - SEM-002 targeted semantic tests: 18 passed;
 - SEM-002 related Parser/Capability/Planner/documentation regression: 99 passed;
 - SEM-002 full pytest regression: 312 passed;
@@ -206,20 +213,20 @@ PLAN-LLM-001 Bounded LLM Planner and Plan Validator, only after explicit user au
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The CLARIFY-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ENG-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pending push to `origin/main` for the CLARIFY-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pending push to `origin/main`; CLARIFY-001 commit `749d027` and the ENG-002 completion commit are local. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Real Qdrant/Elasticsearch semantic-retrieval accuracy has not been evaluated in production; only the SEM-002 Stub contract is verified. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning, repository-wide 23 Ruff findings, and 36 mypy errors remain documented.
+None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Real Qdrant/Elasticsearch semantic-retrieval accuracy has not been evaluated in production; only the SEM-002 Stub contract is verified. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning remains documented; Ruff and mypy are now clean.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `CLARIFY-001_COMPLETION.md` and `specs/CLARIFY-001_clarification_response_integration.md`.
+3. Review `ENG-002_COMPLETION.md` and `specs/ENG-002_lint_type_cleanup.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
 5. If PLAN-LLM-001 is authorized, keep it separate, implement deterministic-first bounded planning with at most one LLM call and no multi-turn state.

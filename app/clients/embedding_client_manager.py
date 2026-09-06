@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 from langchain_core.embeddings import Embeddings
 from langchain_openai import OpenAIEmbeddings
@@ -15,12 +14,18 @@ class EmbeddingClientManager:
 
     def __init__(self, config: EmbeddingConfig):
         self.config = config
-        self.client: Optional[Embeddings] = None
+        self._client: Embeddings | None = None
+
+    @property
+    def client(self) -> Embeddings:
+        if self._client is None:
+            raise RuntimeError("embedding client is not initialized; call init() first")
+        return self._client
 
     def init(self):
         api_key = resolve_api_key(self.config.api_key_env, "硅基流动")
 
-        self.client = OpenAIEmbeddings(
+        self._client = OpenAIEmbeddings(
             model=self.config.model,
             base_url=self.config.base_url,
             api_key=api_key,
