@@ -12,8 +12,13 @@ from app.clients.es_client_manager import es_client_manager
 from app.clients.mysql_client_manager import dw_mysql_client_manager, meta_mysql_client_manager
 from app.clients.qdrant_client_manager import qdrant_client_manager
 from app.conf.app_config import app_config
+from app.diagnosis.grounding import (
+    QdrantElasticsearchCandidateRetriever,
+    SemanticGrounder,
+)
 from app.diagnosis.intent import IntentRouter
 from app.diagnosis.intent_classifier import LangChainIntentClassifier
+from app.diagnosis.semantics import AnalysisSemanticRegistry
 from app.entities.column_info import ColumnInfo
 from app.entities.metric_info import MetricInfo
 from app.metadata.catalog import load_catalog
@@ -134,6 +139,18 @@ async def get_query_service(
         or sql_validator.policy.allowed_database != "data_agent_v1_dw"
     ):
         raise RuntimeError("API-001 requires the isolated V1 database")
+    registry = AnalysisSemanticRegistry.from_catalog(sql_validator.catalog)
+    semantic_grounder = SemanticGrounder(
+        sql_validator.catalog,
+        registry,
+        QdrantElasticsearchCandidateRetriever(
+            metric_qdrant_repository.client,
+            value_es_repository.client,
+            embedding_client,
+            sql_validator.catalog,
+            registry,
+        ),
+    )
     return QueryService(
         embedding_client=embedding_client,
         column_qdrant_repository=column_qdrant_repository,
@@ -143,4 +160,5 @@ async def get_query_service(
         dw_mysql_repository=dw_mysql_repository,
         sql_validator=sql_validator,
         intent_router=intent_router,
+        semantic_grounder=semantic_grounder,
     )

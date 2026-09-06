@@ -14,6 +14,11 @@ from app.agent.state import DataAgentState
 from app.core.log import logger
 from app.diagnosis.capability import CapabilityAssessor
 from app.diagnosis.evidence import evidence_limitation_label
+from app.diagnosis.grounding import (
+    SemanticBindingResult,
+    SemanticBindingStatus,
+    SemanticGrounder,
+)
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.query import (
     AnalysisQueryBuilder,
@@ -21,11 +26,17 @@ from app.diagnosis.query import (
     AnalysisTaskExecutor,
     QueryDataSource,
 )
-from app.diagnosis.question import AnalysisQuestionParser
+from app.diagnosis.question import (
+    AnalysisDimension,
+    AnalysisQuestionParser,
+    CandidateFactor,
+    ParsedAnalysisQuestion,
+)
 from app.diagnosis.runtime import (
     SyntheticCapabilityProfileProvider,
     WarehouseCapabilityProfileProvider,
 )
+from app.diagnosis.semantics import AnalysisSemanticRegistry
 from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
@@ -48,6 +59,26 @@ _UNSUPPORTED_GUIDANCE = MappingProxyType(
     }
 )
 
+_BINDING_GUIDANCE = MappingProxyType(
+    {
+        "missing_current_period": "请补充要分析的当前时间，例如“2018 年 5 月”。",
+        "ambiguous_calendar_months": "问题中有多个可能的分析月份，请明确当前期和对比基期。",
+        "explicit_baseline_incomplete": "你提到了基期，请补充完整的基期月份。",
+        "missing_or_unknown_metric": "请明确要诊断的指标；V1 归因诊断支持 GMV。",
+        "ambiguous_metric": "识别到多个可能指标，请明确选择要诊断的指标。",
+        "unknown_dimension": "请明确希望按地区还是按品类分析。",
+        "ambiguous_dimension": "识别到多个可能维度，请明确选择地区或品类。",
+        "unknown_scope_value": "请补充可识别的州代码或商品品类。",
+        "ambiguous_scope_value": "识别到多个可能的范围值，请从候选中明确选择。",
+        "multiple_scope_values_unsupported": "单轮诊断暂不支持同一维度的多个范围值，请只保留一个。",
+        "semantic_retrieval_unavailable": "语义候选暂时不可用，请按推荐格式补全问题后重试。",
+        "metric_not_supported": "V1 归因诊断仅支持 GMV；该指标可改为普通数据查询。",
+        "non_adjacent_calendar_months": "V1 归因诊断仅支持相邻月份对比，请调整当前期和基期。",
+        "too_many_calendar_months": "单轮诊断最多接受当前期和一个基期，请减少月份数量。",
+        "invalid_calendar_month": "月份格式无效，请使用明确的年月。",
+    }
+)
+
 
 class QueryService:
     def __init__(
@@ -60,6 +91,7 @@ class QueryService:
         dw_mysql_repository: DWMySQLRepository,
         sql_validator: SQLValidator,
         intent_router: IntentRouter | None = None,
+        semantic_grounder: SemanticGrounder | None = None,
     ):
         self.embedding_client = embedding_client
         self.column_qdrant_repository = column_qdrant_repository
@@ -70,6 +102,10 @@ class QueryService:
         self.sql_validator = sql_validator
         self.intent_router = intent_router or IntentRouter.from_catalog(
             sql_validator.catalog
+        )
+        self.semantic_grounder = semantic_grounder or SemanticGrounder(
+            sql_validator.catalog,
+            AnalysisSemanticRegistry.from_catalog(sql_validator.catalog),
         )
 
     async def query_answer(self, question: str) -> AsyncIterator[str]:
@@ -84,8 +120,22 @@ class QueryService:
             if decision.intent is Intent.QUERY:
                 async for event in self._query_events(question, decision):
                     yield _event(event)
-            elif decision.intent is Intent.DIAGNOSIS:
-                async for event in self._diagnosis_events(question, decision):
+            elif decision.intent is Intent.DIAGNOSIS or (
+                decision.reason == "non_gmv_diagnosis_unsupported"
+            ):
+                diagnosis_decision = (
+                    decision
+                    if decision.intent is Intent.DIAGNOSIS
+                    else IntentDecision(
+                        intent=Intent.DIAGNOSIS,
+                        confidence=decision.confidence,
+                        reason="semantic_grounding_diagnosis_candidate",
+                    )
+                )
+                async for event in self._diagnosis_events(
+                    question,
+                    diagnosis_decision,
+                ):
                     yield _event(event)
             else:
                 yield _event(_unsupported_result(decision))
@@ -157,6 +207,23 @@ class QueryService:
         question: str,
         decision: IntentDecision,
     ) -> AsyncIterator[dict[str, Any]]:
+        grounding_step = "理解诊断问题"
+        yield {"type": "progress", "step": grounding_step, "status": "running"}
+        binding = await self.semantic_grounder.bind(question, Intent.DIAGNOSIS)
+        yield {"type": "progress", "step": grounding_step, "status": "success"}
+        if binding.status is not SemanticBindingStatus.READY:
+            yield _binding_result(decision, binding)
+            return
+
+        parsed = binding.parsed_question
+        if parsed is None:
+            raise RuntimeError("READY semantic binding requires a parsed question")
+        graph_question = (
+            _canonical_analysis_question(parsed)
+            if binding.retrieval_used
+            else question
+        )
+
         profile_step = "读取运行时数据能力"
         yield {"type": "progress", "step": profile_step, "status": "running"}
         profile = await WarehouseCapabilityProfileProvider(
@@ -179,7 +246,7 @@ class QueryService:
         )
         diagnosis_graph = build_diagnosis_graph(parser, assessor, profile, executor)
         latest_state: dict[str, Any] = {
-            "question": question,
+            "question": graph_question,
             "intent": decision.intent.value,
         }
         async for mode, chunk in diagnosis_graph.astream(
@@ -190,7 +257,7 @@ class QueryService:
                 yield dict(chunk)
             elif mode == "values" and isinstance(chunk, Mapping):
                 latest_state = dict(chunk)
-        yield _diagnosis_result(decision, latest_state)
+        yield _diagnosis_result(decision, latest_state, binding)
 
     async def synthetic_diagnosis_events(
         self,
@@ -271,9 +338,64 @@ def _unsupported_result(decision: IntentDecision) -> dict[str, Any]:
     }
 
 
+def _binding_result(
+    decision: IntentDecision,
+    binding: SemanticBindingResult,
+) -> dict[str, Any]:
+    if binding.status is SemanticBindingStatus.READY:
+        raise ValueError("READY binding must continue to diagnosis")
+    reason = str(binding.reason or "semantic_binding_failed")
+    public_intent = (
+        Intent.UNSUPPORTED.value
+        if binding.status is SemanticBindingStatus.UNSUPPORTED
+        else Intent.DIAGNOSIS.value
+    )
+    candidates = {
+        "metrics": [item.metric_id for item in binding.candidates.metrics],
+        "dimensions": [
+            item.dimension.value for item in binding.candidates.dimensions
+        ],
+        "values": [
+            {
+                "dimension": item.dimension.value,
+                "value": item.canonical_value,
+            }
+            for item in binding.candidates.values
+        ],
+    }
+    limitations = list(binding.limitations)
+    if binding.status is SemanticBindingStatus.UNSUPPORTED:
+        limitations.append(reason)
+    return {
+        "type": "result",
+        "intent": public_intent,
+        "binding_status": binding.status.value,
+        "answer": _BINDING_GUIDANCE.get(
+            reason,
+            "当前问题无法安全绑定到 V1 归因能力，请补充指标、时间和分析范围。",
+        ),
+        "data": [],
+        "report_status": binding.status.value,
+        "clarification": {
+            "reason": reason,
+            "missing_fields": [item.value for item in binding.missing_fields],
+            "ambiguous_fields": [item.value for item in binding.ambiguous_fields],
+            "candidates": candidates,
+            "suggested_question": binding.suggested_question,
+        },
+        "analysis_trace": [
+            _intent_trace(decision),
+            _semantic_grounding_trace(binding),
+        ],
+        "evidence": [],
+        "limitations": list(dict.fromkeys(limitations)),
+    }
+
+
 def _diagnosis_result(
     decision: IntentDecision,
     state: Mapping[str, Any],
+    binding: SemanticBindingResult | None = None,
 ) -> dict[str, Any]:
     bundle = state.get("validated_evidence")
     evidence = []
@@ -292,22 +414,28 @@ def _diagnosis_result(
             limitations.extend(str(value) for value in missing)
     report = state.get("final_report")
     report_status = report.get("status") if isinstance(report, Mapping) else "DEGRADED"
-    return {
+    result = {
         "type": "result",
         "intent": decision.intent.value,
         "answer": str(state.get("final_answer") or "当前诊断无法安全完成。"),
         "report_status": report_status,
-        "analysis_trace": _diagnosis_trace(decision, state),
+        "analysis_trace": _diagnosis_trace(decision, state, binding),
         "evidence": evidence,
         "limitations": list(dict.fromkeys(limitations)),
     }
+    if binding is not None:
+        result["binding_status"] = binding.status.value
+    return result
 
 
 def _diagnosis_trace(
     decision: IntentDecision,
     state: Mapping[str, Any],
+    binding: SemanticBindingResult | None = None,
 ) -> list[dict[str, Any]]:
     trace: list[dict[str, Any]] = [_intent_trace(decision)]
+    if binding is not None:
+        trace.append(_semantic_grounding_trace(binding))
     parsed = state.get("parsed_question")
     if isinstance(parsed, Mapping):
         trace.append(
@@ -387,6 +515,59 @@ def _diagnosis_trace(
             }
         )
     return trace
+
+
+def _semantic_grounding_trace(
+    binding: SemanticBindingResult,
+) -> dict[str, Any]:
+    return {
+        "stage": "semantic_grounding",
+        "status": "success",
+        "binding_status": binding.status.value,
+        "reason": binding.reason,
+        "missing_fields": [item.value for item in binding.missing_fields],
+        "ambiguous_fields": [item.value for item in binding.ambiguous_fields],
+    }
+
+
+def _canonical_analysis_question(parsed: ParsedAnalysisQuestion) -> str:
+    current = parsed.current_period.start
+    baseline = parsed.baseline_period.start
+    scope = ""
+    if parsed.scope.region is not None:
+        scope += f"{parsed.scope.region} 州"
+    if parsed.scope.category is not None:
+        scope += f"{parsed.scope.category} 品类"
+    question = (
+        f"为什么 {current.year} 年 {current.month} 月相比 "
+        f"{baseline.year} 年 {baseline.month} 月 {scope}GMV 下降？"
+    )
+
+    dimension_labels = {
+        AnalysisDimension.REGION: "地区",
+        AnalysisDimension.CATEGORY: "品类",
+    }
+    factor_labels = {
+        CandidateFactor.TRAFFIC: "流量",
+        CandidateFactor.PROMOTION: "促销",
+        CandidateFactor.INVENTORY: "库存",
+    }
+    requests: list[str] = []
+    if parsed.requested_dimensions:
+        requests.append(
+            "、".join(
+                f"按{dimension_labels[dimension]}"
+                for dimension in parsed.requested_dimensions
+            )
+        )
+    if parsed.requested_factors:
+        requests.append(
+            "分析"
+            + "、".join(factor_labels[factor] for factor in parsed.requested_factors)
+        )
+    if requests:
+        question += "请" + "，".join(requests) + "。"
+    return question
 
 
 def _safe_query_trace(item: Any) -> dict[str, Any]:

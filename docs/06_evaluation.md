@@ -297,3 +297,20 @@ LLM Call Count = 0
 ```
 
 该结果验证代码契约，不代表真实外部检索准确率。未执行真实 Qdrant/Elasticsearch 检索时必须明确写“未评测”，不能用 Stub 结果替代线上召回指标。
+
+### 10.5 CLARIFY-001 单轮澄清集成评测
+
+`CLARIFY-001` 的生产级评测至少报告：
+
+```text
+READY Continues Existing Graph Rate = 100%
+Non-READY Data Access Count = 0
+Clarification Reason Accuracy = 100%
+Missing/Ambiguous Field Accuracy = 100%
+Logical Candidate Schema Leakage Count = 0
+Canonical Reparse Equality Rate = 100%
+Single Terminal Event Rate = 100%
+LLM Call Count = 0
+```
+
+固定评测应覆盖缺少时间、缺少指标、不完整基期、歧义 Scope、明确不支持指标、非法期间、完整诊断和原 QUERY/UNSUPPORTED 分支。真实 Qdrant/Elasticsearch 语义检索尚未运行时，必须写“未评测”，不能用 SEM-002 的 Stub 契约分数冒充线上召回指标。

@@ -60,7 +60,7 @@ test("updates a named progress step without mutating prior state", () => {
   assert.equal(appended.length, 2);
 });
 
-test("classifies query, diagnosis, error, and non-terminal events", () => {
+test("classifies query, diagnosis, clarification, unsupported, error, and non-terminal events", () => {
   assert.equal(
     classifyTerminal({ type: "result", intent: "QUERY", data: [] }),
     "query",
@@ -68,6 +68,22 @@ test("classifies query, diagnosis, error, and non-terminal events", () => {
   assert.equal(
     classifyTerminal({ type: "result", intent: "DIAGNOSIS", answer: "ok" }),
     "diagnosis",
+  );
+  assert.equal(
+    classifyTerminal({
+      type: "result",
+      intent: "DIAGNOSIS",
+      binding_status: "CLARIFICATION_REQUIRED",
+    }),
+    "clarification",
+  );
+  assert.equal(
+    classifyTerminal({
+      type: "result",
+      intent: "UNSUPPORTED",
+      binding_status: "UNSUPPORTED",
+    }),
+    "unsupported",
   );
   assert.equal(classifyTerminal({ type: "error", message: "no" }), "error");
   assert.equal(classifyTerminal({ type: "progress" }), null);

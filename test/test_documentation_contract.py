@@ -104,11 +104,10 @@ def test_future_llm_planner_is_not_claimed_as_implemented() -> None:
         REPOSITORY_ROOT / "IMPLEMENTATION_PLAN.md"
     ).read_text(encoding="utf-8")
 
-    assert "尚未接入生产 Graph、API 或前端" in readme
+    assert "`CLARIFY-001` 已将三种绑定结果接入生产单轮 API 与前端" in readme
+    assert "LLM Planner 尚未实现" in readme
     assert "LLM Planner 与 Validator 仍计划" in workflow
-    assert "`CLARIFY-001` 与 `PLAN-LLM-001` 均需用户明确授权" in (
-        implementation_plan
-    )
+    assert "`PLAN-LLM-001` 需用户明确授权后单独实施" in implementation_plan
 
 
 def test_semantic_grounding_implementation_boundary_is_documented() -> None:

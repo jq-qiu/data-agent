@@ -2,26 +2,32 @@
 
 ## Current Phase
 
-MVP V1 is complete through the synthetic diagnosis demo. SEM-002 now provides independently callable semantic grounding, an analysis semantic Registry, and a schema-safe `PlannerSemanticContext` Builder without changing the production diagnosis Graph.
+MVP V1 now exposes SEM-002 semantic grounding through the single-round production API and frontend. Incomplete or ambiguous diagnosis requests return an actionable clarification card before any diagnosis data access; unsupported requests return a bounded ability message; complete requests continue through the existing deterministic diagnosis Graph unchanged.
 
 ## Current Feature
 
-SEM-002 Semantic Registry and Context Builder.
+CLARIFY-001 Clarification Response Integration.
 
 ## Feature Status
 
-Completed. Deterministic parsing remains the first path; bounded Qdrant metric/logical-dimension and Elasticsearch region/category-value candidates can recover unresolved bindings after Catalog, threshold, score-gap, type, and ambiguity checks. Binding returns `READY`, `CLARIFICATION_REQUIRED`, or `UNSUPPORTED`. The Context Builder intersects the parsed request with `CapabilityAssessment` and emits only logical analysis semantics and limitations. These components are not yet wired to the production Graph, API, or frontend, and no LLM Planner was added.
+Completed. The production DIAGNOSIS branch runs `SemanticGrounder` before runtime capability and diagnosis data access. `READY` continues to the existing Graph; retrieval-completed bindings are converted to an equivalent canonical question and reparsed without changing the Graph, Parser, or diagnosis algorithms. `CLARIFICATION_REQUIRED` and `UNSUPPORTED` terminate as controlled SSE `result` events with stable reasons, missing/ambiguous fields, logical candidates, a suggested complete question, and safe trace. The frontend distinguishes query, diagnosis, clarification, unsupported, and error terminal states, and offers a fill-only suggestion button with no conversation memory. No LLM Planner was added.
 
 ## Last Completed Feature
 
-SEM-001 Analysis Semantic Context Design.
+SEM-002 Semantic Registry and Context Builder.
 
 ## Next Feature
 
-CLARIFY-001 Clarification Response Integration or PLAN-LLM-001, only after explicit user authorization and separate Feature scoping.
+PLAN-LLM-001 Bounded LLM Planner and Plan Validator, only after explicit user authorization and separate Feature scoping.
 
 ## Last Successful Validation
 
+- CLARIFY-001 targeted API tests: 31 passed (includes three binding outcomes, no-data-access guard, logical-candidate sanitization, canonical-question reparse, and existing QUERY/UNSUPPORTED regression);
+- CLARIFY-001 frontend Node tests: 5 passed and Vite production build passed; terminal classification now covers clarification and unsupported states;
+- CLARIFY-001 full pytest regression: 317 passed;
+- CLARIFY-001 real API smoke: the incomplete question `为什么GMV下降？` returns `binding_status=CLARIFICATION_REQUIRED` with `missing_fields=["time"]` and a suggested complete question before diagnosis data access;
+- CLARIFY-001 external retrieval evaluation: not run; Qdrant/Elasticsearch behavior remains covered only by SEM-002 Stub contract and is not claimed as real recall accuracy;
+- CLARIFY-001 static baselines: repository Ruff remains 23 existing diagnostics and mypy remains 36 errors in 11 files while checking 110 source files; all changed Python files pass targeted Ruff and introduce no new mypy finding;
 - SEM-002 targeted semantic tests: 18 passed;
 - SEM-002 related Parser/Capability/Planner/documentation regression: 99 passed;
 - SEM-002 full pytest regression: 312 passed;
@@ -200,20 +206,20 @@ CLARIFY-001 Clarification Response Integration or PLAN-LLM-001, only after expli
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The SEM-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The CLARIFY-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the SEM-002 completion commit. If Git metadata disagrees, Git is authoritative.
+Pending push to `origin/main` for the CLARIFY-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented.
+None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Real Qdrant/Elasticsearch semantic-retrieval accuracy has not been evaluated in production; only the SEM-002 Stub contract is verified. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning, repository-wide 23 Ruff findings, and 36 mypy errors remain documented.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `SEM-002_COMPLETION.md` and `specs/SEM-002_semantic_registry_context_builder.md`.
+3. Review `CLARIFY-001_COMPLETION.md` and `specs/CLARIFY-001_clarification_response_integration.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. If CLARIFY-001 is authorized, wire only the three binding outcomes into the single-round API/frontend; if PLAN-LLM-001 is authorized, keep it separate and do not add multi-turn state.
+5. If PLAN-LLM-001 is authorized, keep it separate, implement deterministic-first bounded planning with at most one LLM call and no multi-turn state.

@@ -107,7 +107,7 @@ Intent Router
 
 意图路由优先使用确定性规则识别 Top/Bottom N、聚合、同比/环比、占比、分布和阈值等问数表达。只有无法由规则判定的请求才调用结构化语义分类器；预测、外部动作、省略式追问和严格因果等强边界不会交给模型覆盖。路由为 QUERY 只表示请求进入 NL2SQL 链路。SQL-003 已将受控分组 TopN（ROW_NUMBER 窗口、每组至多 N 行、稳定标识打破并列）纳入只读校验和固定评测。
 
-`SEM-001` 已冻结归因规划设计，`SEM-002` 已实现可独立调用的语义绑定、分析语义 Registry 和 `PlannerSemanticContext` Builder：规范值与别名优先，必要时通过 Qdrant 召回指标/逻辑维度候选、通过 Elasticsearch 召回地区/品类值候选，并输出 `READY`、`CLARIFICATION_REQUIRED` 或 `UNSUPPORTED`。检索候选必须经过 Catalog 白名单、阈值和歧义校验；规划上下文不包含物理 Schema、SQL 或原始行。该链路尚未接入生产 Graph、API 或前端，LLM Planner 也尚未实现；当前对外诊断运行时仍使用原有确定性 Parser、Capability Assessment 和 Planner。
+`SEM-001` 已冻结归因规划设计，`SEM-002` 已实现可独立调用的语义绑定、分析语义 Registry 和 `PlannerSemanticContext` Builder：规范值与别名优先，必要时通过 Qdrant 召回指标/逻辑维度候选、通过 Elasticsearch 召回地区/品类值候选，并输出 `READY`、`CLARIFICATION_REQUIRED` 或 `UNSUPPORTED`。检索候选必须经过 Catalog 白名单、阈值和歧义校验；规划上下文不包含物理 Schema、SQL 或原始行。`CLARIFY-001` 已将三种绑定结果接入生产单轮 API 与前端：完整问题保持原确定性诊断链，缺失或歧义问题在数据访问前返回补充项、逻辑候选和推荐完整问题，超出边界的问题返回受控说明。LLM Planner 尚未实现；当前对外诊断运行时仍使用原有确定性 Parser、Capability Assessment 和 Planner。
 
 ## 5. 数据方案
 
@@ -193,7 +193,7 @@ ENG-001 Engineering Baseline
   → Minimal API and Demo
   → SEM-001 Analysis Semantic Context Design
   → SEM-002 Semantic Registry and Context Builder
-  → CLARIFY-001 Clarification Response Integration（待授权）
+  → CLARIFY-001 Clarification Response Integration（已完成）
   → PLAN-LLM-001 Bounded LLM Planner（待授权）
 ```
 

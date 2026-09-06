@@ -69,5 +69,12 @@ export function classifyTerminal(event) {
   if (event.type === "error") return "error";
   if (event.type !== "result") return null;
   if (event.intent === "QUERY" && Array.isArray(event.data)) return "query";
+  if (event.binding_status === "CLARIFICATION_REQUIRED") return "clarification";
+  if (
+    event.binding_status === "UNSUPPORTED" ||
+    event.intent === "UNSUPPORTED"
+  ) {
+    return "unsupported";
+  }
   return "diagnosis";
 }

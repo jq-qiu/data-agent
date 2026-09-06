@@ -20,6 +20,15 @@ from app.api.dependencies import _SerializedMetaMySQLRepository, get_query_servi
 from app.api.routers.query_router import query_router
 from app.api.schemas.query_schema import QuerySchema
 from app.diagnosis.capability import CapabilityAssessor
+from app.diagnosis.grounding import (
+    BindingField,
+    DimensionGroundingCandidate,
+    MetricGroundingCandidate,
+    SemanticBindingResult,
+    SemanticBindingStatus,
+    SemanticCandidateBundle,
+    ValueGroundingCandidate,
+)
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.query import (
     AnalysisQueryBuilder,
@@ -27,14 +36,23 @@ from app.diagnosis.query import (
     AnalysisTaskExecutor,
     QueryDataSource,
 )
-from app.diagnosis.question import AnalysisQuestionParser
+from app.diagnosis.question import (
+    AnalysisDimension,
+    AnalysisQuestionParser,
+    ParsedAnalysisQuestion,
+)
 from app.diagnosis.runtime import WarehouseCapabilityProfileProvider
 from app.metadata.catalog import load_catalog
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.validator import SQLValidator, ValidatedSQL
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.services import query_service as query_service_module
-from app.services.query_service import QueryService, _diagnosis_result, _unsupported_result
+from app.services.query_service import (
+    QueryService,
+    _canonical_analysis_question,
+    _diagnosis_result,
+    _unsupported_result,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_TRACE_KEYS = {
@@ -139,6 +157,16 @@ class ControlledRepository:
             {"period_role": "baseline", "gmv": "1000"},
             {"period_role": "current", "gmv": "800"},
         ]
+
+
+class StubSemanticGrounder:
+    def __init__(self, result: SemanticBindingResult) -> None:
+        self.result = result
+        self.calls: list[tuple[str, Intent | str]] = []
+
+    async def bind(self, question: str, intent: Intent | str) -> SemanticBindingResult:
+        self.calls.append((question, intent))
+        return self.result
 
 
 def _nested_keys(value: Any) -> set[str]:
@@ -491,6 +519,187 @@ async def test_query_graph_without_result_emits_safe_terminal_error(monkeypatch:
             "message": "生成的查询未能通过安全校验，请调整问题后重试。",
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_complete_diagnosis_is_ready_and_keeps_existing_graph() -> None:
+    _, validator = _catalog_and_validator()
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=ControlledRepository(),  # type: ignore[arg-type]
+        sql_validator=validator,
+    )
+
+    encoded = [
+        item
+        async for item in service.query_answer("为什么2018年5月GMV下降？")
+    ]
+    payloads = [json.loads(item.removeprefix("data: ")) for item in encoded]
+    result = next(item for item in payloads if item["type"] == "result")
+
+    assert result["intent"] == "DIAGNOSIS"
+    assert result["binding_status"] == "READY"
+    assert result["report_status"] == "DEGRADED"
+    assert [item["stage"] for item in result["analysis_trace"]] == [
+        "intent_router",
+        "semantic_grounding",
+        "analysis_question_parser",
+        "capability_assessment",
+        "analysis_planner",
+        "analysis_task_executor",
+        "deterministic_analyzer",
+        "evidence_checker",
+        "report_generator",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_incomplete_diagnosis_returns_clarification_before_data_access() -> None:
+    _, validator = _catalog_and_validator()
+    binding = SemanticBindingResult(
+        status=SemanticBindingStatus.CLARIFICATION_REQUIRED,
+        reason="missing_current_period",
+        missing_fields=(BindingField.TIME,),
+        suggested_question="为什么 2018 年 5 月 GMV 相比 2018 年 4 月下降？",
+    )
+    grounder = StubSemanticGrounder(binding)
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=None,  # type: ignore[arg-type]
+        sql_validator=validator,
+        semantic_grounder=grounder,  # type: ignore[arg-type]
+    )
+
+    encoded = [item async for item in service.query_answer("为什么GMV下降？")]
+    payloads = [json.loads(item.removeprefix("data: ")) for item in encoded]
+    result = next(item for item in payloads if item["type"] == "result")
+
+    assert grounder.calls == [("为什么GMV下降？", Intent.DIAGNOSIS)]
+    assert result["intent"] == "DIAGNOSIS"
+    assert result["binding_status"] == "CLARIFICATION_REQUIRED"
+    assert result["report_status"] == "CLARIFICATION_REQUIRED"
+    assert result["clarification"] == {
+        "reason": "missing_current_period",
+        "missing_fields": ["time"],
+        "ambiguous_fields": [],
+        "candidates": {"metrics": [], "dimensions": [], "values": []},
+        "suggested_question": "为什么 2018 年 5 月 GMV 相比 2018 年 4 月下降？",
+    }
+    assert "时间" in result["answer"]
+    assert result["evidence"] == []
+    assert [item["stage"] for item in result["analysis_trace"]] == [
+        "intent_router",
+        "semantic_grounding",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_missing_metric_router_outcome_enters_controlled_clarification() -> None:
+    _, validator = _catalog_and_validator()
+    binding = SemanticBindingResult(
+        status=SemanticBindingStatus.CLARIFICATION_REQUIRED,
+        reason="missing_or_unknown_metric",
+        missing_fields=(BindingField.METRIC,),
+        suggested_question="为什么 2018 年 5 月 GMV 相比 2018 年 4 月下降？",
+    )
+    grounder = StubSemanticGrounder(binding)
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=None,  # type: ignore[arg-type]
+        sql_validator=validator,
+        semantic_grounder=grounder,  # type: ignore[arg-type]
+    )
+
+    encoded = [item async for item in service.query_answer("为什么2018年5月下降？")]
+    result = json.loads(encoded[-1].removeprefix("data: "))
+
+    assert grounder.calls == [("为什么2018年5月下降？", Intent.DIAGNOSIS)]
+    assert result["intent"] == "DIAGNOSIS"
+    assert result["binding_status"] == "CLARIFICATION_REQUIRED"
+    assert result["clarification"]["missing_fields"] == ["metric"]
+
+
+@pytest.mark.asyncio
+async def test_binding_candidates_are_logical_and_unsupported_is_controlled() -> None:
+    _, validator = _catalog_and_validator()
+    binding = SemanticBindingResult(
+        status=SemanticBindingStatus.UNSUPPORTED,
+        reason="metric_not_supported",
+        candidates=SemanticCandidateBundle(
+            metrics=(
+                MetricGroundingCandidate(
+                    metric_id="order_count",
+                    score=0.94,
+                    supported_for_diagnosis=False,
+                ),
+            ),
+            dimensions=(
+                DimensionGroundingCandidate(
+                    dimension=AnalysisDimension.REGION,
+                    score=0.82,
+                ),
+            ),
+            values=(
+                ValueGroundingCandidate(
+                    dimension=AnalysisDimension.REGION,
+                    canonical_value="PR",
+                ),
+            ),
+        ),
+        retrieval_used=True,
+    )
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=None,  # type: ignore[arg-type]
+        sql_validator=validator,
+        semantic_grounder=StubSemanticGrounder(binding),  # type: ignore[arg-type]
+    )
+
+    encoded = [item async for item in service.query_answer("为什么订单量下降？")]
+    result = json.loads(encoded[-1].removeprefix("data: "))
+
+    assert result["intent"] == "UNSUPPORTED"
+    assert result["binding_status"] == "UNSUPPORTED"
+    assert result["clarification"]["candidates"] == {
+        "metrics": ["order_count"],
+        "dimensions": ["region"],
+        "values": [{"dimension": "region", "value": "PR"}],
+    }
+    serialized = json.dumps(result)
+    assert "score" not in serialized
+    assert "retrieval_used" not in serialized
+    assert not (_nested_keys(result) & FORBIDDEN_TRACE_KEYS)
+
+
+def test_retrieval_ready_binding_can_be_reparsed_without_graph_changes() -> None:
+    catalog, _ = _catalog_and_validator()
+    parser = AnalysisQuestionParser.from_catalog(catalog)
+    original = parser.parse(
+        "为什么2018年5月圣保罗州GMV下降？",
+        Intent.DIAGNOSIS,
+    ).parsed_question
+    assert original is not None
+
+    canonical = _canonical_analysis_question(original)
+    reparsed = parser.parse(canonical, Intent.DIAGNOSIS).parsed_question
+
+    assert ParsedAnalysisQuestion.model_validate(reparsed) == original
 
 
 @pytest.mark.asyncio

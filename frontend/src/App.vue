@@ -69,6 +69,30 @@ function supportLabel(level) {
   }[String(level || "").toUpperCase()] || "待确认";
 }
 
+function bindingFieldLabel(field) {
+  return {
+    intent: "问题类型",
+    metric: "指标",
+    dimension: "分析维度",
+    time: "当前时间",
+    baseline: "对比基期",
+    scope: "分析范围",
+  }[field] || String(field || "待补充信息");
+}
+
+function dimensionLabel(dimension) {
+  return {
+    region: "地区",
+    category: "品类",
+  }[dimension] || String(dimension || "维度");
+}
+
+function applySuggestedQuestion(value) {
+  if (!value || loading.value) return;
+  question.value = value;
+  document.querySelector("#question-input")?.focus();
+}
+
 function displayValue(value) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "object") return JSON.stringify(value);
@@ -335,7 +359,111 @@ async function sendQuestion() {
             </div>
 
             <template v-else-if="exchange.terminal?.type === 'result'">
-              <section v-if="exchange.terminal.intent === 'QUERY'" class="result-section">
+              <section
+                v-if="exchange.terminal.binding_status === 'CLARIFICATION_REQUIRED'"
+                class="result-section clarification-section"
+              >
+                <div class="result-title">
+                  <div>
+                    <span class="eyebrow">QUESTION CLARIFICATION</span>
+                    <h2>还需要补充一点信息</h2>
+                  </div>
+                  <span class="status-badge clarification-required">待补充</span>
+                </div>
+
+                <p class="binding-guidance">{{ exchange.terminal.answer }}</p>
+
+                <div
+                  v-if="exchange.terminal.clarification?.missing_fields?.length"
+                  class="binding-group"
+                >
+                  <h3>缺少的信息</h3>
+                  <div class="binding-chips">
+                    <span
+                      v-for="field in exchange.terminal.clarification.missing_fields"
+                      :key="field"
+                    >{{ bindingFieldLabel(field) }}</span>
+                  </div>
+                </div>
+
+                <div
+                  v-if="exchange.terminal.clarification?.ambiguous_fields?.length"
+                  class="binding-group"
+                >
+                  <h3>需要明确的内容</h3>
+                  <div class="binding-chips ambiguous">
+                    <span
+                      v-for="field in exchange.terminal.clarification.ambiguous_fields"
+                      :key="field"
+                    >{{ bindingFieldLabel(field) }}</span>
+                  </div>
+                </div>
+
+                <div
+                  v-if="exchange.terminal.clarification?.candidates?.metrics?.length
+                    || exchange.terminal.clarification?.candidates?.dimensions?.length
+                    || exchange.terminal.clarification?.candidates?.values?.length"
+                  class="binding-group"
+                >
+                  <h3>识别到的候选</h3>
+                  <ul class="candidate-list">
+                    <li
+                      v-for="metric in exchange.terminal.clarification.candidates.metrics"
+                      :key="`metric-${metric}`"
+                    >指标：{{ String(metric).toUpperCase() }}</li>
+                    <li
+                      v-for="dimension in exchange.terminal.clarification.candidates.dimensions"
+                      :key="`dimension-${dimension}`"
+                    >维度：{{ dimensionLabel(dimension) }}</li>
+                    <li
+                      v-for="item in exchange.terminal.clarification.candidates.values"
+                      :key="`value-${item.dimension}-${item.value}`"
+                    >{{ dimensionLabel(item.dimension) }}：{{ item.value }}</li>
+                  </ul>
+                </div>
+
+                <div
+                  v-if="exchange.terminal.clarification?.suggested_question"
+                  class="suggestion-card"
+                >
+                  <span>推荐完整问法</span>
+                  <p>{{ exchange.terminal.clarification.suggested_question }}</p>
+                  <button
+                    type="button"
+                    :disabled="loading"
+                    @click="applySuggestedQuestion(exchange.terminal.clarification.suggested_question)"
+                  >填入输入框</button>
+                </div>
+              </section>
+
+              <section
+                v-else-if="exchange.terminal.binding_status === 'UNSUPPORTED'
+                  || exchange.terminal.intent === 'UNSUPPORTED'"
+                class="result-section unsupported-section"
+              >
+                <div class="result-title">
+                  <div>
+                    <span class="eyebrow">ABILITY BOUNDARY</span>
+                    <h2>当前能力暂不支持</h2>
+                  </div>
+                  <span class="status-badge unsupported">不支持</span>
+                </div>
+                <p class="binding-guidance">{{ exchange.terminal.answer }}</p>
+                <div
+                  v-if="exchange.terminal.clarification?.candidates?.metrics?.length"
+                  class="binding-group"
+                >
+                  <h3>识别到的指标候选</h3>
+                  <div class="binding-chips ambiguous">
+                    <span
+                      v-for="metric in exchange.terminal.clarification.candidates.metrics"
+                      :key="metric"
+                    >{{ String(metric).toUpperCase() }}</span>
+                  </div>
+                </div>
+              </section>
+
+              <section v-else-if="exchange.terminal.intent === 'QUERY'" class="result-section">
                 <div class="result-title">
                   <div>
                     <span class="eyebrow">QUERY RESULT</span>

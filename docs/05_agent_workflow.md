@@ -360,6 +360,8 @@ Validator 必须拒绝：
 
 ### 12.4 实现状态
 
-`SEM-002` 已实现但尚未接入生产 Graph 的 Semantic Grounder、Analysis Semantic Registry 和 Context Builder。Grounder 输出固定状态：`READY` 才可进入 Capability；`CLARIFICATION_REQUIRED` 表示需要补充或选择；`UNSUPPORTED` 表示超出当前产品能力。当前 API 与前端尚不展示这些结果，需要独立的 `CLARIFY-001`。
+`SEM-002` 已实现 Semantic Grounder、Analysis Semantic Registry 和 Context Builder。Grounder 输出固定状态：`READY` 才可进入 Capability；`CLARIFICATION_REQUIRED` 表示需要补充或选择；`UNSUPPORTED` 表示超出当前产品能力。
+
+`CLARIFY-001` 已将 Grounder 接入生产单轮 DIAGNOSIS 分支，执行顺序固定为 `Intent Router -> Semantic Grounding -> Runtime Capability -> Existing Diagnosis Graph`。非 `READY` 结果在读取运行时数据能力前终止，并返回稳定原因、缺失/歧义字段、逻辑候选、推荐完整问题和安全 Trace；`READY` 结果继续使用现有确定性 Parser、Capability、Planner 和执行链，检索补全后的绑定通过等价规范问题重新交给 Parser，不修改 Graph 或诊断算法。前端区分 query、diagnosis、clarification、unsupported 和 error，推荐问题按钮只填入输入框，不建立会话记忆。
 
 受限 LLM Planner 与 Validator 仍计划在 `PLAN-LLM-001` 实现；在该 Feature 完成并实测前，不得对外宣称运行时已使用 LLM 进行归因规划。
