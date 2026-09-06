@@ -256,4 +256,6 @@ ParsedAnalysisQuestion（规范化分析问题）
 
 它不包含物理表名、列名、JOIN、SQL、数据库连接、原始查询行、完整高基数字段值列表或 Synthetic Ground Truth 原因标签。后续物理字段映射只能在已校验计划之后由受控 Query Builder 完成。
 
-本节是 `SEM-001` 的设计冻结。`PlannerSemanticContext` 构建器、检索兜底和 LLM Planner 当前尚未实现；现有诊断运行时仍使用确定性 Parser、Capability Assessment 和 Planner。
+`SEM-002` 已实现可独立调用的绑定与投影组件：确定性 Parser 优先；绑定不足时，Qdrant 只召回 Catalog 中存在的指标及可映射为 `region | category` 的字段候选，Elasticsearch 只召回允许值列中的规范地区/品类值。唯一、超过阈值且分差足够的候选才可自动绑定，否则输出 `CLARIFICATION_REQUIRED` 或 `UNSUPPORTED`。检索结果不会把物理字段 ID 带入 `PlannerSemanticContext`。
+
+当前这些组件尚未接入生产 Graph、API 或前端；现有对外诊断运行时仍使用原有确定性 Parser、Capability Assessment 和 Planner。LLM Planner 尚未实现。

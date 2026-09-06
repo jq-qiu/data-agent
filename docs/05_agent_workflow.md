@@ -360,4 +360,6 @@ Validator 必须拒绝：
 
 ### 12.4 实现状态
 
-`SEM-001` 只完成设计冻结。语义 Registry 与 Context Builder 计划在 `SEM-002` 实现，受限 LLM Planner 与 Validator 计划在 `PLAN-LLM-001` 实现；在这些 Feature 完成并实测前，不得对外宣称运行时已使用 LLM 进行归因规划。
+`SEM-002` 已实现但尚未接入生产 Graph 的 Semantic Grounder、Analysis Semantic Registry 和 Context Builder。Grounder 输出固定状态：`READY` 才可进入 Capability；`CLARIFICATION_REQUIRED` 表示需要补充或选择；`UNSUPPORTED` 表示超出当前产品能力。当前 API 与前端尚不展示这些结果，需要独立的 `CLARIFY-001`。
+
+受限 LLM Planner 与 Validator 仍计划在 `PLAN-LLM-001` 实现；在该 Feature 完成并实测前，不得对外宣称运行时已使用 LLM 进行归因规划。

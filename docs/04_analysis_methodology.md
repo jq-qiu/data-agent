@@ -258,4 +258,4 @@ Evidence 和报告至少区分：
 
 现有 `AnalysisTask` 已是类型化工具调用：`method` 选择 Registry 中的分析能力，其余字段是白名单参数。Planner 只负责组合 `AnalysisTask`，Query Builder 负责物理字段映射，Analyzer 负责计算。后续不再增加一套语义重复的通用 `ToolCall`。
 
-本节只冻结后续实现契约，不表示分析语义 Registry、`RuntimeCapability` 新字段或 LLM Planner 已经实现。
+`SEM-002` 已实现 Analysis Semantic Registry 及其 Catalog 引用校验，并复用现有 `CapabilityAssessment` 构建请求级逻辑投影。真实/Synthetic 的字段可用性仍由现有 Capability 链决定；本 Feature 没有修改该判断、Analyzer 或 Evidence。LLM Planner 仍未实现。

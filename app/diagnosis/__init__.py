@@ -17,6 +17,12 @@ from app.diagnosis.evidence import (
     ValidatedEvidence,
     ValidatedEvidenceBundle,
 )
+from app.diagnosis.grounding import (
+    QdrantElasticsearchCandidateRetriever,
+    SemanticBindingResult,
+    SemanticBindingStatus,
+    SemanticGrounder,
+)
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.planner import (
     AnalysisPlan,
@@ -38,6 +44,11 @@ from app.diagnosis.question import (
     ParsedAnalysisQuestion,
 )
 from app.diagnosis.report import DiagnosisReport, ReportGenerator, ReportGeneratorNode
+from app.diagnosis.semantics import (
+    AnalysisSemanticRegistry,
+    PlannerSemanticContext,
+    PlannerSemanticContextBuilder,
+)
 
 __all__ = [
     "AnalysisPlan",
@@ -50,6 +61,7 @@ __all__ = [
     "AnalysisQuestionParser",
     "AnalysisQuestionParserNode",
     "AnalysisResult",
+    "AnalysisSemanticRegistry",
     "AnalysisTask",
     "AnalysisTaskExecutor",
     "AnalysisTaskExecutorNode",
@@ -66,8 +78,14 @@ __all__ = [
     "IntentDecision",
     "IntentRouter",
     "ParsedAnalysisQuestion",
+    "PlannerSemanticContext",
+    "PlannerSemanticContextBuilder",
+    "QdrantElasticsearchCandidateRetriever",
     "ReportGenerator",
     "ReportGeneratorNode",
+    "SemanticBindingResult",
+    "SemanticBindingStatus",
+    "SemanticGrounder",
     "ValidatedEvidence",
     "ValidatedEvidenceBundle",
 ]

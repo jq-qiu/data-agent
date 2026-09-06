@@ -107,7 +107,7 @@ Intent Router
 
 意图路由优先使用确定性规则识别 Top/Bottom N、聚合、同比/环比、占比、分布和阈值等问数表达。只有无法由规则判定的请求才调用结构化语义分类器；预测、外部动作、省略式追问和严格因果等强边界不会交给模型覆盖。路由为 QUERY 只表示请求进入 NL2SQL 链路。SQL-003 已将受控分组 TopN（ROW_NUMBER 窗口、每组至多 N 行、稳定标识打破并列）纳入只读校验和固定评测。
 
-`SEM-001` 已冻结后续归因规划的设计：先把指标、维度、维度值、时间和 Scope 绑定为规范业务对象，再将分析语义与当前数据能力压缩为 `PlannerSemanticContext`。未来 LLM 只在存在多个合法分析路径时选择结构化 `AnalysisTask`，不接触物理 Schema、不写 SQL、不做数学计算，并必须经过计划校验和确定性回退。该语义上下文构建器和 LLM Planner 当前尚未实现；现有诊断运行时仍使用确定性 Parser、Capability Assessment 和 Planner。
+`SEM-001` 已冻结归因规划设计，`SEM-002` 已实现可独立调用的语义绑定、分析语义 Registry 和 `PlannerSemanticContext` Builder：规范值与别名优先，必要时通过 Qdrant 召回指标/逻辑维度候选、通过 Elasticsearch 召回地区/品类值候选，并输出 `READY`、`CLARIFICATION_REQUIRED` 或 `UNSUPPORTED`。检索候选必须经过 Catalog 白名单、阈值和歧义校验；规划上下文不包含物理 Schema、SQL 或原始行。该链路尚未接入生产 Graph、API 或前端，LLM Planner 也尚未实现；当前对外诊断运行时仍使用原有确定性 Parser、Capability Assessment 和 Planner。
 
 ## 5. 数据方案
 
@@ -192,7 +192,8 @@ ENG-001 Engineering Baseline
   → EVAL-001 Diagnosis Regression
   → Minimal API and Demo
   → SEM-001 Analysis Semantic Context Design
-  → SEM-002 Semantic Registry and Context Builder（待授权）
+  → SEM-002 Semantic Registry and Context Builder
+  → CLARIFY-001 Clarification Response Integration（待授权）
   → PLAN-LLM-001 Bounded LLM Planner（待授权）
 ```
 

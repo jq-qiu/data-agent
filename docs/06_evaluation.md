@@ -280,3 +280,20 @@ Total Attribution Model Calls <= 2
 ```
 
 同时记录确定性路径比例、LLM 路径比例、Validator 拒绝原因、回退原因、规划延迟、Token 和费用。模型输出正确性必须与相同 Golden Dataset 上的确定性基线对比；没有真实运行不得宣称提升。
+
+### 10.4 SEM-002 固定功能评测
+
+`SEM-002` 使用 12 条固定样本和 Stubbed Qdrant/Elasticsearch 契约完成组件级评测：
+
+```text
+Exact Match = 12/12
+Binding Status Accuracy = 12/12
+READY Exact = 5/5
+Clarification Exact = 4/4
+Unsupported Exact = 3/3
+Retrieval Policy Match = 12/12
+Physical Schema Leakage Count = 0
+LLM Call Count = 0
+```
+
+该结果验证代码契约，不代表真实外部检索准确率。未执行真实 Qdrant/Elasticsearch 检索时必须明确写“未评测”，不能用 Stub 结果替代线上召回指标。

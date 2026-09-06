@@ -2,26 +2,34 @@
 
 ## Current Phase
 
-MVP V1 is complete through the synthetic diagnosis demo. SEM-001 has now frozen the post-MVP attribution semantic grounding, analysis semantic context, bounded planning, validation, and fallback design without changing runtime behavior.
+MVP V1 is complete through the synthetic diagnosis demo. SEM-002 now provides independently callable semantic grounding, an analysis semantic Registry, and a schema-safe `PlannerSemanticContext` Builder without changing the production diagnosis Graph.
 
 ## Current Feature
 
-SEM-001 Analysis Semantic Context Design.
+SEM-002 Semantic Registry and Context Builder.
 
 ## Feature Status
 
-Completed. The repository now defines Semantic Grounding, analysis semantic Registry contracts, request-scoped `PlannerSemanticContext`, deterministic-first Planner Policy, `AnalysisPlanValidator`, model-call limits, and deterministic fallback. This Feature is documentation-only: the current diagnosis runtime remains deterministic, and no LLM Planner or Context Builder was implemented.
+Completed. Deterministic parsing remains the first path; bounded Qdrant metric/logical-dimension and Elasticsearch region/category-value candidates can recover unresolved bindings after Catalog, threshold, score-gap, type, and ambiguity checks. Binding returns `READY`, `CLARIFICATION_REQUIRED`, or `UNSUPPORTED`. The Context Builder intersects the parsed request with `CapabilityAssessment` and emits only logical analysis semantics and limitations. These components are not yet wired to the production Graph, API, or frontend, and no LLM Planner was added.
 
 ## Last Completed Feature
 
-REPORT-002 Candidate Section Readability, including the non-causal most-likely-candidate follow-up.
+SEM-001 Analysis Semantic Context Design.
 
 ## Next Feature
 
-SEM-002 Semantic Registry and Context Builder, only after explicit user authorization.
+CLARIFY-001 Clarification Response Integration or PLAN-LLM-001, only after explicit user authorization and separate Feature scoping.
 
 ## Last Successful Validation
 
+- SEM-002 targeted semantic tests: 18 passed;
+- SEM-002 related Parser/Capability/Planner/documentation regression: 99 passed;
+- SEM-002 full pytest regression: 312 passed;
+- SEM-002 fixed evaluation: 12/12 exact binding results, 12/12 status accuracy, 12/12 retrieval-policy matches, 0 physical-Schema leaks, and 0 LLM calls;
+- SEM-002 external retrieval evaluation: Stubbed Qdrant/Elasticsearch contract only; real external retrieval not evaluated;
+- SEM-002 targeted Ruff and mypy: all changed Python files pass;
+- SEM-002 repository Ruff: 23 existing diagnostics, unchanged from SEM-001;
+- SEM-002 repository mypy: 36 existing errors in 11 files while checking 110 source files, unchanged from SEM-001;
 - SEM-001 documentation contract: 21 passed;
 - SEM-001 full pytest regression: 293 passed;
 - SEM-001 Ruff: 23 existing diagnostics; no runtime file was changed;
@@ -192,11 +200,11 @@ SEM-002 Semantic Registry and Context Builder, only after explicit user authoriz
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The SEM-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The SEM-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the SEM-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the SEM-002 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
@@ -206,6 +214,6 @@ None blocking deterministic routing. Semantic fallback requires the configured e
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `SEM-001_COMPLETION.md` and `specs/SEM-001_analysis_semantic_context_design.md`.
+3. Review `SEM-002_COMPLETION.md` and `specs/SEM-002_semantic_registry_context_builder.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. If SEM-002 is authorized, implement only the semantic Registry projection and `PlannerSemanticContext` Builder; do not implement the LLM Planner in the same Feature.
+5. If CLARIFY-001 is authorized, wire only the three binding outcomes into the single-round API/frontend; if PLAN-LLM-001 is authorized, keep it separate and do not add multi-turn state.

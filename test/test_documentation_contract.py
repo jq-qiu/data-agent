@@ -104,6 +104,26 @@ def test_future_llm_planner_is_not_claimed_as_implemented() -> None:
         REPOSITORY_ROOT / "IMPLEMENTATION_PLAN.md"
     ).read_text(encoding="utf-8")
 
-    assert "语义上下文构建器和 LLM Planner 当前尚未实现" in readme
-    assert "当前运行时流程仍以第 2 节为准" in workflow
-    assert "`SEM-002` 只有在用户明确授权后才能开始" in implementation_plan
+    assert "尚未接入生产 Graph、API 或前端" in readme
+    assert "LLM Planner 与 Validator 仍计划" in workflow
+    assert "`CLARIFY-001` 与 `PLAN-LLM-001` 均需用户明确授权" in (
+        implementation_plan
+    )
+
+
+def test_semantic_grounding_implementation_boundary_is_documented() -> None:
+    metadata_design = (
+        REPOSITORY_ROOT / "docs/03_metadata_and_nl2sql.md"
+    ).read_text(encoding="utf-8")
+    methodology = (
+        REPOSITORY_ROOT / "docs/04_analysis_methodology.md"
+    ).read_text(encoding="utf-8")
+    evaluation = (REPOSITORY_ROOT / "docs/06_evaluation.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "Qdrant 只召回 Catalog 中存在的指标" in metadata_design
+    assert "Elasticsearch 只召回允许值列" in metadata_design
+    assert "真实/Synthetic 的字段可用性仍由现有 Capability 链决定" in methodology
+    assert "Physical Schema Leakage Count = 0" in evaluation
+    assert "不代表真实外部检索准确率" in evaluation

@@ -1,0 +1,225 @@
+{
+  "dataset_version": "semantic-grounding-golden-v1",
+  "cases": [
+    {
+      "case_id": "SG01",
+      "group": "exact_ready",
+      "question": "为什么2018年5月GMV下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "READY",
+        "target_metric": "gmv",
+        "scope": {"region": null, "category": null},
+        "requested_dimensions": ["region", "category"],
+        "reason": null,
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    },
+    {
+      "case_id": "SG02",
+      "group": "exact_ready",
+      "question": "为什么2018年5月圣保罗州GMV下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "READY",
+        "target_metric": "gmv",
+        "scope": {"region": "SP", "category": null},
+        "requested_dimensions": ["category"],
+        "reason": null,
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    },
+    {
+      "case_id": "SG03",
+      "group": "retrieval_ready",
+      "question": "为什么2018年5月营业额下降？",
+      "intent": "DIAGNOSIS",
+      "candidates": {
+        "metrics": [
+          {"metric_id": "gmv", "score": 0.91, "supported_for_diagnosis": true},
+          {"metric_id": "order_count", "score": 0.70, "supported_for_diagnosis": false}
+        ]
+      },
+      "expected": {
+        "status": "READY",
+        "target_metric": "gmv",
+        "scope": {"region": null, "category": null},
+        "requested_dimensions": ["region", "category"],
+        "reason": null,
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG04",
+      "group": "retrieval_ready",
+      "question": "为什么2018年5月图书品类GMV下降？",
+      "intent": "DIAGNOSIS",
+      "candidates": {
+        "values": [
+          {"dimension": "category", "canonical_value": "livros_interesse_geral"}
+        ]
+      },
+      "expected": {
+        "status": "READY",
+        "target_metric": "gmv",
+        "scope": {"region": null, "category": "livros_interesse_geral"},
+        "requested_dimensions": ["region"],
+        "reason": null,
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG05",
+      "group": "retrieval_ready",
+      "question": "分析2018年5月GMV按客户所在地的贡献",
+      "intent": "DIAGNOSIS",
+      "candidates": {
+        "dimensions": [
+          {"dimension": "region", "score": 0.89}
+        ]
+      },
+      "expected": {
+        "status": "READY",
+        "target_metric": "gmv",
+        "scope": {"region": null, "category": null},
+        "requested_dimensions": ["region"],
+        "reason": null,
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG06",
+      "group": "clarification",
+      "question": "为什么GMV下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "CLARIFICATION_REQUIRED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "missing_current_period",
+        "missing_fields": ["time"],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    },
+    {
+      "case_id": "SG07",
+      "group": "clarification",
+      "question": "为什么2018年5月下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "CLARIFICATION_REQUIRED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "missing_or_unknown_metric",
+        "missing_fields": ["metric"],
+        "ambiguous_fields": [],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG08",
+      "group": "clarification",
+      "question": "为什么2018年5月相比基期GMV下降？",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "CLARIFICATION_REQUIRED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "explicit_baseline_incomplete",
+        "missing_fields": ["baseline"],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    },
+    {
+      "case_id": "SG09",
+      "group": "clarification",
+      "question": "为什么2018年5月南部州GMV下降？",
+      "intent": "DIAGNOSIS",
+      "candidates": {
+        "values": [
+          {"dimension": "region", "canonical_value": "PR"},
+          {"dimension": "region", "canonical_value": "SC"}
+        ]
+      },
+      "expected": {
+        "status": "CLARIFICATION_REQUIRED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "ambiguous_scope_value",
+        "missing_fields": [],
+        "ambiguous_fields": ["scope"],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG10",
+      "group": "unsupported",
+      "question": "2018年5月GMV是多少？",
+      "intent": "QUERY",
+      "expected": {
+        "status": "UNSUPPORTED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "diagnosis_intent_required",
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    },
+    {
+      "case_id": "SG11",
+      "group": "unsupported",
+      "question": "为什么2018年5月订单表现下降？",
+      "intent": "DIAGNOSIS",
+      "candidates": {
+        "metrics": [
+          {"metric_id": "order_count", "score": 0.94, "supported_for_diagnosis": false},
+          {"metric_id": "gmv", "score": 0.70, "supported_for_diagnosis": true}
+        ]
+      },
+      "expected": {
+        "status": "UNSUPPORTED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "metric_not_supported",
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": true
+      }
+    },
+    {
+      "case_id": "SG12",
+      "group": "unsupported",
+      "question": "对比2018年2月和2018年5月的GMV下降原因",
+      "intent": "DIAGNOSIS",
+      "expected": {
+        "status": "UNSUPPORTED",
+        "target_metric": null,
+        "scope": null,
+        "requested_dimensions": [],
+        "reason": "non_adjacent_calendar_months",
+        "missing_fields": [],
+        "ambiguous_fields": [],
+        "retrieval_used": false
+      }
+    }
+  ]
+}
