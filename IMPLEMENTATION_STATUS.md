@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, versioned frontend, and single-process local runtime.
+MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, and hybrid intent routing refinement.
 
 ## Current Feature
 
-DEPLOY-001 Single-process Runtime.
+ROUTE-001 Hybrid Intent Router.
 
 ## Feature Status
 
-Completed. The Python launcher validates the ignored local configuration and exact `data_agent_v1_dw` isolation, installs locked frontend dependencies only when required, builds the Vue application, and starts one Uvicorn worker. FastAPI serves the built frontend and unchanged `/api/query` on one origin, exposes process-only liveness at `/api/health/live`, and no longer registers the legacy test router or password-echo route. Seven deployment tests, five frontend tests, the frontend production build, and all 249 backend tests passed. A real single-process smoke verified the page, asset, liveness, hidden test routes, and a deterministic diagnosis terminal result. Ruff and mypy remain at the accepted 22/36 baselines. The status is valid when the DEPLOY-001 completion commit containing this file is present on `origin/main`.
+Completed. The router now recognizes common Top/Bottom N, aggregate, comparison, share, distribution, filter, and registered-entity query expressions before applying a bounded structured semantic fallback to unresolved ambiguity. Strong unsupported boundaries remain deterministic, semantic output must pass confidence/domain/GMV gates, and public degradation messages are reason-specific. The reported grouped-TopN wording enters QUERY without a classifier call. V1 retained 18/18 exact outcomes; V2 achieved 48/48 exact Intent and reason outcomes with zero diagnosis false positives. All 277 backend tests passed; repository Ruff/mypy remain at the accepted 22/36 baselines. This does not claim grouped TopN SQL correctness.
 
 ## Last Completed Feature
 
-DEPLOY-001 Single-process Runtime.
+ROUTE-001 Hybrid Intent Router.
 
 ## Next Feature
 
-None in the current MVP V1 plan. Public hosting infrastructure, production hardening, monitoring, CI/CD, V1.1 conversation support, or backend refinement requires a separately scoped Feature.
+SQL-003 Grouped Analytical Query Accuracy is the proposed next Feature, but it requires explicit authorization and a separate Spec. ROUTE-001 stops before changing SQL generation or NL2SQL behavior.
 
 ## Last Successful Validation
 
@@ -164,23 +164,29 @@ None in the current MVP V1 plan. Public hosting infrastructure, production harde
 - DEPLOY-001 route boundary: `/hello/...` and `/test_query` returned 404; `POST /login` returned 405 from the static root mount and no legacy test route is registered.
 - DEPLOY-001 isolation: no external service, database, data, Metadata index, API contract, diagnosis logic, or frontend interaction behavior was modified.
 - DEPLOY-001 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 104 source files.
+- ROUTE-001 targeted routing/API tests: 59 passed; full pytest regression: 277 passed.
+- ROUTE-001 ANA-001 compatibility: 18/18 Intent and reason outcomes unchanged, all three class recalls 1.0, diagnosis false positives 0, and low-confidence diagnosis routes 0.
+- ROUTE-001 V2 evaluation: 48/48 Intent and reason outcomes, all three class recalls 1.0, diagnosis false positives 0, and 3 deterministic ambiguity cases marked semantic-fallback eligible.
+- ROUTE-001 fallback safety: explicit queries and strong unsupported boundaries make zero classifier calls; timeout, invalid schema, provider failure, low confidence, domain mismatch, and non-GMV diagnosis fail closed with stable reasons.
+- ROUTE-001 reported-query smoke: `2018 年各州前三的销售额的商品` enters QUERY with reason `explicit_data_query`; grouped TopN SQL correctness remains unclaimed and deferred.
+- ROUTE-001 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 106 source files; all ROUTE-001 implementation/test files pass targeted Ruff and introduce no mypy finding.
 
 ## Last Commit
 
-The DEPLOY-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The ROUTE-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the DEPLOY-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the ROUTE-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking the completed single-host runtime. External services and the ignored local configuration remain prerequisites. Docker is not installed on the validated host. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Public hosting and production hardening are outside DEPLOY-001.
+None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the DEPLOY-001 commit is present on `origin/main` and review `DEPLOY-001_COMPLETION.md` plus `specs/DEPLOY-001_single_process_runtime.md`.
+3. Verify the ROUTE-001 commit is present on `origin/main` and review `ROUTE-001_COMPLETION.md` plus `specs/ROUTE-001_hybrid_intent_router.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. Use `python -m app.scripts.serve --check` for safe runtime preflight. Do not claim external-service readiness from the process-only liveness endpoint.
+5. If SQL-003 is authorized, first freeze grouped TopN/comparison SQL semantics and evaluation cases; do not treat a QUERY route as proof of SQL correctness.

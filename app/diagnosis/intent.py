@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import unicodedata
 from collections.abc import Mapping
 from enum import StrEnum
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+if TYPE_CHECKING:
+    from app.metadata.catalog import MetadataCatalog
 
 
 class Intent(StrEnum):
@@ -29,9 +33,42 @@ class IntentDecision(BaseModel):
         return self
 
 
-def _compact(question: str) -> str:
-    normalized = unicodedata.normalize("NFKC", question).casefold()
+class IntentSignals(BaseModel):
+    """Safe, serializable signals supplied to the bounded semantic classifier."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    has_domain_term: bool
+    has_gmv: bool
+    has_diagnosis_cue: bool
+    has_factor_bundle: bool
+    has_query_operation: bool
+
+
+class SemanticIntentDecision(BaseModel):
+    """The only classifier output accepted by the hybrid router."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    intent: Intent
+    confidence: float = Field(ge=0, le=1)
+
+
+class IntentClassifier(Protocol):
+    async def classify(
+        self,
+        question: str,
+        signals: IntentSignals,
+    ) -> SemanticIntentDecision: ...
+
+
+def _compact(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value).casefold()
     return re.sub(r"[^0-9a-z_\u4e00-\u9fff]+", "", normalized)
+
+
+def _normalized_terms(terms: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(term for value in terms if (term := _compact(value))))
 
 
 def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
@@ -39,74 +76,204 @@ def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
 
 
 class IntentRouter:
-    """High-precision V1 router with explicit unsupported degradation."""
+    """High-precision rules with a bounded semantic fallback for ambiguity."""
 
-    _metric_terms = (
+    _default_domain_terms = (
         "gmv",
         "成交总额",
         "商品交易总额",
         "销售额",
+        "成交金额",
         "订单",
+        "订单量",
+        "订单数",
         "客单价",
         "aov",
+        "销量",
+        "件数",
         "评分",
+        "星级",
         "商品",
+        "产品",
         "品类",
+        "分类",
+        "客户",
+        "用户",
+        "买家",
+        "卖家",
+        "商家",
         "付款",
         "支付",
         "配送",
+        "物流",
+        "评价",
+        "评论",
+        "地区",
+        "州",
+        "region",
+        "state",
+        "category",
+        "product",
+        "customer",
+        "seller",
+        "order",
+        "payment",
+        "delivery",
+        "review",
         "访客",
         "流量",
         "促销",
         "库存",
+        "转化率",
     )
-    _gmv_terms = ("gmv", "成交总额", "商品交易总额", "销售额")
-    _diagnosis_terms = (
-        "为什么",
-        "原因",
-        "根因",
-        "驱动",
-        "归因",
-        "异动",
-        "拆解",
-        "贡献最大",
-        "贡献度",
-        "贡献了",
+    _gmv_terms = _normalized_terms(("gmv", "成交总额", "商品交易总额", "销售额"))
+    _diagnosis_terms = _normalized_terms(
+        (
+            "为什么",
+            "原因",
+            "根因",
+            "驱动",
+            "归因",
+            "异动",
+            "拆解",
+            "贡献最大",
+            "贡献度",
+            "贡献了",
+        )
     )
-    _factor_terms = ("流量", "访客", "traffic", "促销", "promotion", "库存", "inventory")
-    _factor_analysis_terms = ("发生了什么", "什么变化", "分别变化", "验证", "影响")
-    _query_terms = (
-        "多少",
-        "列出",
-        "统计",
-        "排名",
-        "最高",
-        "最低",
-        "趋势",
-        "有哪些",
-        "是什么",
-        "对比",
-        "相比",
-        "变化了多少",
-        "平均",
-        "总数",
-        "一共有",
+    _factor_terms = _normalized_terms(
+        ("流量", "访客", "traffic", "促销", "promotion", "库存", "inventory")
     )
-    _strict_causal_terms = ("严格因果", "因果关系", "唯一原因", "证明", "证实")
-    _future_action_terms = (
-        "预测",
-        "明年",
-        "自动调价",
-        "自动补货",
-        "自动投放",
-        "执行营销",
-        "替我下单",
+    _factor_analysis_terms = _normalized_terms(
+        ("发生了什么", "什么变化", "分别变化", "验证", "影响")
+    )
+    _query_terms = _normalized_terms(
+        (
+            "多少",
+            "是多少",
+            "查询",
+            "查看",
+            "列出",
+            "展示",
+            "统计",
+            "排名",
+            "排行",
+            "最高",
+            "最低",
+            "最大",
+            "最小",
+            "最好",
+            "最差",
+            "热销",
+            "趋势",
+            "有哪些",
+            "是什么",
+            "对比",
+            "相比",
+            "变化了多少",
+            "同比",
+            "环比",
+            "增长率",
+            "增幅",
+            "降幅",
+            "平均",
+            "中位数",
+            "总数",
+            "汇总",
+            "合计",
+            "总和",
+            "一共有",
+            "占比",
+            "份额",
+            "构成",
+            "分布",
+            "明细",
+            "分别",
+            "每月",
+            "每日",
+            "各州",
+            "各品类",
+            "按州",
+            "按品类",
+            "list",
+            "show",
+            "rank",
+            "ranking",
+            "trend",
+            "average",
+            "median",
+            "total",
+            "share",
+        )
+    )
+    _strict_causal_terms = _normalized_terms(
+        ("严格因果", "因果关系", "唯一原因", "证明", "证实")
+    )
+    _future_action_terms = _normalized_terms(
+        (
+            "预测",
+            "明年",
+            "自动调价",
+            "自动补货",
+            "自动投放",
+            "执行营销",
+            "替我下单",
+        )
+    )
+    _query_patterns = (
+        re.compile(r"(?:前|后|倒数)(?:\d+|[一二三四五六七八九十百]+)(?:名|个)?"),
+        re.compile(r"(?:top|bottom)\d+"),
+        re.compile(r"(?:超过|低于|大于|小于|不少于|不超过|至少|至多|介于)"),
     )
     _anaphora_patterns = (
         re.compile(r"^(那|那么|上一个).*(呢|怎么样|如何)?$"),
         re.compile(r"^这个(呢|怎么样|如何|情况)$"),
         re.compile(r"^继续(分析|看|查)?$"),
     )
+
+    def __init__(
+        self,
+        domain_terms: tuple[str, ...] | None = None,
+        classifier: IntentClassifier | None = None,
+        semantic_timeout_seconds: float = 8.0,
+    ) -> None:
+        if semantic_timeout_seconds <= 0 or semantic_timeout_seconds > 8:
+            raise ValueError("semantic timeout must be greater than zero and at most 8 seconds")
+        self._domain_terms = _normalized_terms(domain_terms or self._default_domain_terms)
+        self._classifier = classifier
+        self._semantic_timeout_seconds = semantic_timeout_seconds
+
+    @classmethod
+    def from_catalog(
+        cls,
+        catalog: MetadataCatalog,
+        classifier: IntentClassifier | None = None,
+        semantic_timeout_seconds: float = 8.0,
+    ) -> IntentRouter:
+        terms = list(cls._default_domain_terms)
+        for metric in catalog.metrics:
+            terms.extend((metric.metric_id, metric.display_name, *metric.aliases))
+        for table in catalog.tables:
+            terms.extend((table.table_name, *table.aliases))
+            for column in table.columns:
+                terms.extend((column.name, *column.aliases))
+        return cls(tuple(terms), classifier, semantic_timeout_seconds)
+
+    def signals(self, question: str) -> IntentSignals:
+        text = _compact(question)
+        factor_count = sum(term in text for term in self._factor_terms)
+        return IntentSignals(
+            has_domain_term=_contains_any(text, self._domain_terms),
+            has_gmv=_contains_any(text, self._gmv_terms),
+            has_diagnosis_cue=_contains_any(text, self._diagnosis_terms),
+            has_factor_bundle=(
+                factor_count >= 2 and _contains_any(text, self._factor_analysis_terms)
+            ),
+            has_query_operation=(
+                _contains_any(text, self._query_terms)
+                or any(pattern.search(text) for pattern in self._query_patterns)
+            ),
+        )
 
     def route(self, question: str) -> IntentDecision:
         text = _compact(question)
@@ -135,27 +302,24 @@ class IntentRouter:
                 reason="strict_causal_request_unsupported",
             )
 
-        has_gmv = _contains_any(text, self._gmv_terms)
-        has_diagnosis_cue = _contains_any(text, self._diagnosis_terms)
-        factor_count = sum(term in text for term in self._factor_terms)
-        has_factor_analysis = _contains_any(text, self._factor_analysis_terms)
-        if (has_gmv and has_diagnosis_cue) or (factor_count >= 2 and has_factor_analysis):
+        signals = self.signals(question)
+        if (signals.has_gmv and signals.has_diagnosis_cue) or signals.has_factor_bundle:
             return IntentDecision(
                 intent=Intent.DIAGNOSIS,
                 confidence=0.95,
                 reason=(
                     "gmv_diagnosis_request"
-                    if has_gmv
+                    if signals.has_gmv
                     else "candidate_factor_diagnosis_request"
                 ),
             )
-        if has_diagnosis_cue and not has_gmv:
+        if signals.has_diagnosis_cue and not signals.has_gmv:
             return IntentDecision(
                 intent=Intent.UNSUPPORTED,
                 confidence=0.96,
                 reason="non_gmv_diagnosis_unsupported",
             )
-        if _contains_any(text, self._metric_terms) and _contains_any(text, self._query_terms):
+        if signals.has_domain_term and signals.has_query_operation:
             return IntentDecision(
                 intent=Intent.QUERY,
                 confidence=0.94,
@@ -165,6 +329,56 @@ class IntentRouter:
             intent=Intent.UNSUPPORTED,
             confidence=0.45,
             reason="ambiguous_or_incomplete_question",
+        )
+
+    async def aroute(self, question: str) -> IntentDecision:
+        deterministic = self.route(question)
+        if (
+            deterministic.reason != "ambiguous_or_incomplete_question"
+            or self._classifier is None
+        ):
+            return deterministic
+
+        signals = self.signals(question)
+        try:
+            semantic = await asyncio.wait_for(
+                self._classifier.classify(question, signals),
+                timeout=self._semantic_timeout_seconds,
+            )
+            semantic = SemanticIntentDecision.model_validate(semantic)
+        except Exception:  # noqa: BLE001 - semantic failure must fail closed
+            return IntentDecision(
+                intent=Intent.UNSUPPORTED,
+                confidence=0.0,
+                reason="semantic_classifier_unavailable",
+            )
+        if semantic.confidence < 0.80:
+            return IntentDecision(
+                intent=Intent.UNSUPPORTED,
+                confidence=semantic.confidence,
+                reason="semantic_low_confidence",
+            )
+        if semantic.intent is Intent.QUERY and not signals.has_domain_term:
+            return IntentDecision(
+                intent=Intent.UNSUPPORTED,
+                confidence=semantic.confidence,
+                reason="semantic_domain_mismatch",
+            )
+        if semantic.intent is Intent.DIAGNOSIS and not signals.has_gmv:
+            return IntentDecision(
+                intent=Intent.UNSUPPORTED,
+                confidence=semantic.confidence,
+                reason="non_gmv_diagnosis_unsupported",
+            )
+        reasons = {
+            Intent.QUERY: "semantic_data_query",
+            Intent.DIAGNOSIS: "semantic_gmv_diagnosis",
+            Intent.UNSUPPORTED: "semantic_request_unsupported",
+        }
+        return IntentDecision(
+            intent=semantic.intent,
+            confidence=semantic.confidence,
+            reason=reasons[semantic.intent],
         )
 
 

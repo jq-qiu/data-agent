@@ -20,7 +20,7 @@ from app.api.dependencies import _SerializedMetaMySQLRepository, get_query_servi
 from app.api.routers.query_router import query_router
 from app.api.schemas.query_schema import QuerySchema
 from app.diagnosis.capability import CapabilityAssessor
-from app.diagnosis.intent import IntentRouter
+from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.query import (
     AnalysisQueryBuilder,
     AnalysisQueryContext,
@@ -34,7 +34,7 @@ from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.validator import SQLValidator, ValidatedSQL
 from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.services import query_service as query_service_module
-from app.services.query_service import QueryService, _diagnosis_result
+from app.services.query_service import QueryService, _diagnosis_result, _unsupported_result
 
 ROOT = Path(__file__).resolve().parents[2]
 FORBIDDEN_TRACE_KEYS = {
@@ -400,6 +400,34 @@ async def test_query_branch_keeps_rows_and_adds_only_safe_trace(monkeypatch: Any
 
 
 @pytest.mark.asyncio
+async def test_reported_grouped_topn_question_enters_query_branch(monkeypatch: Any) -> None:
+    _, validator = _catalog_and_validator()
+    monkeypatch.setattr(query_service_module, "nl2sql_graph", FakeNL2SQLGraph())
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=ControlledRepository(),  # type: ignore[arg-type]
+        sql_validator=validator,
+    )
+
+    encoded = [
+        item
+        async for item in service.query_answer("2018 年各州前三的销售额的商品")
+    ]
+    result = next(
+        json.loads(item.removeprefix("data: "))
+        for item in encoded
+        if json.loads(item.removeprefix("data: "))["type"] == "result"
+    )
+
+    assert result["intent"] == "QUERY"
+    assert result["analysis_trace"][0]["reason"] == "explicit_data_query"
+
+
+@pytest.mark.asyncio
 async def test_unsupported_request_degrades_without_touching_data_paths() -> None:
     _, validator = _catalog_and_validator()
     service = QueryService(
@@ -419,3 +447,30 @@ async def test_unsupported_request_degrades_without_touching_data_paths() -> Non
     assert result["intent"] == "UNSUPPORTED"
     assert result["data"] == []
     assert result["limitations"] == ["future_or_external_action_unsupported"]
+    assert result["answer"] == "V1 不支持预测或自动执行操作，可改为查询已有数据。"
+
+
+@pytest.mark.parametrize(
+    "reason,expected_text",
+    (
+        ("empty_question", "完整的单轮数据问题"),
+        ("multi_turn_anaphora_unsupported", "省略式追问"),
+        ("strict_causal_request_unsupported", "严格因果"),
+        ("non_gmv_diagnosis_unsupported", "诊断仅支持 GMV"),
+        ("semantic_low_confidence", "补充指标"),
+        ("semantic_classifier_unavailable", "语义识别暂不可用"),
+        ("semantic_domain_mismatch", "已注册的电商指标"),
+        ("ambiguous_or_incomplete_question", "时间范围"),
+    ),
+)
+def test_unsupported_guidance_is_reason_specific_and_safe(
+    reason: str,
+    expected_text: str,
+) -> None:
+    result = _unsupported_result(
+        IntentDecision(intent=Intent.UNSUPPORTED, confidence=0.5, reason=reason)
+    )
+
+    assert expected_text in result["answer"]
+    assert result["limitations"] == [reason]
+    assert not (_nested_keys(result) & FORBIDDEN_TRACE_KEYS)

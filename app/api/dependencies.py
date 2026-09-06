@@ -12,6 +12,8 @@ from app.clients.es_client_manager import es_client_manager
 from app.clients.mysql_client_manager import dw_mysql_client_manager, meta_mysql_client_manager
 from app.clients.qdrant_client_manager import qdrant_client_manager
 from app.conf.app_config import app_config
+from app.diagnosis.intent import IntentRouter
+from app.diagnosis.intent_classifier import LangChainIntentClassifier
 from app.entities.column_info import ColumnInfo
 from app.entities.metric_info import MetricInfo
 from app.metadata.catalog import load_catalog
@@ -52,6 +54,16 @@ def get_sql_validator() -> SQLValidator:
     return SQLValidator(
         load_catalog(ROOT / "conf" / "meta_config.yaml"),
         load_sql_policy(ROOT / "conf" / "sql_policy.yaml"),
+    )
+
+
+@lru_cache(maxsize=1)
+def get_intent_router() -> IntentRouter:
+    from app.agent.llm import llm
+
+    return IntentRouter.from_catalog(
+        get_sql_validator().catalog,
+        classifier=LangChainIntentClassifier(llm),
     )
 
 
@@ -115,6 +127,7 @@ async def get_query_service(
         Depends(get_dw_mysql_repository),
     ],
     sql_validator: Annotated[SQLValidator, Depends(get_sql_validator)],
+    intent_router: Annotated[IntentRouter, Depends(get_intent_router)],
 ) -> QueryService:
     if (
         app_config.db_dw.database != "data_agent_v1_dw"
@@ -129,4 +142,5 @@ async def get_query_service(
         meta_mysql_repository=meta_mysql_repository,
         dw_mysql_repository=dw_mysql_repository,
         sql_validator=sql_validator,
+        intent_router=intent_router,
     )

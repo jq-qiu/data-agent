@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator, Mapping
+from types import MappingProxyType
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
@@ -28,6 +29,21 @@ from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepositor
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
 from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
 
+_UNSUPPORTED_GUIDANCE = MappingProxyType(
+    {
+        "empty_question": "请输入一个完整的单轮数据问题。",
+        "multi_turn_anaphora_unsupported": "V1 暂不支持省略式追问，请在本轮补全指标、时间和维度。",
+        "future_or_external_action_unsupported": "V1 不支持预测或自动执行操作，可改为查询已有数据。",
+        "strict_causal_request_unsupported": "V1 只能提供关联证据，不能证明严格因果关系。",
+        "non_gmv_diagnosis_unsupported": "V1 诊断仅支持 GMV；其他指标可改为单轮数据查询。",
+        "semantic_low_confidence": "暂时无法可靠判断请求意图，请补充指标、时间和期望操作。",
+        "semantic_classifier_unavailable": "语义识别暂不可用，请明确写出指标、时间和查询操作。",
+        "semantic_domain_mismatch": "请使用已注册的电商指标或实体，并说明查询操作。",
+        "semantic_request_unsupported": "当前请求不在 V1 单轮问数与 GMV 关联诊断范围内。",
+        "ambiguous_or_incomplete_question": "请补充要查询的指标、时间范围和维度。",
+    }
+)
+
 
 class QueryService:
     def __init__(
@@ -39,6 +55,7 @@ class QueryService:
         meta_mysql_repository: MetaMySQLRepository,
         dw_mysql_repository: DWMySQLRepository,
         sql_validator: SQLValidator,
+        intent_router: IntentRouter | None = None,
     ):
         self.embedding_client = embedding_client
         self.column_qdrant_repository = column_qdrant_repository
@@ -47,9 +64,12 @@ class QueryService:
         self.meta_mysql_repository = meta_mysql_repository
         self.dw_mysql_repository = dw_mysql_repository
         self.sql_validator = sql_validator
+        self.intent_router = intent_router or IntentRouter.from_catalog(
+            sql_validator.catalog
+        )
 
     async def query_answer(self, question: str) -> AsyncIterator[str]:
-        decision = IntentRouter().route(question)
+        decision = await self.intent_router.aroute(question)
         yield _event(
             {"type": "progress", "step": "识别请求意图", "status": "running"}
         )
@@ -177,7 +197,10 @@ def _unsupported_result(decision: IntentDecision) -> dict[str, Any]:
     return {
         "type": "result",
         "intent": decision.intent.value,
-        "answer": "当前请求超出 V1 单轮问数与 GMV 关联诊断范围。",
+        "answer": _UNSUPPORTED_GUIDANCE.get(
+            decision.reason,
+            "当前请求不在 V1 单轮问数与 GMV 关联诊断范围内。",
+        ),
         "data": [],
         "analysis_trace": [_intent_trace(decision)],
         "evidence": [],
