@@ -2,7 +2,7 @@
 
 ## Feature
 
-SQL-003 Grouped TopN Query Support. The NL2SQL safety policy is versioned to `sql-policy-v1.1` and now permits a narrowly constrained grouped TopN shape: aggregate in a registered CTE, rank with `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)`, and filter rank position in an outer query with a stable identifier tie-break. `COUNT(*)` is distinguished from forbidden projection stars, CTE aliases resolve only to declared outputs, and Query Service emits a safe terminal error when the one allowed repair exhausts without a result.
+SQL-003 Grouped TopN Query Support. The NL2SQL safety policy is versioned to `sql-policy-v1.1` and now permits a narrowly constrained grouped TopN shape: aggregate in a registered CTE, rank with `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)`, and filter rank position in an outer query with a stable identifier tie-break. `COUNT(*)` is distinguished from forbidden projection stars, CTE and derived-table aliases resolve only to declared outputs, time-component extraction such as `YEAR()` is recognized through its SQLGlot representation, and Query Service emits a safe terminal error when the one allowed repair exhausts without a result.
 
 ## Changed Files
 
@@ -43,9 +43,9 @@ A read-only script also validated all 30 SQL-002 reference SQL statements and co
 
 ## Test Results
 
-- SQL-003 targeted suite: 49 passed, 0 failed in 7.96 seconds.
-- Full backend regression: 283 passed, 0 failed in 13.24 seconds.
-- Tests cover `COUNT(*)`/projection-star separation, CTE output aliasing, constrained window shapes, rejection of `RANK`/`DENSE_RANK`/`LAG`, one-repair terminal fallback, and the four-case Golden contract.
+- SQL-003 targeted suite: 52 passed, 0 failed in 9.57 seconds.
+- Full backend regression: 286 passed, 0 failed.
+- Tests cover `COUNT(*)`/projection-star separation, CTE and derived-table output aliasing, `YEAR()` extraction parsing, constrained window shapes, rejection of `RANK`/`DENSE_RANK`/`LAG`, one-repair terminal fallback, and the four-case Golden contract.
 
 ## Lint Results
 
@@ -68,8 +68,8 @@ A read-only script also validated all 30 SQL-002 reference SQL statements and co
 
 1. Passed: the logged grouped-TopN shape validates under `sql-policy-v1.1` with `row_number`, registered physical tables/columns/JOINs, and V1 GMV rules.
 2. Passed: `COUNT(*)` validates while `SELECT *`, qualified projection stars, and stars outside plain `COUNT(*)` remain rejected.
-3. Passed: CTE aliases may reference only declared output columns; unknown CTE output and physical alias/column/JOIN references remain rejected.
-4. Passed: `ROW_NUMBER` requires OVER, PARTITION BY, and ORDER BY; `RANK`, `DENSE_RANK`, and `LAG` remain rejected.
+3. Passed: CTE and derived-table aliases may reference only declared output columns; unknown output and physical alias/column/JOIN references remain rejected.
+4. Passed: `ROW_NUMBER` requires OVER, PARTITION BY, and ORDER BY; `RANK`, `DENSE_RANK`, and `LAG` remain rejected; `TS_OR_DS_TO_DATE` is allowed only inside `YEAR`/`MONTH`/`DAY`/`QUARTER`.
 5. Passed: generation and repair prompts require aggregate-then-rank, exact-N `ROW_NUMBER`, and a stable identifier tie-break.
 6. Passed: one failed repair still stops, and Query Service emits exactly one safe `QUERY_VALIDATION_FAILED` terminal event when the graph ends without a result.
 7. Passed: the Golden contains exactly four fixed cases and the evaluator persists only checksums, row/group counts, validation traces, and pass/fail facts.
@@ -82,9 +82,10 @@ A read-only script also validated all 30 SQL-002 reference SQL statements and co
 ## Known Issues
 
 - Grouped TopN correctness is proven only for the four frozen references, not for arbitrary grouped analytical SQL.
+- A follow-up run exposed two model-dependent variants (`YEAR()` parsing and qualified derived-table aliases); both are now closed with AST and regression tests.
 - The runtime still requires the configured external model and services; SQL-003 does not improve the previously observed multi-minute LLM latency.
 - Repository Ruff and mypy retain the documented 22/36 pre-existing baselines.
 
 ## Diff Review Summary
 
-The change keeps strong safety rules first and limits window-function support to a single constrained grouped-TopN shape. `COUNT(*)` is allowed only as an aggregate argument, not as a projection wildcard. CTE output validation is scoped to the alias target declared by each CTE. Query Service adds a terminal fallback without changing graph topology or the one-repair rule. The evaluator persists no raw rows, credentials, connection details, or model payloads. Final review found no intent-router, diagnosis, data, Metadata/index, frontend, deployment, or historical SQL-002-report modification. Commit and push synchronization are verified separately after this report is committed.
+The change keeps strong safety rules first and limits window-function support to a single constrained grouped-TopN shape. `COUNT(*)` is allowed only as an aggregate argument, not as a projection wildcard. CTE and derived-table output validation is scoped to each declared alias. `TS_OR_DS_TO_DATE` is accepted only as the argument of an allowlisted time-component function. Query Service adds a terminal fallback without changing graph topology or the one-repair rule. The evaluator persists no raw rows, credentials, connection details, or model payloads. Final review found no intent-router, diagnosis, data, Metadata/index, frontend, deployment, or historical SQL-002-report modification. Commit and push synchronization are verified separately after this report is committed.

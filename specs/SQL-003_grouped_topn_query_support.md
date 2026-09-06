@@ -47,6 +47,13 @@ Historical SQL-002 Golden data, reports, and run artifacts remain immutable.
 - The failed request never reached EXPLAIN or SQL execution. Its approximately
   eight-minute duration is dominated by external model calls; latency
   optimization is a separate Feature.
+- A later rerun showed the external model also emits `YEAR(purchase_date)`, which
+  SQLGlot parses as `Year(TsOrDsToDate(...))`; the inner `ts_or_ds_to_date` node
+  was incorrectly rejected despite `year` being allowlisted.
+- A rerun also showed the repair can use a derived table `FROM (...) t` with
+  qualified output columns. Derived-table aliases were not registered, so
+  `t.state` was rejected as `unknown table alias: t`. Successful runs avoided
+  both variants, which is why behavior appeared intermittent.
 
 ## 4. In Scope
 
@@ -56,9 +63,12 @@ Historical SQL-002 Golden data, reports, and run artifacts remain immutable.
   `PARTITION BY` and `ORDER BY`.
 - Permit the exact aggregate wildcard form `COUNT(*)` while continuing to
   reject `SELECT *`, qualified projection stars, and every other star context.
-- Resolve aliases of known CTEs to their declared output columns, while
-  rejecting unknown CTE output columns and preserving physical table/column
-  registration checks.
+- Resolve aliases of known CTEs and derived tables (`FROM (...) t`) to their
+  declared output columns, while rejecting unknown output columns and preserving
+  physical table/column registration checks.
+- Allow the SQLGlot internal `ts_or_ds_to_date` node only when it is the argument
+  of an allowlisted time-component function such as `YEAR`, `MONTH`, `DAY`, or
+  `QUARTER`.
 - Update SQL generation and repair prompts with the accepted grouped TopN
   pattern, `ROW_NUMBER` restriction, exact-N behavior, and stable identifier
   tie-break.

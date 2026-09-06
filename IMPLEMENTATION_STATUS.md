@@ -10,7 +10,7 @@ SQL-003 Grouped TopN Query Support.
 
 ## Feature Status
 
-Completed. The SQL Policy is versioned as `sql-policy-v1.1`. The AST Validator now distinguishes `COUNT(*)` from projection stars, resolves registered CTE aliases to their declared outputs, and allowlists only constrained `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for grouped TopN. Generation and repair prompts use aggregate-then-rank with a stable identifier tie-break. Query Service emits a safe terminal error when one validation repair exhausts without a result. Four fixed grouped TopN references passed Validator, EXPLAIN, execution, checksum, and per-group rank/limit checks against `data_agent_v1_dw`. All 30 SQL-002 references still validate with identical table/column/JOIN traces. Full pytest 283 passed; repository Ruff/mypy remain at the accepted 22/36 baselines.
+Completed. The SQL Policy is versioned as `sql-policy-v1.1`. The AST Validator now distinguishes `COUNT(*)` from projection stars, resolves registered CTE aliases to their declared outputs, and allowlists only constrained `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for grouped TopN. Generation and repair prompts use aggregate-then-rank with a stable identifier tie-break. Query Service emits a safe terminal error when one validation repair exhausts without a result. Four fixed grouped TopN references passed Validator, EXPLAIN, execution, checksum, and per-group rank/limit checks against `data_agent_v1_dw`. All 30 SQL-002 references still validate with identical table/column/JOIN traces. Full pytest 286 passed; repository Ruff/mypy remain at the accepted 22/36 baselines.
 
 ## Last Completed Feature
 
@@ -171,14 +171,15 @@ A separately scoped latency or broader analytical SQL improvement if authorized.
 - ROUTE-001 reported-query smoke: `2018 年各州前三的销售额的商品` enters QUERY with reason `explicit_data_query`; grouped TopN SQL correctness remains unclaimed and deferred.
 - ROUTE-001 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 106 source files; all ROUTE-001 implementation/test files pass targeted Ruff and introduce no mypy finding.
 
-- SQL-003 targeted tests: 49 passed; full pytest regression: 283 passed.
+- SQL-003 targeted tests: 52 passed; full pytest regression: 286 passed.
 - SQL-003 policy: `sql-policy-v1.1`; `row_number` is allowlisted only with OVER/PARTITION BY/ORDER BY; `RANK`, `DENSE_RANK`, and `LAG` remain rejected.
-- SQL-003 AST safety: `COUNT(*)` validates; `SELECT *`, qualified projection stars, and other star contexts remain rejected.
-- SQL-003 CTE handling: registered CTE aliases resolve only to declared output columns; unknown CTE output and physical alias references remain rejected.
+- SQL-003 AST safety: `COUNT(*)` validates; `SELECT *`, qualified projection stars, and other star contexts remain rejected; `ts_or_ds_to_date` is allowed only inside `YEAR`/`MONTH`/`DAY`/`QUARTER`.
+- SQL-003 CTE/derived-table handling: registered CTE and `FROM (...) t` aliases resolve only to declared output columns; unknown output and physical alias references remain rejected.
 - SQL-003 terminal behavior: one failed repair stops and Query Service emits exactly one safe `QUERY_VALIDATION_FAILED` event.
 - SQL-003 Golden: four fixed grouped TopN cases; freeze-reference wrote non-null checksums and the non-freeze run passed 4/4.
 - SQL-003 compatibility: all 30 SQL-002 references still validate with identical table/column/JOIN traces.
 - SQL-003 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 107 source files; all SQL-003 implementation/test files pass targeted Ruff and introduce no mypy finding.
+- SQL-003 follow-up: rerun failures caused by `YEAR()` parsing to `TsOrDsToDate` and by qualified derived-table aliases are now covered and closed by AST/regression tests.
 ## Last Commit
 
 The SQL-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.

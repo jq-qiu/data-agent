@@ -82,9 +82,15 @@ class SQLValidator:
             for cte in statement.find_all(exp.CTE)
             if cte.alias
         }
-        tables, alias_map = self._resolve_tables(statement, set(cte_outputs))
-        columns = self._validate_columns(statement, tables, alias_map, cte_outputs)
-        join_relations, grain_warnings = self._validate_joins(statement, alias_map, cte_outputs)
+        subquery_outputs = {
+            subquery.alias_or_name: set(subquery.this.named_selects)
+            for subquery in statement.find_all(exp.Subquery)
+            if subquery.alias_or_name
+        }
+        virtual_outputs = {**subquery_outputs, **cte_outputs}
+        tables, alias_map = self._resolve_tables(statement, set(virtual_outputs))
+        columns = self._validate_columns(statement, tables, alias_map, virtual_outputs)
+        join_relations, grain_warnings = self._validate_joins(statement, alias_map, virtual_outputs)
         self._validate_window_functions(statement)
         self._validate_functions(statement)
         self._validate_sensitive_projection(statement, tables, alias_map)
@@ -170,6 +176,10 @@ class SQLValidator:
             tables.add(name)
             aliases[table.alias_or_name] = name
             aliases[name] = name
+        for subquery in statement.find_all(exp.Subquery):
+            alias = subquery.alias_or_name
+            if alias and alias in cte_names:
+                aliases[alias] = alias
         if not tables:
             raise SQLValidationError("query must read at least one registered table")
         return tables, aliases
@@ -263,6 +273,10 @@ class SQLValidator:
     def _validate_functions(self, statement: exp.Expression) -> None:
         for function in statement.find_all(exp.Func):
             if isinstance(function, exp.Connector):
+                continue
+            if isinstance(function, exp.TsOrDsToDate) and isinstance(
+                function.parent, (exp.Year, exp.Month, exp.Day, exp.Quarter)
+            ):
                 continue
             name = (
                 function.name.casefold()

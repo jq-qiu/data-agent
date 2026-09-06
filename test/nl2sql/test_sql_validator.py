@@ -211,3 +211,51 @@ def test_validation_route_allows_only_one_repair() -> None:
     assert route_after_validation({"error": None, "repair_attempts": 0}) == "execute_sql"
     assert route_after_validation({"error": "invalid", "repair_attempts": 0}) == "correct_sql"
     assert route_after_validation({"error": "still invalid", "repair_attempts": 1}) == "end"
+
+
+def test_year_extraction_is_allowed_but_raw_ts_or_ds_to_date_is_not(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate("SELECT YEAR(purchase_date) AS y FROM fact_order")
+
+    assert "YEAR(" in result.sql
+    with pytest.raises(SQLValidationError, match="not allowlisted"):
+        validator.validate("SELECT TS_OR_DS_TO_DATE(purchase_date) FROM fact_order")
+
+
+def test_derived_table_alias_resolves_declared_outputs(validator: SQLValidator) -> None:
+    result = validator.validate(
+        "SELECT t.state FROM (SELECT c.state FROM dim_customer AS c) AS t"
+    )
+
+    assert result.tables == ("dim_customer",)
+    with pytest.raises(SQLValidationError, match="not exposed by CTE"):
+        validator.validate(
+            "SELECT t.gmv FROM (SELECT c.state FROM dim_customer AS c) AS t"
+        )
+
+
+def test_grouped_topn_derived_table_with_qualified_columns(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate(
+        "SELECT t.state AS state, t.product_id AS product_id, t.sales_amount AS sales_amount "
+        "FROM ("
+        "SELECT c.state, oi.product_id, SUM(oi.price) AS sales_amount, "
+        "ROW_NUMBER() OVER ("
+        "PARTITION BY c.state ORDER BY SUM(oi.price) DESC, oi.product_id ASC"
+        ") AS rn "
+        "FROM fact_order_item oi "
+        "JOIN fact_order o ON oi.order_id = o.order_id "
+        "JOIN dim_customer c ON o.customer_id = c.customer_id "
+        "WHERE o.purchase_date >= '2018-01-01' AND o.purchase_date < '2019-01-01' "
+        "AND o.status NOT IN ('canceled', 'unavailable') "
+        "GROUP BY c.state, oi.product_id"
+        ") t "
+        "WHERE t.rn <= 3 ORDER BY t.state, t.sales_amount, t.product_id",
+        ("gmv",),
+    )
+
+    assert result.tables == ("dim_customer", "fact_order", "fact_order_item")
+    assert result.join_relations == ("order_item_to_order", "order_to_customer")
+    assert "ROW_NUMBER() OVER" in result.sql
