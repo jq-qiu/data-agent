@@ -324,6 +324,11 @@ class FakeNL2SQLGraph:
         }
 
 
+class ValidationFailureGraph:
+    async def astream(self, **_: Any):
+        yield {"type": "progress", "step": "验证SQL", "status": "error"}
+
+
 class ValidationHandoffRepository:
     def __init__(self) -> None:
         self.validated: list[str] = []
@@ -425,6 +430,33 @@ async def test_reported_grouped_topn_question_enters_query_branch(monkeypatch: A
 
     assert result["intent"] == "QUERY"
     assert result["analysis_trace"][0]["reason"] == "explicit_data_query"
+
+
+@pytest.mark.asyncio
+async def test_query_graph_without_result_emits_safe_terminal_error(monkeypatch: Any) -> None:
+    _, validator = _catalog_and_validator()
+    monkeypatch.setattr(query_service_module, "nl2sql_graph", ValidationFailureGraph())
+    service = QueryService(
+        embedding_client=None,  # type: ignore[arg-type]
+        column_qdrant_repository=None,  # type: ignore[arg-type]
+        metric_qdrant_repository=None,  # type: ignore[arg-type]
+        value_es_repository=None,  # type: ignore[arg-type]
+        meta_mysql_repository=None,  # type: ignore[arg-type]
+        dw_mysql_repository=None,  # type: ignore[arg-type]
+        sql_validator=validator,
+    )
+
+    encoded = [item async for item in service.query_answer("各州GMV排名")]
+    payloads = [json.loads(item.removeprefix("data: ")) for item in encoded]
+    terminals = [item for item in payloads if item["type"] in {"result", "error"}]
+
+    assert terminals == [
+        {
+            "type": "error",
+            "code": "QUERY_VALIDATION_FAILED",
+            "message": "生成的查询未能通过安全校验，请调整问题后重试。",
+        }
+    ]
 
 
 @pytest.mark.asyncio

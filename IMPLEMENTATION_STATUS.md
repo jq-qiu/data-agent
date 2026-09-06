@@ -2,15 +2,15 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, and hybrid intent routing refinement.
+MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, and grouped TopN query support.
 
 ## Current Feature
 
-ROUTE-001 Hybrid Intent Router.
+SQL-003 Grouped TopN Query Support.
 
 ## Feature Status
 
-Completed. The router now recognizes common Top/Bottom N, aggregate, comparison, share, distribution, filter, and registered-entity query expressions before applying a bounded structured semantic fallback to unresolved ambiguity. Strong unsupported boundaries remain deterministic, semantic output must pass confidence/domain/GMV gates, and public degradation messages are reason-specific. The reported grouped-TopN wording enters QUERY without a classifier call. V1 retained 18/18 exact outcomes; V2 achieved 48/48 exact Intent and reason outcomes with zero diagnosis false positives. All 277 backend tests passed; repository Ruff/mypy remain at the accepted 22/36 baselines. This does not claim grouped TopN SQL correctness.
+Completed. The SQL Policy is versioned as `sql-policy-v1.1`. The AST Validator now distinguishes `COUNT(*)` from projection stars, resolves registered CTE aliases to their declared outputs, and allowlists only constrained `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for grouped TopN. Generation and repair prompts use aggregate-then-rank with a stable identifier tie-break. Query Service emits a safe terminal error when one validation repair exhausts without a result. Four fixed grouped TopN references passed Validator, EXPLAIN, execution, checksum, and per-group rank/limit checks against `data_agent_v1_dw`. All 30 SQL-002 references still validate with identical table/column/JOIN traces. Full pytest 283 passed; repository Ruff/mypy remain at the accepted 22/36 baselines.
 
 ## Last Completed Feature
 
@@ -18,7 +18,7 @@ ROUTE-001 Hybrid Intent Router.
 
 ## Next Feature
 
-SQL-003 Grouped Analytical Query Accuracy is the proposed next Feature, but it requires explicit authorization and a separate Spec. ROUTE-001 stops before changing SQL generation or NL2SQL behavior.
+A separately scoped latency or broader analytical SQL improvement if authorized. SQL-003 does not claim grouped TopN SQL beyond the four frozen references, and it does not optimize external-model latency.
 
 ## Last Successful Validation
 
@@ -171,13 +171,21 @@ SQL-003 Grouped Analytical Query Accuracy is the proposed next Feature, but it r
 - ROUTE-001 reported-query smoke: `2018 年各州前三的销售额的商品` enters QUERY with reason `explicit_data_query`; grouped TopN SQL correctness remains unclaimed and deferred.
 - ROUTE-001 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 106 source files; all ROUTE-001 implementation/test files pass targeted Ruff and introduce no mypy finding.
 
+- SQL-003 targeted tests: 49 passed; full pytest regression: 283 passed.
+- SQL-003 policy: `sql-policy-v1.1`; `row_number` is allowlisted only with OVER/PARTITION BY/ORDER BY; `RANK`, `DENSE_RANK`, and `LAG` remain rejected.
+- SQL-003 AST safety: `COUNT(*)` validates; `SELECT *`, qualified projection stars, and other star contexts remain rejected.
+- SQL-003 CTE handling: registered CTE aliases resolve only to declared output columns; unknown CTE output and physical alias references remain rejected.
+- SQL-003 terminal behavior: one failed repair stops and Query Service emits exactly one safe `QUERY_VALIDATION_FAILED` event.
+- SQL-003 Golden: four fixed grouped TopN cases; freeze-reference wrote non-null checksums and the non-freeze run passed 4/4.
+- SQL-003 compatibility: all 30 SQL-002 references still validate with identical table/column/JOIN traces.
+- SQL-003 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 107 source files; all SQL-003 implementation/test files pass targeted Ruff and introduce no mypy finding.
 ## Last Commit
 
-The ROUTE-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The SQL-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the ROUTE-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the SQL-003 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 

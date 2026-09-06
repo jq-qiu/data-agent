@@ -32,6 +32,7 @@
 9. 禁止 SELECT *、注释、系统表、文件读写和危险函数；明细结果最多 500 行。
 10. GMV 只能按注册公式计算且不含运费；AOV 和各类比例必须汇总分子分母后计算；品类订单数不得跨品类相加解释为整体订单量。
 11. Synthetic Evidence 必须与 Olist 事实数据区分，不得将 analysis_* 表描述为真实经营事实。
+12. 分组 TopN 必须先在 CTE 按分组维度和实体标识聚合，再使用 ROW_NUMBER() OVER (PARTITION BY 分组维度 ORDER BY 指标 DESC 或 ASC, 稳定实体标识 ASC) 编号，并在外层按 rn <= N 过滤；只允许 ROW_NUMBER，不得改用 RANK、DENSE_RANK 或其他窗口函数。该规则表示每组最多 N 行，并用稳定标识打破并列；不得编造名称字段。
 用户查询如下：
 {query}
 

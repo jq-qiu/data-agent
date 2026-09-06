@@ -110,6 +110,7 @@ class QueryService:
             value_es_repository=self.value_es_repository,
             sql_validator=self.sql_validator,
         )
+        terminal_emitted = False
         async for chunk in nl2sql_graph.astream(
             input=state,
             context=context,
@@ -119,6 +120,7 @@ class QueryService:
                 continue
             event = dict(chunk)
             if event.get("type") == "result":
+                terminal_emitted = True
                 validation = _safe_validation(event.get("validation"))
                 event.update(
                     {
@@ -136,7 +138,15 @@ class QueryService:
                         "limitations": [],
                     }
                 )
+            elif event.get("type") == "error":
+                terminal_emitted = True
             yield event
+        if not terminal_emitted:
+            yield {
+                "type": "error",
+                "code": "QUERY_VALIDATION_FAILED",
+                "message": "生成的查询未能通过安全校验，请调整问题后重试。",
+            }
 
     async def _diagnosis_events(
         self,

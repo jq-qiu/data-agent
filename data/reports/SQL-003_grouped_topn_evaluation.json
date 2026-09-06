@@ -1,0 +1,68 @@
+{
+  "run_id": "sql-003-grouped-topn-v1",
+  "generated_at_utc": "2026-09-06T07:40:39.885310+00:00",
+  "source_commit": "c753bd1908a1db6a4aac865cd5b50184c58bb578",
+  "dataset_version": "grouped-topn-golden-v1",
+  "dataset_sha256": "0156de3fb44d4534557ba1c61b70877e2b15606711b866f41f0870d0ed4273cc",
+  "metadata_version": "metadata-v1",
+  "sql_policy_version": "sql-policy-v1.1",
+  "database": "data_agent_v1_dw",
+  "case_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "raw_rows_persisted": false,
+  "cases": [
+    {
+      "case_id": "GT01",
+      "validation_trace_matches": true,
+      "explain_succeeded": true,
+      "execution_succeeded": true,
+      "checksum_matches": true,
+      "row_count": 81,
+      "group_count": 27,
+      "rank_sequences_valid": true,
+      "per_group_limit_valid": true,
+      "deterministic_order_valid": true,
+      "result_sha256": "d03265cae51d402eae963c49ab38aa67def8b81459c012380491c8fcad7e425e"
+    },
+    {
+      "case_id": "GT02",
+      "validation_trace_matches": true,
+      "explain_succeeded": true,
+      "execution_succeeded": true,
+      "checksum_matches": true,
+      "row_count": 54,
+      "group_count": 27,
+      "rank_sequences_valid": true,
+      "per_group_limit_valid": true,
+      "deterministic_order_valid": true,
+      "result_sha256": "7642ca579baece161d1442fab29c034e5e8bb2851355cb73eecb55959da1f333"
+    },
+    {
+      "case_id": "GT03",
+      "validation_trace_matches": true,
+      "explain_succeeded": true,
+      "execution_succeeded": true,
+      "checksum_matches": true,
+      "row_count": 54,
+      "group_count": 27,
+      "rank_sequences_valid": true,
+      "per_group_limit_valid": true,
+      "deterministic_order_valid": true,
+      "result_sha256": "beee866eba624dadd97f979a742e7eb01c51c3399befaf54673ecf64eddce44e"
+    },
+    {
+      "case_id": "GT04",
+      "validation_trace_matches": true,
+      "explain_succeeded": true,
+      "execution_succeeded": true,
+      "checksum_matches": true,
+      "row_count": 145,
+      "group_count": 73,
+      "rank_sequences_valid": true,
+      "per_group_limit_valid": true,
+      "deterministic_order_valid": true,
+      "result_sha256": "42f889b352c0da25ab893c8bbb34a729d8ce02a22915c9f0252960c44fd5a8e4"
+    }
+  ]
+}

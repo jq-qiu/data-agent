@@ -33,7 +33,7 @@ def test_valid_gmv_query_is_normalized_limited_and_traced(validator: SQLValidato
     assert result.tables == ("fact_order", "fact_order_item")
     assert result.join_relations == ("order_item_to_order",)
     assert result.grain_warnings
-    assert result.policy_version == "sql-policy-v1"
+    assert result.policy_version == "sql-policy-v1.1"
 
 
 def test_existing_limit_is_reduced_to_policy_maximum(validator: SQLValidator) -> None:
@@ -128,6 +128,83 @@ def test_read_only_cte_is_allowed_and_limited(validator: SQLValidator) -> None:
 
     assert result.sql.startswith("WITH monthly AS")
     assert result.sql.endswith("LIMIT 500")
+
+
+def test_count_star_is_allowed_but_projection_stars_remain_forbidden(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate("SELECT COUNT(*) AS row_count FROM fact_order")
+
+    assert "COUNT(*)" in result.sql
+    for sql in (
+        "SELECT * FROM fact_order",
+        "SELECT o.* FROM fact_order AS o",
+        "SELECT SUM(*) FROM fact_order",
+    ):
+        with pytest.raises(SQLValidationError, match=r"SELECT \*"):
+            validator.validate(sql)
+
+
+def test_cte_alias_can_only_reference_declared_output_columns(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate(
+        "WITH monthly AS ("
+        "SELECT date_id, SUM(gmv) AS gmv FROM dws_sales_region_daily GROUP BY date_id"
+        ") SELECT m.date_id, m.gmv FROM monthly AS m"
+    )
+
+    assert result.tables == ("dws_sales_region_daily",)
+    with pytest.raises(SQLValidationError, match="not exposed by CTE"):
+        validator.validate(
+            "WITH monthly AS (SELECT date_id FROM dws_sales_region_daily) "
+            "SELECT m.gmv FROM monthly AS m"
+        )
+
+
+def test_grouped_topn_window_shape_is_allowlisted_and_constrained(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate(
+        "WITH state_product_gmv AS ("
+        "SELECT c.state AS state, i.product_id AS product_id, SUM(i.price) AS gmv "
+        "FROM fact_order_item AS i "
+        "JOIN fact_order AS o ON i.order_id = o.order_id "
+        "JOIN dim_customer AS c ON o.customer_id = c.customer_id "
+        "WHERE o.purchase_date >= '2018-01-01' AND o.purchase_date < '2019-01-01' "
+        "AND o.status NOT IN ('canceled', 'unavailable') "
+        "GROUP BY c.state, i.product_id"
+        "), ranked AS ("
+        "SELECT state, product_id, gmv, "
+        "ROW_NUMBER() OVER ("
+        "PARTITION BY state ORDER BY gmv DESC, product_id ASC"
+        ") AS rank_position FROM state_product_gmv"
+        ") SELECT r.state, r.product_id, r.gmv, r.rank_position "
+        "FROM ranked AS r WHERE r.rank_position <= 3 "
+        "ORDER BY r.state, r.rank_position",
+        ("gmv",),
+    )
+
+    assert result.tables == ("dim_customer", "fact_order", "fact_order_item")
+    assert result.join_relations == ("order_item_to_order", "order_to_customer")
+    assert "ROW_NUMBER() OVER" in result.sql
+
+    invalid_shapes = (
+        "SELECT ROW_NUMBER() AS rn FROM fact_order",
+        "SELECT ROW_NUMBER() OVER (ORDER BY purchase_date) AS rn FROM fact_order",
+        "SELECT ROW_NUMBER() OVER (PARTITION BY status) AS rn FROM fact_order",
+    )
+    for sql in invalid_shapes:
+        with pytest.raises(SQLValidationError, match="ROW_NUMBER requires"):
+            validator.validate(sql)
+
+    for function in ("RANK()", "DENSE_RANK()", "LAG(purchase_date)"):
+        sql = (
+            f"SELECT {function} OVER (PARTITION BY status ORDER BY purchase_date) AS rn "
+            "FROM fact_order"
+        )
+        with pytest.raises(SQLValidationError, match="not allowlisted"):
+            validator.validate(sql)
 
 
 def test_validation_route_allows_only_one_repair() -> None:

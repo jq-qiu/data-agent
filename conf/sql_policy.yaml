@@ -1,4 +1,4 @@
-version: sql-policy-v1
+version: sql-policy-v1.1
 allowed_database: data_agent_v1_dw
 max_rows: 500
 timeout_seconds: 10
@@ -24,6 +24,7 @@ allowed_functions:
   - nullif
   - quarter
   - round
+  - row_number
   - sum
   - upper
   - year

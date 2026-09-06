@@ -1,0 +1,97 @@
+{
+  "dataset_version": "grouped-topn-golden-v1",
+  "cases": [
+    {
+      "case_id": "GT01",
+      "question": "2018年各州销售额前三的商品",
+      "n": 3,
+      "group_column": "state",
+      "rank_column": "rank_position",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "fact_order_item",
+        "fact_order",
+        "dim_customer"
+      ],
+      "expected_columns": [
+        "fact_order_item.product_id",
+        "fact_order_item.price",
+        "fact_order_item.order_id",
+        "fact_order.order_id",
+        "fact_order.customer_id",
+        "fact_order.purchase_date",
+        "fact_order.status",
+        "dim_customer.customer_id",
+        "dim_customer.state"
+      ],
+      "expected_join_relations": [
+        "order_item_to_order",
+        "order_to_customer"
+      ],
+      "reference_sql": "WITH state_product_gmv AS (SELECT c.state AS state, i.product_id AS product_id, SUM(i.price) AS gmv FROM fact_order_item AS i JOIN fact_order AS o ON i.order_id = o.order_id JOIN dim_customer AS c ON o.customer_id = c.customer_id WHERE o.purchase_date >= '2018-01-01' AND o.purchase_date < '2019-01-01' AND o.status NOT IN ('canceled', 'unavailable') GROUP BY c.state, i.product_id), ranked AS (SELECT state, product_id, gmv, ROW_NUMBER() OVER (PARTITION BY state ORDER BY gmv DESC, product_id ASC) AS rank_position FROM state_product_gmv) SELECT state, product_id, gmv, rank_position FROM ranked WHERE rank_position <= 3 ORDER BY state ASC, rank_position ASC",
+      "expected_result_sha256": "d03265cae51d402eae963c49ab38aa67def8b81459c012380491c8fcad7e425e"
+    },
+    {
+      "case_id": "GT02",
+      "question": "2018年每个州GMV最高的两个品类",
+      "n": 2,
+      "group_column": "region_id",
+      "rank_column": "rank_position",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_category_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_category_daily.date_id",
+        "dws_sales_category_daily.gmv"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "WITH grouped AS (SELECT region_id, category_id, SUM(gmv) AS metric_value FROM dws_sales_category_daily WHERE date_id BETWEEN 20180101 AND 20181231 GROUP BY region_id, category_id), ranked AS (SELECT region_id, category_id, metric_value, ROW_NUMBER() OVER (PARTITION BY region_id ORDER BY metric_value DESC, category_id ASC) AS rank_position FROM grouped) SELECT region_id, category_id, metric_value, rank_position FROM ranked WHERE rank_position <= 2 ORDER BY region_id ASC, rank_position ASC",
+      "expected_result_sha256": "7642ca579baece161d1442fab29c034e5e8bb2851355cb73eecb55959da1f333"
+    },
+    {
+      "case_id": "GT03",
+      "question": "2018年每个州商品项数最少的两个品类",
+      "n": 2,
+      "group_column": "region_id",
+      "rank_column": "rank_position",
+      "expected_metric_ids": [
+        "item_count"
+      ],
+      "expected_tables": [
+        "dws_sales_category_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_category_daily.date_id",
+        "dws_sales_category_daily.item_count"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "WITH grouped AS (SELECT region_id, category_id, SUM(item_count) AS metric_value FROM dws_sales_category_daily WHERE date_id BETWEEN 20180101 AND 20181231 GROUP BY region_id, category_id), ranked AS (SELECT region_id, category_id, metric_value, ROW_NUMBER() OVER (PARTITION BY region_id ORDER BY metric_value ASC, category_id ASC) AS rank_position FROM grouped) SELECT region_id, category_id, metric_value, rank_position FROM ranked WHERE rank_position <= 2 ORDER BY region_id ASC, rank_position ASC",
+      "expected_result_sha256": "beee866eba624dadd97f979a742e7eb01c51c3399befaf54673ecf64eddce44e"
+    },
+    {
+      "case_id": "GT04",
+      "question": "2018年每个品类GMV最高的两个州",
+      "n": 2,
+      "group_column": "category_id",
+      "rank_column": "rank_position",
+      "expected_metric_ids": [
+        "gmv"
+      ],
+      "expected_tables": [
+        "dws_sales_category_daily"
+      ],
+      "expected_columns": [
+        "dws_sales_category_daily.date_id",
+        "dws_sales_category_daily.gmv"
+      ],
+      "expected_join_relations": [],
+      "reference_sql": "WITH grouped AS (SELECT category_id, region_id, SUM(gmv) AS metric_value FROM dws_sales_category_daily WHERE date_id BETWEEN 20180101 AND 20181231 GROUP BY category_id, region_id), ranked AS (SELECT category_id, region_id, metric_value, ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY metric_value DESC, region_id ASC) AS rank_position FROM grouped) SELECT category_id, region_id, metric_value, rank_position FROM ranked WHERE rank_position <= 2 ORDER BY category_id ASC, rank_position ASC",
+      "expected_result_sha256": "42f889b352c0da25ab893c8bbb34a729d8ce02a22915c9f0252960c44fd5a8e4"
+    }
+  ]
+}

@@ -75,8 +75,7 @@ class SQLValidator:
         if not isinstance(statement, (exp.Select, exp.Union, exp.Intersect, exp.Except)):
             raise SQLValidationError("only SELECT or read-only CTE queries are allowed")
         self._reject_mutating_nodes(statement)
-        if next(statement.find_all(exp.Star), None) is not None:
-            raise SQLValidationError("SELECT * is forbidden; columns must be explicit")
+        self._validate_stars(statement)
 
         cte_outputs = {
             cte.alias: set(cte.this.named_selects)
@@ -86,6 +85,7 @@ class SQLValidator:
         tables, alias_map = self._resolve_tables(statement, set(cte_outputs))
         columns = self._validate_columns(statement, tables, alias_map, cte_outputs)
         join_relations, grain_warnings = self._validate_joins(statement, alias_map, cte_outputs)
+        self._validate_window_functions(statement)
         self._validate_functions(statement)
         self._validate_sensitive_projection(statement, tables, alias_map)
         self._validate_grain_rules(statement, tables, columns, metric_ids)
@@ -142,6 +142,12 @@ class SQLValidator:
         if next(statement.find_all(exp.Into), None) is not None:
             raise SQLValidationError("SELECT INTO is forbidden")
 
+    def _validate_stars(self, statement: exp.Expression) -> None:
+        for star in statement.find_all(exp.Star):
+            if isinstance(star.parent, exp.Count):
+                continue
+            raise SQLValidationError("SELECT * is forbidden; columns must be explicit")
+
     def _resolve_tables(
         self,
         statement: exp.Expression,
@@ -185,17 +191,19 @@ class SQLValidator:
         for column in statement.find_all(exp.Column):
             qualifier = column.table
             name = column.name
-            if qualifier in cte_outputs:
-                if name not in cte_outputs[qualifier]:
-                    raise SQLValidationError(f"column is not exposed by CTE {qualifier}: {name}")
-                continue
             if qualifier:
-                table_name = aliases.get(qualifier)
-                if table_name is None or table_name in cte_outputs:
+                source_name = aliases.get(qualifier)
+                if source_name is None:
                     raise SQLValidationError(f"unknown table alias: {qualifier}")
-                if name not in self.table_columns[table_name]:
-                    raise SQLValidationError(f"column is not registered: {table_name}.{name}")
-                resolved.add(f"{table_name}.{name}")
+                if source_name in cte_outputs:
+                    if name not in cte_outputs[source_name]:
+                        raise SQLValidationError(
+                            f"column is not exposed by CTE {source_name}: {name}"
+                        )
+                    continue
+                if name not in self.table_columns[source_name]:
+                    raise SQLValidationError(f"column is not registered: {source_name}.{name}")
+                resolved.add(f"{source_name}.{name}")
                 continue
             if name in select_aliases or any(name in outputs for outputs in cte_outputs.values()):
                 continue
@@ -265,6 +273,18 @@ class SQLValidator:
                 raise SQLValidationError(f"function is forbidden: {name}")
             if name not in self.policy.allowed_functions:
                 raise SQLValidationError(f"function is not allowlisted: {name}")
+
+    def _validate_window_functions(self, statement: exp.Expression) -> None:
+        for row_number in statement.find_all(exp.RowNumber):
+            window = row_number.parent
+            if (
+                not isinstance(window, exp.Window)
+                or not window.args.get("partition_by")
+                or window.args.get("order") is None
+            ):
+                raise SQLValidationError(
+                    "ROW_NUMBER requires OVER with PARTITION BY and ORDER BY"
+                )
 
     def _validate_sensitive_projection(
         self,
