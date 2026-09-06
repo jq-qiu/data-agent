@@ -851,3 +851,12 @@ def test_evidence_limitation_labels_include_chinese_and_code() -> None:
     assert "NO_CAUSAL_DESIGN" in evidence_limitation_label(
         EvidenceLimitation.NO_CAUSAL_DESIGN
     )
+
+
+def test_report_states_most_likely_associated_candidate() -> None:
+    plan, results = _candidate_contract(_traffic_rows())
+    report = ReportGenerator().generate(EvidenceChecker().check(plan, results))
+
+    assert "最可能的关联候选因素" in report.markdown
+    assert "Traffic" in report.markdown
+    assert "导致" not in report.markdown

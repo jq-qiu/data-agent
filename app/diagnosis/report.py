@@ -433,6 +433,23 @@ class ReportGenerator:
                 recommendation_refs,
             )
         )
+        if supported:
+            top = supported[0]
+            statements.append(
+                _statement(
+                    ReportStatementKind.RECOMMENDATION,
+                    f"综合现有证据，{_factor_label(top)} 是当前最可能的关联候选因素。",
+                    (top,),
+                )
+            )
+        else:
+            statements.append(
+                _statement(
+                    ReportStatementKind.RECOMMENDATION,
+                    "当前证据不足以确定最可能的关联候选因素。",
+                    tuple(candidates) or (anomaly,),
+                )
+            )
         return _section(
             ReportSectionId.LIMITATIONS,
             "6. 数据限制和建议",

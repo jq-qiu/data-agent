@@ -184,6 +184,7 @@ A separately scoped latency improvement or browser demonstration walkthrough if 
 - DEMO-001: 289 backend tests, 5 frontend tests, Vite build, and D01/D03/D05 synthetic profile real-smoke passed; D01 complete diagnosis graph generated a report without reading Ground Truth labels.
 - REPORT-001: Evidence limitation codes now render as Chinese labels with English codes; 290 backend tests passed and Ruff/mypy remain 22/36.
 - REPORT-002: candidate section now separates supported and unsupported candidates and removes duplicate limitation rows; 290 backend tests passed and Ruff/mypy remain 22/36.
+- REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
 The FRONT-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.

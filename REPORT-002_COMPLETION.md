@@ -45,6 +45,7 @@ git status --short --branch
 
 - Supported candidates remain in section 5 before unsupported candidates.
 - Unsupported candidates now read as `Promotion 未支持：主指标未下降（PRIMARY_METRIC_NOT_DECREASING）。`
+- The final section now states the most likely associated candidate without causal wording, for example `综合现有证据，Traffic 是当前最可能的关联候选因素。`
 - The limitations section retains missing Evidence and recommendation text without duplicating candidate rows.
 
 ## Acceptance Criteria
