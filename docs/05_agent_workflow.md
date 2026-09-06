@@ -364,4 +364,4 @@ Validator 必须拒绝：
 
 `CLARIFY-001` 已将 Grounder 接入生产单轮 DIAGNOSIS 分支，执行顺序固定为 `Intent Router -> Semantic Grounding -> Runtime Capability -> Existing Diagnosis Graph`。非 `READY` 结果在读取运行时数据能力前终止，并返回稳定原因、缺失/歧义字段、逻辑候选、推荐完整问题和安全 Trace；`READY` 结果继续使用现有确定性 Parser、Capability、Planner 和执行链，检索补全后的绑定通过等价规范问题重新交给 Parser，不修改 Graph 或诊断算法。前端区分 query、diagnosis、clarification、unsupported 和 error，推荐问题按钮只填入输入框，不建立会话记忆。
 
-受限 LLM Planner 与 Validator 仍计划在 `PLAN-LLM-001` 实现；在该 Feature 完成并实测前，不得对外宣称运行时已使用 LLM 进行归因规划。
+`PLAN-LLM-001` 已实现可独立调用的 `AnalysisPlanValidator` 与 `BoundedPlannerPolicy`：Validator 校验计划不得改变指标/时间/基期/Scope、不得使用未请求或不可用维度/因素、不得选择能力外方法；Policy 只有在存在多条合法计划时才通过 `PlanSelector` 最多调用一次模型，选择无效、超时、模型不可用或选择器缺失时立即确定性回退且不重试。V1 黄金问题只有唯一合法计划，因此当前生产确定性 Planner 仍为实际路径，规划阶段模型调用为 0。该策略尚未接入生产 Graph/API，也不得宣称生产运行时已使用 LLM 进行归因规划。

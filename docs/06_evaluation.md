@@ -281,6 +281,19 @@ Total Attribution Model Calls <= 2
 
 同时记录确定性路径比例、LLM 路径比例、Validator 拒绝原因、回退原因、规划延迟、Token 和费用。模型输出正确性必须与相同 Golden Dataset 上的确定性基线对比；没有真实运行不得宣称提升。
 
+`PLAN-LLM-001` 已实现的组件级验证包括：
+
+```text
+Validator accepts all deterministic plans = yes
+Validator mutation/unsupported/unrequested rejection = tested
+Unique legal plan model calls = 0
+Multi-option accepted LLM choice calls = 1
+Invalid/missing/failed selector fallback calls <= 1, no retry = tested
+Physical schema leakage count = 0
+```
+
+多合法计划场景使用测试专用 Stub 提供器验证通用策略闭环，不代表 V1 当前存在多条产品合法路径；真实模型规划未被评测。
+
 ### 10.4 SEM-002 固定功能评测
 
 `SEM-002` 使用 12 条固定样本和 Stubbed Qdrant/Elasticsearch 契约完成组件级评测：

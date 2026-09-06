@@ -2,26 +2,33 @@
 
 ## Current Phase
 
-MVP V1 已完成澄清响应集成；ENG-002 进一步清理了仓库全部存量静态问题，`ruff check .` 与 `mypy app` 现在均为 0 项。运行时功能、诊断链路与既有测试保持不变。
+MVP V1 已完成澄清响应集成与工程清理；PLAN-LLM-001 新增可独立调用的计划校验器与确定性优先受限规划策略，使“最多一次模型规划 + Validator + 确定性回退”架构可验证。当前生产 Graph/API 仍使用原有确定性 Planner，V1 黄金问题规划阶段模型调用为 0。
 
 ## Current Feature
 
-ENG-002 Lint and Type Cleanup.
+PLAN-LLM-001 Bounded LLM Planner and Plan Validator.
 
 ## Feature Status
 
-Completed. 23 项 Ruff 与 36 项 mypy 存量诊断全部清零：先 Ruff 自动修复，再按 client managers、mappers、repositories/LLM、配置与旧元数据服务四批修复 mypy，每批均通过全量 pytest。client managers 改为显式“初始化后可访问”的属性约束，未初始化访问给出明确 RuntimeError；mappers 对空值/JSON 字段做显式校验；Qdrant payload、DW 查询返回、LLM api_key 与配置加载均完成类型收窄。M1 同时暴露并修复了 `evaluate_diagnosis_v1.py` 与 `evaluate_nl2sql_v1.py` 的 4 个潜在类型问题。
+Completed. `AnalysisPlanValidator` 校验计划不得改变指标/时间/基期/Scope、不得使用未请求或不可用维度/因素、不得选择能力外方法，并校验空计划停止原因。`BoundedPlannerPolicy` 以 V1 唯一确定性计划为默认提供器：唯一合法计划返回 `DETERMINISTIC` 且模型调用 0；仅测试专用 Stub 多选项场景验证 LLM 选择、无效/缺失/异常回退闭环。生产 Graph/API 未接入，真实模型未评测。
 
 ## Last Completed Feature
 
-CLARIFY-001 Clarification Response Integration.
+ENG-002 Lint and Type Cleanup.
 
 ## Next Feature
 
-PLAN-LLM-001 Bounded LLM Planner and Plan Validator, only after explicit user authorization and separate Feature scoping.
+PLAN-UI-001 Analysis Plan Trace 或 INTERVIEW-001 Demo Script and Architecture Narrative，需用户明确授权和单独 Feature Scoping。
 
 ## Last Successful Validation
 
+- PLAN-LLM-001 targeted tests: 20 passed (Validator context matrix + bounded policy unique/LLM/fallback/no-schema);
+- PLAN-LLM-001 full pytest regression: 337 passed;
+- PLAN-LLM-001 frontend Node tests: 5 passed and Vite production build passed;
+- PLAN-LLM-001 V1 planning calls: every golden/unique legal plan returns `DETERMINISTIC` with `model_calls=0`;
+- PLAN-LLM-001 Stub multi-option architecture: accepted LLM choice = 1 call; unknown/empty/failure selector fallback <= 1 call and no retry;
+- PLAN-LLM-001 real model planning: not evaluated; not wired to production Graph/API;
+- PLAN-LLM-001 Ruff/mypy: both clean (0/0) after ENG-002 baseline;
 - ENG-002 Ruff: `ruff check .` returns 0 findings;
 - ENG-002 mypy: `mypy app` returns `Success: no issues found in 110 source files`;
 - ENG-002 full pytest regression: 317 passed after every batch (R、M1、M2、M3、M4);
@@ -213,11 +220,11 @@ PLAN-LLM-001 Bounded LLM Planner and Plan Validator, only after explicit user au
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The ENG-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The PLAN-LLM-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pending push to `origin/main`; CLARIFY-001 commit `749d027` and the ENG-002 completion commit are local. If Git metadata disagrees, Git is authoritative.
+Pending push for the PLAN-LLM-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
@@ -227,6 +234,6 @@ None blocking deterministic routing. Semantic fallback requires the configured e
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `ENG-002_COMPLETION.md` and `specs/ENG-002_lint_type_cleanup.md`.
+3. Review `PLAN-LLM-001_COMPLETION.md` and `specs/PLAN-LLM-001_bounded_planner_validator.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. If PLAN-LLM-001 is authorized, keep it separate, implement deterministic-first bounded planning with at most one LLM call and no multi-turn state.
+5. PLAN-LLM-001 components are independently callable but not wired into production Graph/API; wiring and real-model evaluation require a new Feature.

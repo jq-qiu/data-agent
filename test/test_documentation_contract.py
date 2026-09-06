@@ -95,7 +95,7 @@ def test_semantic_planning_design_is_frozen() -> None:
     assert "确定性回退" in workflow
 
 
-def test_future_llm_planner_is_not_claimed_as_implemented() -> None:
+def test_llm_planner_production_boundary_is_documented() -> None:
     readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     workflow = (REPOSITORY_ROOT / "docs/05_agent_workflow.md").read_text(
         encoding="utf-8"
@@ -105,9 +105,10 @@ def test_future_llm_planner_is_not_claimed_as_implemented() -> None:
     ).read_text(encoding="utf-8")
 
     assert "`CLARIFY-001` 已将三种绑定结果接入生产单轮 API 与前端" in readme
-    assert "LLM Planner 尚未实现" in readme
-    assert "LLM Planner 与 Validator 仍计划" in workflow
-    assert "`PLAN-LLM-001` 需用户明确授权后单独实施" in implementation_plan
+    assert "`PLAN-LLM-001` 已实现可独立调用的 `AnalysisPlanValidator`" in readme
+    assert "尚未接入生产 Graph/API" in readme
+    assert "未接入生产 Graph/API" in implementation_plan
+    assert "尚未接入生产 Graph/API" in workflow
 
 
 def test_semantic_grounding_implementation_boundary_is_documented() -> None:

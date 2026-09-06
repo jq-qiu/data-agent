@@ -24,11 +24,24 @@ from app.diagnosis.grounding import (
     SemanticGrounder,
 )
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
+from app.diagnosis.plan_validator import (
+    AnalysisPlanValidator,
+    PlanValidationIssue,
+    PlanValidationResult,
+)
 from app.diagnosis.planner import (
     AnalysisPlan,
     AnalysisPlanner,
     AnalysisPlannerNode,
     AnalysisTask,
+)
+from app.diagnosis.planner_policy import (
+    BoundedPlannerPolicy,
+    BoundedPlanResult,
+    LegalPlanOption,
+    PlanningSource,
+    SelectorOption,
+    V1PlanVariantProvider,
 )
 from app.diagnosis.query import (
     AnalysisQueryBuilder,
@@ -52,6 +65,7 @@ from app.diagnosis.semantics import (
 
 __all__ = [
     "AnalysisPlan",
+    "AnalysisPlanValidator",
     "AnalysisPlanner",
     "AnalysisPlannerNode",
     "AnalysisQueryBuilder",
@@ -65,6 +79,8 @@ __all__ = [
     "AnalysisTask",
     "AnalysisTaskExecutor",
     "AnalysisTaskExecutorNode",
+    "BoundedPlanResult",
+    "BoundedPlannerPolicy",
     "CapabilityAssessment",
     "CapabilityAssessmentNode",
     "CapabilityAssessor",
@@ -77,15 +93,21 @@ __all__ = [
     "Intent",
     "IntentDecision",
     "IntentRouter",
+    "LegalPlanOption",
     "ParsedAnalysisQuestion",
+    "PlanValidationIssue",
+    "PlanValidationResult",
     "PlannerSemanticContext",
     "PlannerSemanticContextBuilder",
+    "PlanningSource",
     "QdrantElasticsearchCandidateRetriever",
     "ReportGenerator",
     "ReportGeneratorNode",
+    "SelectorOption",
     "SemanticBindingResult",
     "SemanticBindingStatus",
     "SemanticGrounder",
+    "V1PlanVariantProvider",
     "ValidatedEvidence",
     "ValidatedEvidenceBundle",
 ]
