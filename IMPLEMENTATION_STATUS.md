@@ -2,26 +2,29 @@
 
 ## Current Phase
 
-MVP V1 已完成澄清响应集成与工程清理；PLAN-LLM-001 新增可独立调用的计划校验器与确定性优先受限规划策略，使“最多一次模型规划 + Validator + 确定性回退”架构可验证。当前生产 Graph/API 仍使用原有确定性 Planner，V1 黄金问题规划阶段模型调用为 0。
+MVP V1 已完成澄清响应、工程清理、受限规划组件与分析计划 Trace 展示。前端诊断报告现在可展开显示语义绑定、规范问题、能力范围、T1–T4 计划、查询/计算/Evidence 与报告状态；后端与诊断逻辑保持不变。
 
 ## Current Feature
 
-PLAN-LLM-001 Bounded LLM Planner and Plan Validator.
+PLAN-UI-001 Analysis Plan Trace.
 
 ## Feature Status
 
-Completed. `AnalysisPlanValidator` 校验计划不得改变指标/时间/基期/Scope、不得使用未请求或不可用维度/因素、不得选择能力外方法，并校验空计划停止原因。`BoundedPlannerPolicy` 以 V1 唯一确定性计划为默认提供器：唯一合法计划返回 `DETERMINISTIC` 且模型调用 0；仅测试专用 Stub 多选项场景验证 LLM 选择、无效/缺失/异常回退闭环。生产 Graph/API 未接入，真实模型未评测。
+Completed. 新增纯函数 `frontend/src/lib/trace.js` 将后端已有的安全 `analysis_trace` 转换为分阶段中文卡片；诊断详情不再只显示阶段名。未知阶段不会 dump 原始对象；仍无 v-html、本地存储或客户端业务计算。
 
 ## Last Completed Feature
 
-ENG-002 Lint and Type Cleanup.
+PLAN-LLM-001 Bounded LLM Planner and Plan Validator.
 
 ## Next Feature
 
-PLAN-UI-001 Analysis Plan Trace 或 INTERVIEW-001 Demo Script and Architecture Narrative，需用户明确授权和单独 Feature Scoping。
+INTERVIEW-001 Demo Script and Architecture Narrative，需用户明确授权和单独 Feature Scoping。
 
 ## Last Successful Validation
 
+- PLAN-UI-001 frontend Node tests: 11 passed（含 trace 各阶段提取、未知阶段安全与澄清不泄露）；
+- PLAN-UI-001 Vite production build: passed；
+- PLAN-UI-001 full pytest regression: 337 passed；Ruff/mypy 保持 0/0；
 - PLAN-LLM-001 targeted tests: 20 passed (Validator context matrix + bounded policy unique/LLM/fallback/no-schema);
 - PLAN-LLM-001 full pytest regression: 337 passed;
 - PLAN-LLM-001 frontend Node tests: 5 passed and Vite production build passed;
@@ -220,11 +223,11 @@ PLAN-UI-001 Analysis Plan Trace 或 INTERVIEW-001 Demo Script and Architecture N
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The PLAN-LLM-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The PLAN-UI-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pending push for the PLAN-LLM-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pending push for the PLAN-UI-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
@@ -234,6 +237,6 @@ None blocking deterministic routing. Semantic fallback requires the configured e
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `PLAN-LLM-001_COMPLETION.md` and `specs/PLAN-LLM-001_bounded_planner_validator.md`.
+3. Review `PLAN-UI-001_COMPLETION.md` and `specs/PLAN-UI-001_analysis_plan_trace.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. PLAN-LLM-001 components are independently callable but not wired into production Graph/API; wiring and real-model evaluation require a new Feature.
+5. Next documented Feature is INTERVIEW-001; requires explicit user authorization.

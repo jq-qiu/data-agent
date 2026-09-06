@@ -216,9 +216,15 @@ tbody tr:hover { background: #fbfaf5; }
 .limitations ul { display: grid; gap: 7px; margin: 12px 0 0; padding-left: 19px; color: #76552e; font-size: 12px; line-height: 1.6; }
 .trace-panel { border-top: 1px solid #dfe4df; padding-top: 17px; }
 .trace-panel summary { color: var(--teal); font-size: 12px; font-weight: 700; cursor: pointer; }
-.trace-panel ol { display: grid; gap: 7px; margin: 13px 0 0; padding-left: 20px; }
-.trace-panel li { padding-left: 5px; color: #445b59; font-size: 12px; }
-.trace-panel li small { float: right; color: #82908e; }
+.trace-cards { display: grid; gap: 10px; margin-top: 14px; }
+.trace-card { min-width: 0; padding: 13px 15px; border: 1px solid #dce2dd; border-radius: 12px; background: #fffdf8; }
+.trace-card-heading { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.trace-card-heading strong { color: #2f5551; font-size: 12px; }
+.trace-card-heading small { color: #7d8f8b; font-size: 10px; }
+.trace-card-rows { display: grid; grid-template-columns: minmax(86px, max-content) 1fr; gap: 5px 12px; margin: 10px 0 0; }
+.trace-card-rows dt { color: #71817f; font-size: 11px; }
+.trace-card-rows dd { min-width: 0; margin: 0; color: #3e5552; font-size: 11px; overflow-wrap: anywhere; }
+.trace-card-empty { margin: 9px 0 0; color: #96a19e; font-size: 11px; }
 
 .notice { margin: 16px 0 0 48px; padding: 14px 16px; border: 1px solid #d8ddd7; border-radius: 12px; color: #526361; background: #f8f7f2; font-size: 13px; }
 .error-notice { display: flex; flex-direction: column; gap: 4px; border-color: #e3b8b0; color: #84382e; background: #fff1ee; }

@@ -6,6 +6,7 @@ import {
   createSseParser,
   upsertProgress,
 } from "./lib/sse.js";
+import { buildTraceCards } from "./lib/trace.js";
 
 const API_URL = "/api/query";
 const examples = [
@@ -97,20 +98,6 @@ function displayValue(value) {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
-}
-
-function traceName(stage) {
-  return {
-    intent_router: "意图识别",
-    query_execution: "问数执行",
-    analysis_question_parser: "问题解析",
-    capability_assessment: "数据能力检查",
-    analysis_planner: "分析计划",
-    analysis_task_executor: "受控查询",
-    deterministic_analyzer: "确定性计算",
-    evidence_checker: "证据校验",
-    report_generator: "报告生成",
-  }[stage] || String(stage || "处理步骤");
 }
 
 function chooseExample(example) {
@@ -541,11 +528,28 @@ async function sendQuestion() {
 
                 <details v-if="exchange.terminal.analysis_trace?.length" class="trace-panel">
                   <summary>查看分析轨迹 · {{ exchange.terminal.analysis_trace.length }} 个阶段</summary>
-                  <ol>
-                    <li v-for="item in exchange.terminal.analysis_trace" :key="item.stage">
-                      <span>{{ traceName(item.stage) }}</span><small>{{ item.status === "success" ? "已完成" : item.status }}</small>
-                    </li>
-                  </ol>
+                  <div class="trace-cards">
+                    <section
+                      v-for="card in buildTraceCards(exchange.terminal.analysis_trace)"
+                      :key="card.stage"
+                      class="trace-card"
+                    >
+                      <div class="trace-card-heading">
+                        <strong>{{ card.name }}</strong>
+                        <small>{{ card.status }}</small>
+                      </div>
+                      <dl v-if="card.rows.length" class="trace-card-rows">
+                        <template
+                          v-for="(row, rowIndex) in card.rows"
+                          :key="`${card.stage}-${rowIndex}`"
+                        >
+                          <dt>{{ row.label }}</dt>
+                          <dd>{{ row.value }}</dd>
+                        </template>
+                      </dl>
+                      <p v-else class="trace-card-empty">该阶段无额外明细</p>
+                    </section>
+                  </div>
                 </details>
               </section>
             </template>
