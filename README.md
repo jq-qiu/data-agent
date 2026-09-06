@@ -27,6 +27,7 @@ V1 实现的是指标拆解、变化贡献和关联诊断，不是严格的因�
 - 确定性的诊断意图、问题解析、能力评估和分析规划；
 - 受控查询、确定性计算、Evidence 校验和诊断报告；
 - FastAPI SSE 单轮查询与诊断接口。
+- Vue 3/Vite 单轮经营分析前端，支持流式进度、问数表格与证据化诊断展示。
 
 API-001 的六个固定问题已通过真实服务依赖的 HTTP/SSE 演示。真实
 Olist DWS 中 Traffic、Promotion 和 Inventory 候选字段为空时，诊断会明确
@@ -35,7 +36,7 @@ Olist DWS 中 Traffic、Promotion 和 Inventory 候选字段为空时，诊断�
 - 省略式多轮会话；
 - 登录、租户、权限和附件；
 - 严格因果推断或自动经营动作；
-- 前端重构（需作为独立 Feature 另行实施）。
+- 生产部署、监控与多租户前端能力。
 
 ## 3. V1 核心场景
 
@@ -200,7 +201,24 @@ ENG-001 Engineering Baseline
 
 测试、Lint 或类型检查存在存量问题时，应真实记录基线，不得伪造全绿结果，也不得在无关 Feature 中顺手重构业务代码。
 
-## 10. 安全与配置
+## 10. 本地前端
+
+先在一个终端启动后端：
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+再在另一个终端安装依赖并启动前端：
+
+```powershell
+npm install --prefix frontend
+npm run dev --prefix frontend
+```
+
+浏览器访问 `http://127.0.0.1:5173`。开发服务器会将同源 `/api` 请求代理到本地后端。前端只发送单轮问题，不保存问题、响应或凭据。
+
+## 11. 安全与配置
 
 - 禁止提交 API Key、数据库密码、Token 和完整连接串；
 - `conf/app_config.yaml` 是本地敏感配置，已从 Git 排除；

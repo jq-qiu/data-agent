@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API and fixed Demo.
+MVP V1 complete through the minimal API, fixed Demo, and versioned frontend.
 
 ## Current Feature
 
-API-001 Minimal API and Demo.
+FRONT-001 MVP Frontend.
 
 ## Feature Status
 
-Completed. `POST /api/query` now accepts canonical `question` and compatible legacy `query` requests, routes QUERY/DIAGNOSIS/UNSUPPORTED deterministically, preserves the accepted NL2SQL Graph, and runs the seven accepted diagnosis stages in a bounded graph. Runtime diagnosis derives capability from validated read-only aggregate probes against `data_agent_v1_dw` and degrades when real candidate Evidence columns are empty. The six fixed V1 questions completed 6/6 through the FastAPI HTTP/SSE path with safe public traces. Full pytest passed; Ruff improved to 22 existing diagnostics and mypy remained at the accepted 36-error baseline. The status is valid when the API-001 completion commit containing this file is present on `origin/main`.
+Completed. A versioned Vue 3/Vite application now lives under `frontend/` and sends canonical single-turn `question` requests through the local `/api/query` proxy. It reconstructs arbitrarily chunked SSE, exposes progress and cancellation, and safely renders QUERY tables or DIAGNOSIS report status, Evidence, limitations, and public Trace without raw HTML. The six fixed questions are available as standalone examples. Five deterministic frontend tests and the production build passed; a real diagnosis completed visibly through the proxy with nine progress steps, a degraded report, Evidence, limitations, and eight public Trace stages. Backend pytest passed; Ruff and mypy remain at the accepted 22/36 baselines. The status is valid when the FRONT-001 completion commit containing this file is present on `origin/main`.
 
 ## Last Completed Feature
 
-API-001 Minimal API and Demo.
+FRONT-001 MVP Frontend.
 
 ## Next Feature
 
-None in the current MVP V1 plan. Frontend work requires a new separately scoped Feature.
+None in the current MVP V1 plan. Deployment, V1.1 conversation support, or backend refinement requires a separately scoped Feature.
 
 ## Last Successful Validation
 
@@ -150,23 +150,29 @@ None in the current MVP V1 plan. Frontend work requires a new separately scoped 
 - API-001 diagnosis outcomes: three `DEGRADED` reports correctly reflect unavailable real candidate fields; the scoped São Paulo request returned `NO_DECLINE` for the real Olist period.
 - API-001 latency: mean 58,467.103 ms and maximum 208,327.703 ms; external LLM calls dominate the two QUERY requests.
 - API-001 isolation: runtime capability and diagnosis accessed only validated read-only aggregates in `data_agent_v1_dw`; no Ground Truth or Synthetic Case ID was used by the API.
+- FRONT-001 frontend tests: 5/5 passed; production build succeeded with Vite 7.3.6.
+- FRONT-001 dependency audit: 35 packages installed and 0 known npm vulnerabilities reported at installation time.
+- FRONT-001 real browser verification: the fixed May 2018 GMV diagnosis reached FastAPI through the Vite proxy and visibly completed with nine successful progress steps, a `DEGRADED` report, Evidence, five limitations, and eight safe public Trace stages.
+- FRONT-001 UI safety: diagnosis Markdown is rendered as text nodes without `v-html`; no raw SQL, parameters, credentials, connection details, or persisted response payload was added.
+- FRONT-001 backend regression: 242 passed; Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files.
+- FRONT-001 isolation: no backend Python, business logic, data, database, or the unversioned `D:\py project\data-agent-front` reference was changed.
 
 ## Last Commit
 
-The API-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The FRONT-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the API-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the FRONT-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
-None blocking the completed MVP V1. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Frontend implementation is outside the completed API-001 scope.
+None blocking the completed MVP V1. The Qdrant Python client 1.16.2/server 1.19.0 compatibility warning, SQL-002 baseline accuracy limitations, repository-wide 22 Ruff findings, and 36 mypy errors remain documented. Production deployment is outside FRONT-001.
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Verify the API-001 commit is present on `origin/main` and review `API-001_COMPLETION.md` plus `data/reports/API-001_minimal_demo.json`.
+3. Verify the FRONT-001 commit is present on `origin/main` and review `FRONT-001_COMPLETION.md` plus `specs/FRONT-001_mvp_frontend.md`.
 4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. If frontend work is requested, inspect `D:\py project\data-agent-front` read-only first and define a separate frontend Feature; do not mix it into API-001 history.
+5. Do not modify the read-only reference at `D:\py project\data-agent-front`; future frontend changes require a separate Feature under the versioned `frontend/` package.
