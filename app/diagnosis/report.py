@@ -368,6 +368,21 @@ class ReportGenerator:
             statements.append(
                 _statement(ReportStatementKind.CONCLUSION, text, (item,))
             )
+        unsupported = tuple(
+            item
+            for item in bundle.evidence
+            if item.evidence_type is EvidenceType.CANDIDATE_FACTOR
+            and item.support_level is EvidenceSupportLevel.UNSUPPORTED
+        )
+        for item in unsupported:
+            labels = "，".join(evidence_limitation_label(l) for l in item.limitations)
+            statements.append(
+                _statement(
+                    ReportStatementKind.LIMITATION,
+                    f"{_factor_label(item)} 未支持：{labels}。",
+                    (item,),
+                )
+            )
         if not statements:
             candidates = tuple(
                 item
@@ -400,16 +415,6 @@ class ReportGenerator:
             for item in bundle.evidence
             if item.evidence_type is EvidenceType.CANDIDATE_FACTOR
         ]
-        for item in candidates:
-            if item.limitations:
-                text = (
-                    f"{_factor_label(item)} 限制："
-                    + ", ".join(evidence_limitation_label(limitation) for limitation in item.limitations)
-                    + "。"
-                )
-                statements.append(
-                    _statement(ReportStatementKind.LIMITATION, text, (item,))
-                )
         if bundle.missing_evidence:
             statements.append(
                 _statement(
