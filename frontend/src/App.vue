@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, reactive, ref } from "vue";
 
 import {
   classifyTerminal,
@@ -98,13 +98,13 @@ async function sendQuestion() {
 
   question.value = "";
   loading.value = true;
-  const exchange = {
+  const exchange = reactive({
     id: crypto.randomUUID(),
     question: value,
     steps: [],
     terminal: null,
     state: "running",
-  };
+  });
   exchanges.value.push(exchange);
   activeController = new AbortController();
   scrollToBottom();

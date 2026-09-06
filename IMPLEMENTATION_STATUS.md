@@ -2,23 +2,23 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, and grouped TopN query support.
+MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, grouped TopN query support, and reactive SSE progress rendering.
 
 ## Current Feature
 
-SQL-003 Grouped TopN Query Support.
+FRONT-002 SSE Progress Render Fix.
 
 ## Feature Status
 
-Completed. The SQL Policy is versioned as `sql-policy-v1.1`. The AST Validator now distinguishes `COUNT(*)` from projection stars, resolves registered CTE aliases to their declared outputs, and allowlists only constrained `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for grouped TopN. Generation and repair prompts use aggregate-then-rank with a stable identifier tie-break. Query Service emits a safe terminal error when one validation repair exhausts without a result. Four fixed grouped TopN references passed Validator, EXPLAIN, execution, checksum, and per-group rank/limit checks against `data_agent_v1_dw`. All 30 SQL-002 references still validate with identical table/column/JOIN traces. Full pytest 287 passed; repository Ruff/mypy remain at the accepted 22/36 baselines.
+Completed. The Vue frontend creates each request's `exchange` object with `reactive({...})` before inserting it into `exchanges`. Incremental SSE progress events now trigger Vue rendering immediately instead of appearing only after the request finishes. Five frontend Node tests pass and Vite builds 11 modules successfully. Backend streaming was independently verified: `text/event-stream` events arrive progressively from about 0.4 seconds through the final result.
 
 ## Last Completed Feature
 
-ROUTE-001 Hybrid Intent Router.
+SQL-003 Grouped TopN Query Support.
 
 ## Next Feature
 
-A separately scoped latency or broader analytical SQL improvement if authorized. SQL-003 does not claim grouped TopN SQL beyond the four frozen references, and it does not optimize external-model latency.
+A separately scoped latency improvement or broader analytical SQL support if authorized. FRONT-002 only fixes reactive SSE progress rendering.
 
 ## Last Successful Validation
 
@@ -180,13 +180,14 @@ A separately scoped latency or broader analytical SQL improvement if authorized.
 - SQL-003 compatibility: all 30 SQL-002 references still validate with identical table/column/JOIN traces.
 - SQL-003 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 107 source files; all SQL-003 implementation/test files pass targeted Ruff and introduce no mypy finding.
 - SQL-003 follow-up: rerun failures caused by `YEAR()` parsing to `TsOrDsToDate` and by qualified derived-table aliases are now covered and closed by AST/regression tests; global TopN now allows `ROW_NUMBER() OVER (ORDER BY ...)` without `PARTITION BY`, and numeric position partitions such as `PARTITION BY 1` are rejected.
+- FRONT-002: five frontend Node tests passed and Vite production build passed after making the per-request `exchange` object reactive; backend streaming was independently confirmed progressive and was not changed.
 ## Last Commit
 
-The SQL-003 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The FRONT-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pushed to `origin/main` after the SQL-003 completion commit. If Git metadata disagrees, Git is authoritative.
+Pushed to `origin/main` after the FRONT-002 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
