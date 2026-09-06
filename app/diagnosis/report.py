@@ -438,7 +438,7 @@ class ReportGenerator:
             statements.append(
                 _statement(
                     ReportStatementKind.RECOMMENDATION,
-                    f"综合现有证据，{_factor_label(top)} 是当前最可能的关联候选因素。",
+                    f"综合现有证据，本次 GMV 下降更可能主要与{_factor_label_cn(top)}变化相关。",
                     (top,),
                 )
             )
@@ -446,7 +446,7 @@ class ReportGenerator:
             statements.append(
                 _statement(
                     ReportStatementKind.RECOMMENDATION,
-                    "当前证据不足以确定最可能的关联候选因素。",
+                    "当前证据不足以判断本次 GMV 下降主要与哪个因素相关。",
                     tuple(candidates) or (anomaly,),
                 )
             )
@@ -484,6 +484,13 @@ def _candidate_sort_key(item: ValidatedEvidence) -> tuple[int, Decimal, int]:
 
 def _factor_label(item: ValidatedEvidence) -> str:
     labels = {"traffic": "Traffic", "promotion": "Promotion", "inventory": "Inventory"}
+    if item.factor is None:
+        raise EvidenceValidationError("candidate_factor_identity_missing")
+    return labels[item.factor.value]
+
+
+def _factor_label_cn(item: ValidatedEvidence) -> str:
+    labels = {"traffic": "流量", "promotion": "促销", "inventory": "库存"}
     if item.factor is None:
         raise EvidenceValidationError("candidate_factor_identity_missing")
     return labels[item.factor.value]

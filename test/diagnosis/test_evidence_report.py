@@ -857,6 +857,5 @@ def test_report_states_most_likely_associated_candidate() -> None:
     plan, results = _candidate_contract(_traffic_rows())
     report = ReportGenerator().generate(EvidenceChecker().check(plan, results))
 
-    assert "最可能的关联候选因素" in report.markdown
-    assert "Traffic" in report.markdown
+    assert "本次 GMV 下降更可能主要与流量变化相关" in report.markdown
     assert "导致" not in report.markdown
