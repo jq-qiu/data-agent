@@ -43,9 +43,9 @@ A read-only script also validated all 30 SQL-002 reference SQL statements and co
 
 ## Test Results
 
-- SQL-003 targeted suite: 52 passed, 0 failed in 9.57 seconds.
-- Full backend regression: 286 passed, 0 failed.
-- Tests cover `COUNT(*)`/projection-star separation, CTE and derived-table output aliasing, `YEAR()` extraction parsing, constrained window shapes, rejection of `RANK`/`DENSE_RANK`/`LAG`, one-repair terminal fallback, and the four-case Golden contract.
+- SQL-003 targeted suite: 53 passed, 0 failed in 7.39 seconds.
+- Full backend regression: 287 passed, 0 failed.
+- Tests cover `COUNT(*)`/projection-star separation, CTE and derived-table output aliasing, `YEAR()` extraction parsing, grouped and global window shapes, rejection of numeric partition positions and `RANK`/`DENSE_RANK`/`LAG`, one-repair terminal fallback, and the four-case Golden contract.
 
 ## Lint Results
 
@@ -69,7 +69,7 @@ A read-only script also validated all 30 SQL-002 reference SQL statements and co
 1. Passed: the logged grouped-TopN shape validates under `sql-policy-v1.1` with `row_number`, registered physical tables/columns/JOINs, and V1 GMV rules.
 2. Passed: `COUNT(*)` validates while `SELECT *`, qualified projection stars, and stars outside plain `COUNT(*)` remain rejected.
 3. Passed: CTE and derived-table aliases may reference only declared output columns; unknown output and physical alias/column/JOIN references remain rejected.
-4. Passed: `ROW_NUMBER` requires OVER, PARTITION BY, and ORDER BY; `RANK`, `DENSE_RANK`, and `LAG` remain rejected; `TS_OR_DS_TO_DATE` is allowed only inside `YEAR`/`MONTH`/`DAY`/`QUARTER`.
+4. Passed: `ROW_NUMBER` requires OVER and ORDER BY; `PARTITION BY` is optional for global TopN and required for grouped TopN; numeric partition positions, `RANK`, `DENSE_RANK`, and `LAG` remain rejected; `TS_OR_DS_TO_DATE` is allowed only inside `YEAR`/`MONTH`/`DAY`/`QUARTER`.
 5. Passed: generation and repair prompts require aggregate-then-rank, exact-N `ROW_NUMBER`, and a stable identifier tie-break.
 6. Passed: one failed repair still stops, and Query Service emits exactly one safe `QUERY_VALIDATION_FAILED` terminal event when the graph ends without a result.
 7. Passed: the Golden contains exactly four fixed cases and the evaluator persists only checksums, row/group counts, validation traces, and pass/fail facts.

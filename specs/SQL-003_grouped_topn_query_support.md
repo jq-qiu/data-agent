@@ -54,13 +54,18 @@ Historical SQL-002 Golden data, reports, and run artifacts remain immutable.
   qualified output columns. Derived-table aliases were not registered, so
   `t.state` was rejected as `unknown table alias: t`. Successful runs avoided
   both variants, which is why behavior appeared intermittent.
+- A later global-TopN request (`2018 年销售额排名前三的商品`) correctly used
+  `ROW_NUMBER() OVER (ORDER BY ...)` without a partition. The original window
+  rule wrongly required `PARTITION BY`, and the repair then produced the invalid
+  MySQL 8 legacy-position form `PARTITION BY 1`.
 
 ## 4. In Scope
 
 - Version the SQL Policy from `sql-policy-v1` to `sql-policy-v1.1`.
 - Add only `ROW_NUMBER` to the allowed function set for grouped TopN.
-- Require every `ROW_NUMBER` node to be used through an `OVER` window with both
-  `PARTITION BY` and `ORDER BY`.
+- Require every `ROW_NUMBER` node to use `OVER` with `ORDER BY`; `PARTITION BY`
+  is optional for global TopN and required only for grouped TopN. Reject numeric
+  position partitions such as `PARTITION BY 1`.
 - Permit the exact aggregate wildcard form `COUNT(*)` while continuing to
   reject `SELECT *`, qualified projection stars, and every other star context.
 - Resolve aliases of known CTEs and derived tables (`FROM (...) t`) to their

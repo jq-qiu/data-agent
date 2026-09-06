@@ -291,13 +291,14 @@ class SQLValidator:
     def _validate_window_functions(self, statement: exp.Expression) -> None:
         for row_number in statement.find_all(exp.RowNumber):
             window = row_number.parent
-            if (
-                not isinstance(window, exp.Window)
-                or not window.args.get("partition_by")
-                or window.args.get("order") is None
+            if not isinstance(window, exp.Window) or window.args.get("order") is None:
+                raise SQLValidationError("ROW_NUMBER requires OVER with ORDER BY")
+            partitions = window.args.get("partition_by") or ()
+            if any(
+                isinstance(item, exp.Literal) and item.is_int for item in partitions
             ):
                 raise SQLValidationError(
-                    "ROW_NUMBER requires OVER with PARTITION BY and ORDER BY"
+                    "ROW_NUMBER PARTITION BY must be an expression, not a position"
                 )
 
     def _validate_sensitive_projection(

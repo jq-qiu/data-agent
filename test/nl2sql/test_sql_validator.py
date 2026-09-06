@@ -189,14 +189,24 @@ def test_grouped_topn_window_shape_is_allowlisted_and_constrained(
     assert result.join_relations == ("order_item_to_order", "order_to_customer")
     assert "ROW_NUMBER() OVER" in result.sql
 
+    global_ranking = validator.validate(
+        "SELECT ROW_NUMBER() OVER (ORDER BY purchase_date) AS rn FROM fact_order"
+    )
+    assert "ROW_NUMBER() OVER" in global_ranking.sql
+
     invalid_shapes = (
         "SELECT ROW_NUMBER() AS rn FROM fact_order",
-        "SELECT ROW_NUMBER() OVER (ORDER BY purchase_date) AS rn FROM fact_order",
         "SELECT ROW_NUMBER() OVER (PARTITION BY status) AS rn FROM fact_order",
     )
     for sql in invalid_shapes:
         with pytest.raises(SQLValidationError, match="ROW_NUMBER requires"):
             validator.validate(sql)
+
+    with pytest.raises(SQLValidationError, match="not a position"):
+        validator.validate(
+            "SELECT ROW_NUMBER() OVER (PARTITION BY 1 ORDER BY purchase_date) AS rn "
+            "FROM fact_order"
+        )
 
     for function in ("RANK()", "DENSE_RANK()", "LAG(purchase_date)"):
         sql = (
@@ -258,4 +268,29 @@ def test_grouped_topn_derived_table_with_qualified_columns(
 
     assert result.tables == ("dim_customer", "fact_order", "fact_order_item")
     assert result.join_relations == ("order_item_to_order", "order_to_customer")
+    assert "ROW_NUMBER() OVER" in result.sql
+
+
+def test_global_top3_derived_table_without_partition_is_allowed(
+    validator: SQLValidator,
+) -> None:
+    result = validator.validate(
+        "SELECT product_id AS product_id, sales_amount AS sales_amount "
+        "FROM ("
+        "SELECT product_id, sales_amount, "
+        "ROW_NUMBER() OVER (ORDER BY sales_amount DESC, product_id ASC) AS rn "
+        "FROM ("
+        "SELECT foi.product_id, SUM(foi.price) AS sales_amount "
+        "FROM fact_order_item foi "
+        "JOIN fact_order fo ON foi.order_id = fo.order_id "
+        "WHERE fo.purchase_date >= '2018-01-01' AND fo.purchase_date < '2019-01-01' "
+        "AND fo.status NOT IN ('canceled', 'unavailable') "
+        "GROUP BY foi.product_id"
+        ") AS sales"
+        ") AS ranked WHERE rn <= 3",
+        ("gmv",),
+    )
+
+    assert result.tables == ("fact_order", "fact_order_item")
+    assert result.join_relations == ("order_item_to_order",)
     assert "ROW_NUMBER() OVER" in result.sql
