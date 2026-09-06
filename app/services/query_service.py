@@ -21,7 +21,10 @@ from app.diagnosis.query import (
     QueryDataSource,
 )
 from app.diagnosis.question import AnalysisQuestionParser
-from app.diagnosis.runtime import WarehouseCapabilityProfileProvider
+from app.diagnosis.runtime import (
+    SyntheticCapabilityProfileProvider,
+    WarehouseCapabilityProfileProvider,
+)
 from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
@@ -187,6 +190,55 @@ class QueryService:
             elif mode == "values" and isinstance(chunk, Mapping):
                 latest_state = dict(chunk)
         yield _diagnosis_result(decision, latest_state)
+
+    async def synthetic_diagnosis_events(
+        self,
+        case_id: str,
+        question: str,
+    ) -> AsyncIterator[str]:
+        profile_step = "读取合成诊断数据能力"
+        yield _event({"type": "progress", "step": profile_step, "status": "running"})
+        profile = await SyntheticCapabilityProfileProvider(
+            self.sql_validator.catalog,
+            self.sql_validator,
+            self.dw_mysql_repository,
+            case_id,
+        ).load()
+        yield _event({"type": "progress", "step": profile_step, "status": "success"})
+
+        parser = AnalysisQuestionParser.from_catalog(self.sql_validator.catalog)
+        assessor = CapabilityAssessor(self.sql_validator.catalog)
+        query_builder = AnalysisQueryBuilder(
+            self.sql_validator.catalog,
+            AnalysisQueryContext(
+                source=QueryDataSource.SYNTHETIC_CASE,
+                case_id=case_id,
+            ),
+        )
+        executor = AnalysisTaskExecutor(
+            query_builder,
+            self.sql_validator,
+            self.dw_mysql_repository,
+        )
+        diagnosis_graph = build_diagnosis_graph(parser, assessor, profile, executor)
+        decision = IntentDecision(
+            intent=Intent.DIAGNOSIS,
+            confidence=0.95,
+            reason="gmv_diagnosis_request",
+        )
+        latest_state: dict[str, Any] = {
+            "question": question,
+            "intent": decision.intent.value,
+        }
+        async for mode, chunk in diagnosis_graph.astream(
+            input=latest_state,
+            stream_mode=["custom", "values"],
+        ):
+            if mode == "custom" and isinstance(chunk, Mapping):
+                yield _event(dict(chunk))
+            elif mode == "values" and isinstance(chunk, Mapping):
+                latest_state = dict(chunk)
+        yield _event(_diagnosis_result(decision, latest_state))
 
 
 def _event(payload: Mapping[str, Any]) -> str:

@@ -29,6 +29,7 @@ V1 实现的是指标拆解、变化贡献和关联诊断，不是严格的因�
 - FastAPI SSE 单轮查询与诊断接口。
 - Vue 3/Vite 单轮经营分析前端，支持流式进度、问数表格与证据化诊断展示。
 - FastAPI 同源托管前端与 API 的单进程本地运行方式。
+- 可复现的 Synthetic 诊断演示入口，展示 Traffic Drop、Promotion End 与 Stockout 完整证据链。
 
 API-001 的六个固定问题已通过真实服务依赖的 HTTP/SSE 演示。真实
 Olist DWS 中 Traffic、Promotion 和 Inventory 候选字段为空时，诊断会明确

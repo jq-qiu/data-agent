@@ -290,6 +290,16 @@ class FakeQueryService:
             {"type": "result", "intent": "QUERY", "data": [{"gmv": "1"}]}
         ) + "\n\n"
 
+    async def synthetic_diagnosis_events(self, case_id: str, question: str):
+        yield "data: " + json.dumps(
+            {
+                "type": "result",
+                "intent": "DIAGNOSIS",
+                "case_id": case_id,
+                "data": [],
+            }
+        ) + "\n\n"
+
 
 def test_http_endpoint_preserves_sse_and_legacy_query_contract() -> None:
     app = FastAPI()
@@ -305,6 +315,30 @@ def test_http_endpoint_preserves_sse_and_legacy_query_contract() -> None:
     assert '"type": "result"' in response.text
     assert '"data": [{"gmv": "1"}]' in response.text
 
+
+
+def test_synthetic_demo_endpoint_rejects_unknown_case() -> None:
+    app = FastAPI()
+    app.include_router(query_router)
+    app.dependency_overrides[get_query_service] = FakeQueryService
+
+    with TestClient(app) as client:
+        response = client.post("/api/demo/synthetic-diagnosis/D99")
+
+    assert response.status_code == 422
+
+
+def test_synthetic_demo_endpoint_streams_known_case() -> None:
+    app = FastAPI()
+    app.include_router(query_router)
+    app.dependency_overrides[get_query_service] = FakeQueryService
+
+    with TestClient(app) as client:
+        response = client.post("/api/demo/synthetic-diagnosis/D01")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert '"case_id": "D01"' in response.text
 
 class FakeNL2SQLGraph:
     async def astream(self, **_: Any):

@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, grouped TopN query support, and reactive SSE progress rendering.
+MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-process local runtime, hybrid intent routing refinement, grouped TopN query support, reactive SSE progress rendering, and a synthetic diagnosis demo.
 
 ## Current Feature
 
-FRONT-002 SSE Progress Render Fix.
+DEMO-001 Synthetic Diagnosis Demo.
 
 ## Feature Status
 
@@ -14,11 +14,11 @@ Completed. The Vue frontend creates each request's `exchange` object with `react
 
 ## Last Completed Feature
 
-SQL-003 Grouped TopN Query Support.
+FRONT-002 SSE Progress Render Fix.
 
 ## Next Feature
 
-A separately scoped latency improvement or broader analytical SQL support if authorized. FRONT-002 only fixes reactive SSE progress rendering.
+A separately scoped latency improvement or a real browser demonstration walkthrough if authorized.
 
 ## Last Successful Validation
 
@@ -181,6 +181,7 @@ A separately scoped latency improvement or broader analytical SQL support if aut
 - SQL-003 static baselines: repository Ruff remains 22 existing diagnostics and mypy remains 36 errors in 11 files while checking 107 source files; all SQL-003 implementation/test files pass targeted Ruff and introduce no mypy finding.
 - SQL-003 follow-up: rerun failures caused by `YEAR()` parsing to `TsOrDsToDate` and by qualified derived-table aliases are now covered and closed by AST/regression tests; global TopN now allows `ROW_NUMBER() OVER (ORDER BY ...)` without `PARTITION BY`, and numeric position partitions such as `PARTITION BY 1` are rejected.
 - FRONT-002: five frontend Node tests passed and Vite production build passed after making the per-request `exchange` object reactive; backend streaming was independently confirmed progressive and was not changed.
+- DEMO-001: 289 backend tests, 5 frontend tests, Vite build, and D01/D03/D05 synthetic profile real-smoke passed; D01 complete diagnosis graph generated a report without reading Ground Truth labels.
 ## Last Commit
 
 The FRONT-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.

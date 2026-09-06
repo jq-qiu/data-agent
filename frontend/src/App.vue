@@ -17,6 +17,12 @@ const examples = [
   "进一步分析 2018 年 5 月圣保罗州 GMV 下降的原因。",
 ];
 
+const syntheticDemos = [
+  { id: "D01", label: "为什么 2018 年 5 月相比 2018 年 4 月 PR 州 GMV 下降？", title: "为什么 2018 年 5 月相比 2018 年 4 月 PR 州 GMV 下降？", cause: "合成案例 · 流量下降" },
+  { id: "D03", label: "为什么 2018 年 5 月相比 2018 年 4 月 SC 州 GMV 下降？", title: "为什么 2018 年 5 月相比 2018 年 4 月 SC 州 GMV 下降？", cause: "合成案例 · 促销结束" },
+  { id: "D05", label: "为什么 2018 年 5 月相比 2018 年 4 月 SP 州 GMV 下降？", title: "为什么 2018 年 5 月相比 2018 年 4 月 SP 州 GMV 下降？", cause: "合成案例 · 库存不足" },
+];
+
 const question = ref("");
 const exchanges = ref([]);
 const loading = ref(false);
@@ -90,6 +96,65 @@ function chooseExample(example) {
 
 function cancelRequest() {
   activeController?.abort();
+}
+
+async function runSyntheticDemo(demo) {
+  if (loading.value) return;
+  loading.value = true;
+  const exchange = reactive({
+    id: crypto.randomUUID(),
+    question: demo.title,
+    steps: [],
+    terminal: null,
+    state: "running",
+  });
+  exchanges.value.push(exchange);
+  activeController = new AbortController();
+  scrollToBottom();
+
+  try {
+    const response = await fetch(`/api/demo/synthetic-diagnosis/${demo.id}`, {
+      method: "POST",
+      signal: activeController.signal,
+    });
+    if (!response.ok) throw new Error("HTTP_ERROR");
+    if (!response.body) throw new Error("STREAM_UNAVAILABLE");
+
+    const parser = createSseParser((event) => {
+      if (event?.type === "progress") {
+        exchange.steps = upsertProgress(exchange.steps, event);
+      } else if (!exchange.terminal && classifyTerminal(event)) {
+        exchange.terminal = event;
+      }
+      scrollToBottom();
+    });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    while (true) {
+      const { value: chunk, done } = await reader.read();
+      if (done) break;
+      parser.push(decoder.decode(chunk, { stream: true }));
+    }
+    parser.push(decoder.decode());
+    parser.finish();
+    if (!exchange.terminal) throw new Error("TERMINAL_EVENT_MISSING");
+    exchange.state = classifyTerminal(exchange.terminal) === "error" ? "error" : "done";
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      exchange.state = "cancelled";
+    } else {
+      exchange.state = "error";
+      exchange.terminal = {
+        type: "error",
+        code: "FRONTEND_REQUEST_FAILED",
+        message: "合成诊断请求未能完成，请确认后端服务可用后重试。",
+      };
+    }
+  } finally {
+    loading.value = false;
+    activeController = null;
+    scrollToBottom();
+  }
 }
 
 async function sendQuestion() {
@@ -188,6 +253,23 @@ async function sendQuestion() {
           {{ example }}
         </button>
       </nav>
+
+      <section class="synthetic-demos" aria-label="合成诊断演示">
+        <div class="section-label">合成诊断演示</div>
+        <p class="demo-note">使用固定 Seed 的 Synthetic Evidence，展示完整诊断证据链。</p>
+        <button
+          v-for="demo in syntheticDemos"
+          :key="demo.id"
+          type="button"
+          class="example-button synthetic-button"
+          :disabled="loading"
+          @click="runSyntheticDemo(demo)"
+        >
+          <span>SYN</span>
+          <span class="demo-question">{{ demo.label }}</span>
+          <small class="demo-cause">{{ demo.cause }}</small>
+        </button>
+      </section>
 
       <p class="boundary-note">结果用于关联诊断，不代表严格因果结论。</p>
     </aside>
@@ -368,3 +450,26 @@ async function sendQuestion() {
     </main>
   </div>
 </template>
+
+
+<style scoped>
+.synthetic-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.45;
+}
+.demo-question {
+  color: inherit;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.demo-cause {
+  color: #7f9d97;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+</style>
