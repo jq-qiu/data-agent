@@ -6,7 +6,7 @@ MVP V1 complete through the minimal API, fixed Demo, versioned frontend, single-
 
 ## Current Feature
 
-DEMO-001 Synthetic Diagnosis Demo.
+REPORT-001 Localized Evidence Limitations.
 
 ## Feature Status
 
@@ -14,11 +14,11 @@ Completed. The Vue frontend creates each request's `exchange` object with `react
 
 ## Last Completed Feature
 
-FRONT-002 SSE Progress Render Fix.
+DEMO-001 Synthetic Diagnosis Demo.
 
 ## Next Feature
 
-A separately scoped latency improvement or a real browser demonstration walkthrough if authorized.
+A separately scoped latency improvement or browser demonstration walkthrough if authorized.
 
 ## Last Successful Validation
 
@@ -182,6 +182,7 @@ A separately scoped latency improvement or a real browser demonstration walkthro
 - SQL-003 follow-up: rerun failures caused by `YEAR()` parsing to `TsOrDsToDate` and by qualified derived-table aliases are now covered and closed by AST/regression tests; global TopN now allows `ROW_NUMBER() OVER (ORDER BY ...)` without `PARTITION BY`, and numeric position partitions such as `PARTITION BY 1` are rejected.
 - FRONT-002: five frontend Node tests passed and Vite production build passed after making the per-request `exchange` object reactive; backend streaming was independently confirmed progressive and was not changed.
 - DEMO-001: 289 backend tests, 5 frontend tests, Vite build, and D01/D03/D05 synthetic profile real-smoke passed; D01 complete diagnosis graph generated a report without reading Ground Truth labels.
+- REPORT-001: Evidence limitation codes now render as Chinese labels with English codes; 290 backend tests passed and Ruff/mypy remain 22/36.
 ## Last Commit
 
 The FRONT-002 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.

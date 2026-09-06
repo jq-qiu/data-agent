@@ -13,6 +13,7 @@ from app.agent.graph import graph as nl2sql_graph
 from app.agent.state import DataAgentState
 from app.core.log import logger
 from app.diagnosis.capability import CapabilityAssessor
+from app.diagnosis.evidence import evidence_limitation_label
 from app.diagnosis.intent import Intent, IntentDecision, IntentRouter
 from app.diagnosis.query import (
     AnalysisQueryBuilder,
@@ -285,7 +286,7 @@ def _diagnosis_result(
                 if isinstance(item, Mapping):
                     values = item.get("limitations")
                     if isinstance(values, list):
-                        limitations.extend(str(value) for value in values)
+                        limitations.extend(evidence_limitation_label(value) for value in values)
         missing = bundle.get("missing_evidence")
         if isinstance(missing, list):
             limitations.extend(str(value) for value in missing)

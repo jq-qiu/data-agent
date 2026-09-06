@@ -21,6 +21,7 @@ from app.diagnosis.evidence import (
     EvidenceType,
     EvidenceValidationError,
     ValidatedEvidenceBundle,
+    evidence_limitation_label,
 )
 from app.diagnosis.planner import AnalysisPlan, AnalysisTask, TaskMethod
 from app.diagnosis.query import (
@@ -841,3 +842,12 @@ def test_generated_report_contains_no_forbidden_claim(forbidden: str) -> None:
     report = ReportGenerator().generate(EvidenceChecker().check(plan, results))
 
     assert forbidden not in report.markdown
+
+
+def test_evidence_limitation_labels_include_chinese_and_code() -> None:
+    label = evidence_limitation_label(EvidenceLimitation.SYNTHETIC_CANDIDATE_DATA)
+
+    assert label == "合成候选因素数据（SYNTHETIC_CANDIDATE_DATA）"
+    assert "NO_CAUSAL_DESIGN" in evidence_limitation_label(
+        EvidenceLimitation.NO_CAUSAL_DESIGN
+    )

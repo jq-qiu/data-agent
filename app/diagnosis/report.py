@@ -15,6 +15,7 @@ from app.diagnosis.evidence import (
     EvidenceValidationError,
     ValidatedEvidence,
     ValidatedEvidenceBundle,
+    evidence_limitation_label,
 )
 
 _FORBIDDEN_CLAIMS = ("导致", "造成", "证明", "唯一原因", "一定能够", "必然提升")
@@ -403,7 +404,7 @@ class ReportGenerator:
             if item.limitations:
                 text = (
                     f"{_factor_label(item)} 限制："
-                    + ", ".join(limitation.value for limitation in item.limitations)
+                    + ", ".join(evidence_limitation_label(limitation) for limitation in item.limitations)
                     + "。"
                 )
                 statements.append(

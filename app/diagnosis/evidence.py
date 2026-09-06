@@ -79,6 +79,31 @@ class AnomalyStatus(StrEnum):
     UNAVAILABLE = "UNAVAILABLE"
 
 
+_EVIDENCE_LIMITATION_LABELS = {
+    EvidenceLimitation.BASELINE_RATE_UNAVAILABLE: "基线率不可用",
+    EvidenceLimitation.AOV_DENOMINATOR_ZERO: "AOV 分母为零",
+    EvidenceLimitation.DIMENSION_TOTAL_MISMATCH: "维度合计不匹配",
+    EvidenceLimitation.TOTAL_DELTA_NEAR_ZERO: "总变化接近零",
+    EvidenceLimitation.PRIMARY_METRIC_MISSING: "主指标缺失",
+    EvidenceLimitation.PRIMARY_METRIC_NOT_DECREASING: "主指标未下降",
+    EvidenceLimitation.ORDER_COUNT_NOT_DECREASING: "订单量未下降",
+    EvidenceLimitation.CONVERSION_RATE_MISSING: "转化率缺失",
+    EvidenceLimitation.CONVERSION_RATE_NOT_DECREASING: "转化率未下降",
+    EvidenceLimitation.CONVERSION_RATE_OPPOSES: "转化率变化方向相反",
+    EvidenceLimitation.SYNTHETIC_CANDIDATE_DATA: "合成候选因素数据",
+    EvidenceLimitation.NO_CAUSAL_DESIGN: "无因果实验或准实验设计",
+    EvidenceLimitation.DECLINE_NOT_CONFIRMED: "未确认下降",
+}
+
+
+def evidence_limitation_label(value: EvidenceLimitation | str) -> str:
+    name = value.value if isinstance(value, EvidenceLimitation) else str(value)
+    label = _EVIDENCE_LIMITATION_LABELS.get(
+        EvidenceLimitation(name), name
+    )
+    return f"{label}（{name}）"
+
+
 _OVERALL_DECOMPOSITION_LINEAGE = frozenset({"gmv", "order_count", "aov"})
 _CATEGORY_DECOMPOSITION_LINEAGE = frozenset({"gmv", "category_order_count"})
 
