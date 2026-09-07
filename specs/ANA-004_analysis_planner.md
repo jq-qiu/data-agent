@@ -115,7 +115,7 @@
 - `data/evaluation/analysis_planner_golden_v1.json`；
 - `data/reports/ANA-004_analysis_planner_evaluation.json`；
 - `test/diagnosis/test_analysis_planner.py`；
-- `ANA-004_COMPLETION.md`；
+- `docs/reports/ANA-004_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 ## 7. Local Plan

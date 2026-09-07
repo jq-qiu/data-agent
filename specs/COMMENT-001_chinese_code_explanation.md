@@ -32,7 +32,7 @@
 - 在 NL2SQL 链路、诊断链路、语义绑定、Registry、Planner、Validator、受控 SQL、Analyzer、Evidence、Report、API/Query Service 和 client managers 的关键分支补充“为什么这样设计”的中文注释；
 - 为 `frontend/src/lib/sse.js`、`frontend/src/lib/trace.js`、`frontend/src/main.js` 和 `frontend/src/App.vue` 新增适量中文模块说明、JSDoc 或局部注释，重点解释 SSE 分块解析、进度去重、终态分类、安全 Trace 白名单和 Vue 响应式状态；
 - 只新增注释/docstring，保留全部既有注释，不删除、不改写既有源码行；
-- 新增本 Spec，并在实现完成后新增 `COMMENT-001_COMPLETION.md` 记录真实验证结果和 Diff Review；
+- 新增本 Spec，并在实现完成后新增 `docs/reports/COMMENT-001_COMPLETION.md` 记录真实验证结果和 Diff Review；
 - 在注释中明确真实/合成数据边界、确定性计算边界、SQL 安全边界、Evidence 可追溯边界和非因果语言边界，但不复制大段设计文档或写死易过期统计数字。
 
 ## 5. Out of Scope
@@ -53,7 +53,7 @@
 - `app/**/*.py`
 - `frontend/src/**/*.js`
 - `frontend/src/App.vue`
-- `COMMENT-001_COMPLETION.md`
+- `docs/reports/COMMENT-001_COMPLETION.md`
 
 除以上路径外，不允许修改其他文件。验证命令产生的忽略文件不得进入 Diff。
 

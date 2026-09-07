@@ -12,7 +12,7 @@ leaving that reference directory unchanged.
 1. Current user authorization to continue and to reuse or regenerate the
    frontend reference.
 2. This specification.
-3. `specs/API-001_minimal_demo.md` and `API-001_COMPLETION.md`.
+3. `specs/API-001_minimal_demo.md` and `docs/reports/API-001_COMPLETION.md`.
 4. `docs/01_product_scope.md` and `docs/05_agent_workflow.md`.
 5. `IMPLEMENTATION_PLAN.md`, `AGENTS.md`, `README.md`, and
    `IMPLEMENTATION_STATUS.md`.
@@ -114,7 +114,7 @@ must never derive a business conclusion or execute content.
 - `frontend/test/sse.test.js`
 - `README.md`
 - `IMPLEMENTATION_STATUS.md`
-- `FRONT-001_COMPLETION.md`
+- `docs/reports/FRONT-001_COMPLETION.md`
 
 Any additional file requires a documented direct blocker and must remain
 inside FRONT-001.

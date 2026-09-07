@@ -11,7 +11,7 @@ Fix the Vue frontend so SSE progress events received incrementally from the Fast
 3. `AGENTS.md`.
 4. `README.md`.
 5. `IMPLEMENTATION_STATUS.md`.
-6. `specs/DEPLOY-001_single_process_runtime.md` and `DEPLOY-001_COMPLETION.md`.
+6. `specs/DEPLOY-001_single_process_runtime.md` and `docs/reports/DEPLOY-001_COMPLETION.md`.
 7. Current frontend `App.vue` and SSE parser behavior.
 
 ## 3. Prerequisite Findings
@@ -38,7 +38,7 @@ Fix the Vue frontend so SSE progress events received incrementally from the Fast
 - `specs/FRONT-002_sse_progress_render.md`
 - `frontend/src/App.vue`
 - `IMPLEMENTATION_STATUS.md`
-- `FRONT-002_COMPLETION.md`
+- `docs/reports/FRONT-002_COMPLETION.md`
 
 ## 7. Local Plan
 

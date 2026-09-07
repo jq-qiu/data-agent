@@ -2,26 +2,36 @@
 
 ## Current Phase
 
-MVP V1 的功能、工程与讲解资料全部收口：除澄清响应、工程清理、受限规划组件和分析计划 Trace 展示外，INTERVIEW-001 新增演示脚本与架构讲解/Q&A，供面试前直接练习。
+MVP V1 的功能与工程链路已收口，当前进入公开仓库展示整理阶段。SHOWCASE-001
+重构 README 的访客信息层级，并将根目录 Feature 报告归档到统一索引目录；不改变
+任何运行逻辑或既有评测结果。
 
 ## Current Feature
 
-INTERVIEW-001 Demo Script and Architecture Narrative.
+SHOWCASE-001 Public Repository Presentation.
 
 ## Feature Status
 
-Completed. 产出公开的 `INTERVIEW-001_ARCHITECTURE_NARRATIVE.md`（分层职责、语义层、LLM 调用边界/预算、安全审计与评测）。所有描述与仓库真实状态一致，不宣称未接入能力已运行；演示辅助资料仅在本地保留。
+Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
+GitHub visibility remains unchanged until the separate action-time confirmation.
+README 已覆盖项目定位、两条执行链、ODS→DWD→DWS、混合意图路由、安全边界、
+真实评测与快速开始；34份历史完成/基线报告已移动到 `docs/reports/` 并建立索引。
 
 ## Last Completed Feature
 
-PLAN-UI-001 Analysis Plan Trace.
+COMMENT-001 Chinese Code Explanation.
 
 ## Next Feature
 
-当前 V1 路线图 Feature 已全部完成。后续需由用户给出新的 Feature（例如生产接入 LLM Planner、真实语义检索评测、受限多轮、部署监控等）并单独授权。
+完成 SHOWCASE-001 提交、推送和公开前最终安全检查。生产接入 LLM
+Planner、真实语义检索评测、受限多轮和部署监控均需建立新的独立 Feature。
 
 ## Last Successful Validation
 
+- SHOWCASE-001 full pytest regression: 338 passed；frontend 11 passed/build passed；
+  Ruff/mypy 0/0；
+- SHOWCASE-001 documentation contract: 23 passed；当前事实源 Markdown 断链 0；
+  33/34 历史报告保持原 Git blob，INTERVIEW-001 报告仅移除不公开资料说明；
 - INTERVIEW-001 deliverables: 2 documents created and linked from README；
 - INTERVIEW-001 documentation contract: 22 passed + new assertions；
 - INTERVIEW-001 full pytest regression: 338 passed；frontend 11 passed/build passed；Ruff/mypy 0/0；
@@ -226,19 +236,27 @@ PLAN-UI-001 Analysis Plan Trace.
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The INTERVIEW-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+SHOWCASE-001 completion commit. Resolve the immutable commit ID with
+`git log -1 --oneline`; its parent history does not contain the local interview demo script or Q&A.
 
 ## Push Status
 
-Pending push for the INTERVIEW-001 completion commit. If Git metadata disagrees, Git is authoritative.
+用户已授权显式推送 `main`；最终结果以 Git 为准。GitHub CLI 尚未登录，之前 Git push
+曾因无法连接 GitHub 443 端口失败。仓库可见性不会随 Git push 自动改变。
 
 ## Known Blockers
 
-None blocking deterministic routing. Semantic fallback requires the configured external LLM and fails closed when unavailable. Real Qdrant/Elasticsearch semantic-retrieval accuracy has not been evaluated in production; only the SEM-002 Stub contract is verified. Grouped TopN and other complex analytical SQL correctness are not established by ROUTE-001. External services and the ignored local configuration remain runtime prerequisites. The Qdrant compatibility warning remains documented; Ruff and mypy are now clean.
+公开操作需要可用的 GitHub 登录会话与网络，并且必须在最终修改仓库可见性前再次取得
+用户确认。运行能力方面，语义兜底仍依赖外部 LLM；真实 Qdrant/Elasticsearch 召回
+准确率和真实 LLM Planner 尚未评测；外部服务与本地忽略配置仍是运行前置条件。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `INTERVIEW-001_COMPLETION.md` and `specs/INTERVIEW-001_demo_script_architecture_narrative.md`.
-4. The V1 roadmap Features are complete; do not enter a new Feature until its Spec, scope, and verification commands are explicitly established.
+3. Review `README.md`, `docs/reports/README.md`,
+   `docs/reports/SHOWCASE-001_COMPLETION.md` and
+   `specs/SHOWCASE-001_public_repository_presentation.md`.
+4. Commit and explicitly push the complete SHOWCASE-001 change set to `origin/main`.
+5. Run the final public-exposure audit, then request action-time confirmation before changing the
+   GitHub repository visibility to Public.

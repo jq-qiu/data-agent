@@ -174,7 +174,7 @@ AnalysisTask Tool Dispatcher（类型化工具调度）
 - `IMPLEMENTATION_PLAN.md`
 - `IMPLEMENTATION_STATUS.md`
 - `test/test_documentation_contract.py`
-- `SEM-001_COMPLETION.md`
+- `docs/reports/SEM-001_COMPLETION.md`
 
 ## 9. Local Plan
 

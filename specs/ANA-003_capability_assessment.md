@@ -79,7 +79,7 @@
 - `data/evaluation/capability_assessment_golden_v1.json`；
 - `data/reports/ANA-003_capability_assessment_evaluation.json`；
 - `test/diagnosis/test_capability_assessment.py`；
-- `ANA-003_COMPLETION.md`；
+- `docs/reports/ANA-003_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 ## 7. Local Plan

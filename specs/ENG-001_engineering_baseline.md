@@ -20,7 +20,7 @@
 2. 验证开发工具版本；
 3. 运行真实 pytest、Ruff、mypy 基线；
 4. 统计错误数量和主要类别；
-5. 创建 `ENG-001_BASELINE.md`；
+5. 创建 `docs/reports/ENG-001_BASELINE.md`；
 6. 检查暂存内容、敏感信息和 Diff；
 7. 建立首个本地工程基线 Commit；
 8. 输出完成报告并停止。
@@ -48,7 +48,7 @@ git diff --cached --check
 
 ## Baseline Report Requirements
 
-`ENG-001_BASELINE.md` 至少记录：
+`docs/reports/ENG-001_BASELINE.md` 至少记录：
 
 ```text
 Date and Environment
@@ -73,7 +73,7 @@ Acceptance Criteria
 - [ ] mypy 可以执行并记录真实结果；
 - [ ] 存量失败未被隐藏；
 - [ ] 未修改业务逻辑；
-- [ ] `ENG-001_BASELINE.md` 已创建；
+- [ ] `docs/reports/ENG-001_BASELINE.md` 已创建；
 - [ ] 暂存内容完成安全和范围检查；
 - [ ] 首个本地基线 Commit 已建立；
 - [ ] 完成报告已输出；

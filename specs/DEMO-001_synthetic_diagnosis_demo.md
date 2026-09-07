@@ -72,7 +72,7 @@ Traffic, Promotion, and Inventory fields are empty.
 - `test/api/test_query_api.py`
 - `README.md`
 - `IMPLEMENTATION_STATUS.md`
-- `DEMO-001_COMPLETION.md`
+- `docs/reports/DEMO-001_COMPLETION.md`
 
 Any additional file requires a documented direct blocker and must remain inside
 DEMO-001.

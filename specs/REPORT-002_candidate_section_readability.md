@@ -36,7 +36,7 @@ Make the candidate-evidence report section distinguish supported candidates from
 - `app/diagnosis/report.py`
 - `test/diagnosis/test_evidence_report.py`
 - `IMPLEMENTATION_STATUS.md`
-- `REPORT-002_COMPLETION.md`
+- `docs/reports/REPORT-002_COMPLETION.md`
 
 ## 7. Verification Commands
 

@@ -10,8 +10,8 @@ host whose required data and model services are already provisioned.
 
 1. Current user authorization to continue with the recommended DEPLOY-001.
 2. This specification.
-3. `specs/API-001_minimal_demo.md` and `API-001_COMPLETION.md`.
-4. `specs/FRONT-001_mvp_frontend.md` and `FRONT-001_COMPLETION.md`.
+3. `specs/API-001_minimal_demo.md` and `docs/reports/API-001_COMPLETION.md`.
+4. `specs/FRONT-001_mvp_frontend.md` and `docs/reports/FRONT-001_COMPLETION.md`.
 5. `docs/01_product_scope.md` and `docs/05_agent_workflow.md`.
 6. `IMPLEMENTATION_PLAN.md`, `AGENTS.md`, `README.md`, and
    `IMPLEMENTATION_STATUS.md`.
@@ -123,7 +123,7 @@ Runtime routes:
 - `test/deployment/test_runtime.py`
 - `README.md`
 - `IMPLEMENTATION_STATUS.md`
-- `DEPLOY-001_COMPLETION.md`
+- `docs/reports/DEPLOY-001_COMPLETION.md`
 
 Any additional file requires a documented direct blocker and must remain
 inside DEPLOY-001.

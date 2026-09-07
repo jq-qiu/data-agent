@@ -20,10 +20,10 @@ Groups with fewer than three available products return all available products.
 4. `docs/01_product_scope.md`, `docs/02_data_and_metric_design.md`,
    `docs/03_metadata_and_nl2sql.md`, and `docs/06_evaluation.md`.
 5. `AGENTS.md` and `README.md`.
-6. `specs/SQL-001_nl2sql_adaptation.md`, `SQL-001_COMPLETION.md`,
-   `specs/SQL-002_nl2sql_evaluation.md`, and `SQL-002_COMPLETION.md`.
+6. `specs/SQL-001_nl2sql_adaptation.md`, `docs/reports/SQL-001_COMPLETION.md`,
+   `specs/SQL-002_nl2sql_evaluation.md`, and `docs/reports/SQL-002_COMPLETION.md`.
 7. `specs/ROUTE-001_hybrid_intent_router.md` and
-   `ROUTE-001_COMPLETION.md`.
+   `docs/reports/ROUTE-001_COMPLETION.md`.
 8. Current SQL Policy, AST Validator, prompts, query graph, Query Service,
    isolated Metadata, and regression behavior.
 
@@ -140,7 +140,7 @@ proves result shape and checksum for the reference queries.
 - `data/reports/SQL-003_grouped_topn_evaluation.json`
 - `README.md`
 - `IMPLEMENTATION_STATUS.md`
-- `SQL-003_COMPLETION.md`
+- `docs/reports/SQL-003_COMPLETION.md`
 
 Any additional file requires a documented direct blocker and must remain inside
 SQL-003.

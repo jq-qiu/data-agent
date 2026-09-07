@@ -60,7 +60,7 @@ This Feature follows, in order:
 - `data/evaluation/evidence_report_golden_v1.json`
 - `data/reports/ANA-007_evidence_report_evaluation.json`
 - `test/diagnosis/test_evidence_report.py`
-- `ANA-007_COMPLETION.md`
+- `docs/reports/ANA-007_COMPLETION.md`
 - `IMPLEMENTATION_STATUS.md`
 
 ## 6. Evidence Contract

@@ -9,7 +9,7 @@ Render Evidence limitation codes as human-readable Chinese labels while preservi
 1. The user's request to make report limitations readable in Chinese.
 2. This specification.
 3. `AGENTS.md`, `README.md`, and `IMPLEMENTATION_STATUS.md`.
-4. `specs/ANA-007_evidence_report.md` and `ANA-007_COMPLETION.md`.
+4. `specs/ANA-007_evidence_report.md` and `docs/reports/ANA-007_COMPLETION.md`.
 5. Current Evidence, Report Generator, Query Service, and regression tests.
 
 ## 3. Prerequisite Findings
@@ -43,7 +43,7 @@ Render Evidence limitation codes as human-readable Chinese labels while preservi
 - `test/diagnosis/test_evidence_report.py`
 - `test/api/test_query_api.py`
 - `IMPLEMENTATION_STATUS.md`
-- `REPORT-001_COMPLETION.md`
+- `docs/reports/REPORT-001_COMPLETION.md`
 
 ## 7. Verification Commands
 

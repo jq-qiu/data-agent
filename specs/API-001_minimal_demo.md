@@ -158,7 +158,7 @@ details, cookies, tokens, Ground Truth labels, or runtime objects.
 - `data/reports/API-001_minimal_demo.json`
 - `test/api/test_query_api.py`
 - `README.md`
-- `API-001_COMPLETION.md`
+- `docs/reports/API-001_COMPLETION.md`
 - `IMPLEMENTATION_STATUS.md`
 
 Any additional file requires a documented direct blocker and must remain inside

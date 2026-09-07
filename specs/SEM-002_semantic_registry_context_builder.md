@@ -104,7 +104,7 @@ Registry 白名单 + 类型 + 阈值 + 分差 + 歧义校验
 - `README.md`
 - `IMPLEMENTATION_PLAN.md`
 - `IMPLEMENTATION_STATUS.md`
-- `SEM-002_COMPLETION.md`
+- `docs/reports/SEM-002_COMPLETION.md`
 
 ## 7. Local Plan
 

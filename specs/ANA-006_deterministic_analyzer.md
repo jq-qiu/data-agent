@@ -55,7 +55,7 @@ This Feature follows, in order:
 - `data/evaluation/deterministic_analyzer_golden_v1.json`
 - `data/reports/ANA-006_deterministic_analyzer_evaluation.json`
 - `test/diagnosis/test_deterministic_analyzer.py`
-- `ANA-006_COMPLETION.md`
+- `docs/reports/ANA-006_COMPLETION.md`
 - `IMPLEMENTATION_STATUS.md`
 
 Any additional file requires a documented blocking reason and must stay inside

@@ -58,7 +58,7 @@
 - `test/metadata/**`；
 - `data/evaluation/metadata_golden_v1.json`；
 - `data/reports/META-001_metadata_evaluation.json`；
-- `META-001_COMPLETION.md`；
+- `docs/reports/META-001_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 若实现过程中必须修改其他文件，先确认其属于本 Feature 且在 Diff Review 中披露；不得借机重构下游模块。

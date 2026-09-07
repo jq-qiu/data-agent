@@ -2,7 +2,7 @@
 
 ## Feature
 
-Demo Script and Architecture Narrative：固化可用于面试讲解的演示脚本与架构叙事/Q&A，清晰说明 LLM 与确定性模块的职责边界、当前真实能力与后续演进。仅产出文档与契约测试。
+Architecture Narrative：固化公开架构叙事，清晰说明 LLM 与确定性模块的职责边界、当前真实能力与后续演进。演示辅助资料仅在本地保留。
 
 ## Changed Files
 

@@ -12,7 +12,7 @@ coverage and Scope-aware Order Count Evidence lineage.
 1. Current user authorization to continue.
 2. This specification.
 3. `IMPLEMENTATION_PLAN.md` and Gate 5.
-4. `IMPLEMENTATION_STATUS.md` and `EVAL-001_COMPLETION.md`.
+4. `IMPLEMENTATION_STATUS.md` and `docs/reports/EVAL-001_COMPLETION.md`.
 5. `docs/02_data_and_metric_design.md`.
 6. `docs/03_metadata_and_nl2sql.md`.
 7. `docs/04_analysis_methodology.md`.
@@ -82,7 +82,7 @@ coverage and Scope-aware Order Count Evidence lineage.
 - `eval_runs/FIX-001_v1/summary.json`
 - `eval_runs/FIX-001_v1/diagnosis_results.csv`
 - `eval_runs/FIX-001_v1/error_analysis.md`
-- `FIX-001_COMPLETION.md`
+- `docs/reports/FIX-001_COMPLETION.md`
 - `IMPLEMENTATION_STATUS.md`
 
 ## 7. Frozen Contract Decisions

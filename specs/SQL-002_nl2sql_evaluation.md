@@ -60,7 +60,7 @@ Gate 3 通过条件仅使用已冻结事实源中的确定条件：
 - `data/reports/SQL-002_nl2sql_evaluation.json`；
 - `eval_runs/sql-002-baseline-v1/**`；
 - `test/nl2sql/test_evaluation.py`；
-- `SQL-002_COMPLETION.md`；
+- `docs/reports/SQL-002_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 不得修改 SQL-001 运行逻辑或任何诊断、AOV 拆解和 API 业务逻辑。

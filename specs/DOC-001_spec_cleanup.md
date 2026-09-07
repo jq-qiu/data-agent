@@ -16,7 +16,7 @@
 - `AGENTS.md`；
 - `README.md`；
 - `IMPLEMENTATION_PLAN.md`；
-- `ENG-001_BASELINE.md`；
+- `docs/reports/ENG-001_BASELINE.md`；
 - `docs/01_product_scope.md` 至 `docs/06_evaluation.md`；
 - `specs/ENG-001_engineering_baseline.md`；
 - 当前 Git 状态与仓库文件。
@@ -26,7 +26,7 @@
 - 更新后的 `README.md` 和 `IMPLEMENTATION_PLAN.md`；
 - `IMPLEMENTATION_STATUS.md`；
 - 可重复运行的文档契约测试；
-- `DOC-001_COMPLETION.md`；
+- `docs/reports/DOC-001_COMPLETION.md`；
 - 独立 DOC-001 Commit 和成功 Push。
 
 ## In Scope

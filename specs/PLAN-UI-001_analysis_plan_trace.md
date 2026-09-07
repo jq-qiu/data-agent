@@ -47,7 +47,7 @@
 - `README.md`
 - `IMPLEMENTATION_PLAN.md`
 - `IMPLEMENTATION_STATUS.md`
-- `PLAN-UI-001_COMPLETION.md`
+- `docs/reports/PLAN-UI-001_COMPLETION.md`
 
 ## 7. Local Plan
 

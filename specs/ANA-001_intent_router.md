@@ -57,7 +57,7 @@
 - `data/evaluation/intent_router_golden_v1.json`；
 - `data/reports/ANA-001_intent_router_evaluation.json`；
 - `test/diagnosis/test_intent_router.py`；
-- `ANA-001_COMPLETION.md`；
+- `docs/reports/ANA-001_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 ## 7. Local Plan

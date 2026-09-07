@@ -54,7 +54,7 @@ V1 diagnosis component chain against the isolated Synthetic Evidence tables in
 - `eval_runs/EVAL-001_v1/diagnosis_results.csv`
 - `eval_runs/EVAL-001_v1/error_analysis.md`
 - `test/evaluation/test_diagnosis_regression.py`
-- `EVAL-001_COMPLETION.md`
+- `docs/reports/EVAL-001_COMPLETION.md`
 - `IMPLEMENTATION_STATUS.md`
 
 ## 6. Frozen Dataset

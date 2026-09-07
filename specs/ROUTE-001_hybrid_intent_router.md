@@ -12,8 +12,8 @@ reason-specific guidance.
 1. Current user authorization and the reviewed `意图识别.txt` design reference.
 2. This specification.
 3. `docs/01_product_scope.md` and `docs/05_agent_workflow.md`.
-4. `specs/ANA-001_intent_router.md` and `ANA-001_COMPLETION.md`.
-5. `specs/API-001_minimal_demo.md` and `API-001_COMPLETION.md`.
+4. `specs/ANA-001_intent_router.md` and `docs/reports/ANA-001_COMPLETION.md`.
+5. `specs/API-001_minimal_demo.md` and `docs/reports/API-001_COMPLETION.md`.
 6. `IMPLEMENTATION_PLAN.md`, `AGENTS.md`, `README.md`, and
    `IMPLEMENTATION_STATUS.md`.
 7. Current Intent Router, API dependency, Query Service, Metadata catalog, and
@@ -143,7 +143,7 @@ domain mismatch, and ambiguous/incomplete wording.
 - `data/reports/ROUTE-001_intent_router_evaluation.json`
 - `README.md`
 - `IMPLEMENTATION_STATUS.md`
-- `ROUTE-001_COMPLETION.md`
+- `docs/reports/ROUTE-001_COMPLETION.md`
 
 Any additional file requires a documented direct blocker and must remain
 inside ROUTE-001.

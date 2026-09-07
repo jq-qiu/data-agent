@@ -68,7 +68,7 @@
 - `app/api/dependencies.py`、`app/services/query_service.py`；
 - `prompts/{expand_recall_keywords,filter_table_info,filter_metric_info,generate_sql,correct_sql}.prompt`；
 - `test/nl2sql/**`；
-- `SQL-001_COMPLETION.md`；
+- `docs/reports/SQL-001_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 不得修改诊断模块；若实现必须触及其他文件，应先确认与本 Feature 的直接关系并在 Diff Review 披露。

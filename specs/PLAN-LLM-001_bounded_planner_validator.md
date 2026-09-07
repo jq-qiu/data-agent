@@ -100,7 +100,7 @@ duplicate_validator_issue
 - `README.md`
 - `IMPLEMENTATION_PLAN.md`
 - `IMPLEMENTATION_STATUS.md`
-- `PLAN-LLM-001_COMPLETION.md`
+- `docs/reports/PLAN-LLM-001_COMPLETION.md`
 
 任何新增文件必须是本 Feature 的直接阻塞项并记录原因。
 

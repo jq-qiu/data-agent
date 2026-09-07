@@ -72,7 +72,7 @@
 - `data/evaluation/analysis_question_parser_golden_v1.json`；
 - `data/reports/ANA-002_analysis_question_parser_evaluation.json`；
 - `test/diagnosis/test_analysis_question_parser.py`；
-- `ANA-002_COMPLETION.md`；
+- `docs/reports/ANA-002_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 ## 7. Local Plan

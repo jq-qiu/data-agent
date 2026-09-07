@@ -78,7 +78,7 @@
 - `README.md`
 - `IMPLEMENTATION_PLAN.md`
 - `IMPLEMENTATION_STATUS.md`
-- `ENG-002_COMPLETION.md`
+- `docs/reports/ENG-002_COMPLETION.md`
 
 任何新增文件必须是本 Feature 的直接阻塞项并记录原因。
 

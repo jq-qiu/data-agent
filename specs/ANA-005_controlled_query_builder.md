@@ -122,7 +122,7 @@ State/Trace 禁止包含原始 SQL、绑定参数、数据库凭据或完整连�
 - `data/evaluation/analysis_task_executor_golden_v1.json`；
 - `data/reports/ANA-005_analysis_task_executor_evaluation.json`；
 - `test/diagnosis/test_analysis_task_executor.py`；
-- `ANA-005_COMPLETION.md`；
+- `docs/reports/ANA-005_COMPLETION.md`；
 - `IMPLEMENTATION_STATUS.md`。
 
 ## 9. Local Plan
