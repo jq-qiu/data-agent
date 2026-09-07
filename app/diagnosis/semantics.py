@@ -1,3 +1,5 @@
+"""定义分析语义 Registry 及面向 Planner 的安全投影，不向规划上下文暴露物理 Schema。"""
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -24,6 +26,8 @@ class ClaimType(StrEnum):
 
 
 class MetricAnalysisDefinition(BaseModel):
+    """指标的分析关系投影；物理聚合公式仍由 Metadata Metric Registry 唯一定义。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     metric_id: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
@@ -36,6 +40,8 @@ class MetricAnalysisDefinition(BaseModel):
 
 
 class DimensionDefinition(BaseModel):
+    """维度的业务角色与可用值来源，防止同名物理字段被当成相同分析语义。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     dimension: AnalysisDimension
@@ -60,6 +66,8 @@ class DimensionDefinition(BaseModel):
 
 
 class CandidateFactorDefinition(BaseModel):
+    """候选因素所需指标和最低证据契约；V1 声明类型固定为关联。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     factor: CandidateFactor
@@ -81,6 +89,8 @@ class AnalysisToolDefinition(BaseModel):
 
 
 class AnalysisSemanticRegistry(BaseModel):
+    """静态分析知识注册表，通过规范 ID 引用 Catalog，而不复制物理 Schema。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True, arbitrary_types_allowed=True)
 
     version: str = Field(min_length=1)
@@ -120,6 +130,8 @@ class AnalysisSemanticRegistry(BaseModel):
 
     @classmethod
     def from_catalog(cls, catalog: MetadataCatalog) -> AnalysisSemanticRegistry:
+        """从当前 Catalog 构造并校验 V1 分析语义，缺少必要指标时立即失败。"""
+
         catalog_metrics = {item.metric_id: item for item in catalog.metrics}
         gmv = catalog_metrics.get("gmv")
         if gmv is None:
@@ -315,6 +327,8 @@ class ToolSemanticContext(BaseModel):
 
 
 class PlannerConstraints(BaseModel):
+    """随规划上下文下发的硬边界：禁用 SQL/物理 Schema，要求确定性计算和已验证证据。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     max_tasks: int = Field(default=4, ge=1, le=4)
@@ -326,6 +340,8 @@ class PlannerConstraints(BaseModel):
 
 
 class PlannerSemanticContext(BaseModel):
+    """单次请求的不可变逻辑说明书，不包含表、列、JOIN、原始行或连接对象。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     context_version: str = "planner-semantic-context-v1"
@@ -340,6 +356,8 @@ class PlannerSemanticContext(BaseModel):
 
 
 class PlannerSemanticContextBuilder:
+    """取静态 Registry 与 RuntimeCapability 的交集，生成 Planner 可见的最小上下文。"""
+
     def __init__(self, registry: AnalysisSemanticRegistry) -> None:
         self._registry = registry
 
@@ -348,12 +366,16 @@ class PlannerSemanticContextBuilder:
         question: ParsedAnalysisQuestion,
         capability: CapabilityAssessment,
     ) -> PlannerSemanticContext:
+        """只投影当前问题已请求且运行时可用的维度、因素和分析工具。"""
+
+        # ParsedQuestion 中的规范 ID 必须能回查静态 Registry，否则说明上下游事实源不一致。
         metric = self._registry.metric_map.get(question.target_metric)
         if metric is None:
             raise ValueError("parsed metric is not registered for analysis")
 
         supported = set(capability.supported_methods)
         available_dimension_ids = set(capability.available_dimensions)
+        # 维度同时满足“指标允许、用户请求、当前数据可用”才进入本次上下文。
         dimensions = tuple(
             self._dimension_context(self._registry.dimension_map[dimension])
             for dimension in metric.dimensions
@@ -361,6 +383,7 @@ class PlannerSemanticContextBuilder:
             and dimension in available_dimension_ids
             and AnalysisMethod.DIMENSION_CONTRIBUTION in supported
         )
+        # 候选因素还要求对应运行时验证方法可用，缺 Evidence 的因素会被过滤并写入限制。
         factors = tuple(
             self._factor_context(self._registry.factor_map[factor])
             for factor in metric.candidate_factors
@@ -368,6 +391,7 @@ class PlannerSemanticContextBuilder:
             and self._registry.factor_map[factor].capability_method in supported
         )
 
+        # 工具列表是 Planner 唯一可选方法集合；没有前置能力的工具不会被投影。
         tools: list[ToolSemanticContext] = []
         for definition in self._registry.tools:
             if (
@@ -391,6 +415,7 @@ class PlannerSemanticContextBuilder:
                 )
             )
 
+        # 返回对象只包含逻辑显示名、规范 ID 和约束，不包含物理表列或 SQL。
         return PlannerSemanticContext(
             parsed_question=question,
             metric=MetricSemanticContext(

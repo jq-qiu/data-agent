@@ -1,3 +1,5 @@
+"""声明可替换的诊断意图分类接口，供路由器选择确定性或模型分类实现。"""
+
 from __future__ import annotations
 
 import json

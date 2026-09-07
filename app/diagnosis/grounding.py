@@ -1,3 +1,5 @@
+"""将自然语言诊断问题绑定到规范指标、维度、取值与时间，并显式返回澄清或不支持状态。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -64,6 +66,8 @@ class ValueGroundingCandidate(BaseModel):
 
 
 class SemanticCandidateBundle(BaseModel):
+    """一次检索返回的逻辑候选集合；候选必须能映射回 Catalog 中的规范对象。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     metrics: tuple[MetricGroundingCandidate, ...] = ()
@@ -83,6 +87,8 @@ class SemanticCandidateBundle(BaseModel):
 
 
 class SemanticCandidateRetriever(Protocol):
+    """语义候选检索边界，只返回有限候选，不负责决定最终绑定。"""
+
     async def retrieve(self, question: str) -> SemanticCandidateBundle: ...
 
 
@@ -117,6 +123,7 @@ class QdrantElasticsearchCandidateRetriever:
         self._value_limit = value_limit
 
     async def retrieve(self, question: str) -> SemanticCandidateBundle:
+        # 同一个问题向量并行查询指标、字段和值，三路结果随后统一映射到逻辑语义。
         embedding = await self._embedding_client.aembed_query(question)
         metric_hits, column_hits, value_hits = await asyncio.gather(
             query_metadata_by_vector(
@@ -138,6 +145,7 @@ class QdrantElasticsearchCandidateRetriever:
             ),
         )
 
+        # 低于阈值或 Catalog 中不存在的向量命中直接丢弃，检索不能创造新指标。
         catalog_metric_ids = {item.metric_id for item in self._catalog.metrics}
         metrics = _best_metric_candidates(
             [
@@ -152,6 +160,7 @@ class QdrantElasticsearchCandidateRetriever:
             ]
         )
 
+        # 物理列先通过 Registry 映射成 region/category，Planner 不会看到真实列名。
         column_to_dimension = {
             column_id: definition.dimension
             for definition in self._registry.dimensions
@@ -169,6 +178,7 @@ class QdrantElasticsearchCandidateRetriever:
             ]
         )
 
+        # 值候选只有来自允许值列且通过业务格式检查，才可作为 Scope 候选。
         value_column_to_dimension = {
             column_id: definition.dimension
             for definition in self._registry.dimensions
@@ -231,6 +241,8 @@ def _valid_scope_value(dimension: AnalysisDimension, value: str) -> bool:
 
 
 class SemanticBindingResult(BaseModel):
+    """语义绑定终态：READY、需要澄清或不支持三者之一，并携带稳定原因。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     status: SemanticBindingStatus
@@ -283,6 +295,9 @@ class SemanticGrounder:
         self._parser = AnalysisQuestionParser.from_catalog(catalog)
 
     async def bind(self, question: str, intent: Intent | str) -> SemanticBindingResult:
+        """优先确定性解析；仅在可补全字段上检索，并拒绝低分差或歧义候选。"""
+
+        # 确定性 Parser 成功时直接使用，避免已经明确的问题再受检索排序波动影响。
         deterministic = self._parser.parse(question, intent)
         if deterministic.parsed_question is not None:
             if not _needs_dimension_retrieval(question, deterministic.parsed_question):
@@ -303,6 +318,7 @@ class SemanticGrounder:
         if self._retriever is None:
             return _result_from_parse_error(error)
 
+        # 外部检索不可用时关闭失败，不把连接错误当成可靠的业务绑定。
         try:
             candidates = await self._retriever.retrieve(question)
         except Exception:  # noqa: BLE001 - external retrieval must fail closed
@@ -315,6 +331,7 @@ class SemanticGrounder:
                 limitations=("retrieval_unavailable",),
             )
 
+        # 自动绑定要求唯一高分候选且与第二名拉开最小分差，否则返回澄清而不是猜测。
         selected_metric: str | None = None
         if error.field == "metric":
             selected_metric, metric_error = self._select_metric(candidates.metrics)
@@ -343,6 +360,7 @@ class SemanticGrounder:
                     retrieval_used=True,
                 )
 
+        # 检索结果只扩充受控词表，最终仍由同一个确定性 Parser 复核完整契约。
         retry_parser = _parser_with_candidates(
             self._catalog,
             question,

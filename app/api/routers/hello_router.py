@@ -1,3 +1,5 @@
+"""提供基础示例与连通性路由，不承载核心问数或诊断逻辑。"""
+
 import asyncio
 from typing import Annotated
 

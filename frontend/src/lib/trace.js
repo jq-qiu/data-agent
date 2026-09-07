@@ -1,3 +1,5 @@
+/** 将后端公开的安全 Trace 投影为中文卡片；未知字段不会被直接输出。 */
+
 const STAGE_NAMES = {
   intent_router: "意图识别",
   semantic_grounding: "语义绑定",
@@ -92,6 +94,7 @@ function groundingRows(item) {
 }
 
 function parsedQuestionRows(item) {
+  // 后端已经完成规范绑定；这里仅负责格式化显示，不在浏览器重新解释业务问题。
   const parsed = item.parsed_question;
   if (!parsed || typeof parsed !== "object") return [];
   const rows = [];
@@ -109,6 +112,7 @@ function parsedQuestionRows(item) {
 }
 
 function capabilityRows(item) {
+  // 能力卡片同时展示可执行方法和缺失 Evidence，帮助区分“没分析”与“不能分析”。
   const capability = item.capability;
   if (!capability || typeof capability !== "object") return [];
   const rows = [];
@@ -170,6 +174,7 @@ function planRows(item) {
 }
 
 function queriesRows(item) {
+  // 后端安全 Trace 不包含 SQL 正文，前端只展示 query_id、方法和逻辑角色。
   const queries = item.queries;
   if (!Array.isArray(queries)) return [];
   const rows = [];
@@ -186,6 +191,7 @@ function queriesRows(item) {
 }
 
 function analysisRows(item) {
+  // 对账状态来自确定性 Analyzer；前端不重复计算贡献率或财务数字。
   const results = item.results;
   if (!Array.isArray(results)) return [];
   const rows = [];
@@ -228,6 +234,7 @@ function reportRows(item) {
 }
 
 function rowsForStage(stage, item) {
+  // 每个阶段显式列出允许展示的字段，避免用 JSON dump 泄漏内部 SQL、参数或原始数据。
   switch (stage) {
     case "intent_router":
       return intentRows(item);
@@ -248,6 +255,7 @@ function rowsForStage(stage, item) {
     case "report_generator":
       return reportRows(item);
     default:
+      // 新增但尚未适配的阶段只显示通用状态，绝不回退到遍历任意对象字段。
       return [];
   }
 }
@@ -257,6 +265,7 @@ export function traceStageName(stage) {
 }
 
 export function buildTraceCards(trace) {
+  /** 忽略畸形项，并为每个合法阶段构造名称、状态和白名单明细行。 */
   if (!Array.isArray(trace)) return [];
   return trace
     .filter(

@@ -1,3 +1,5 @@
+"""运行包含分类器回退路径的意图路由固定样本评测。"""
+
 from __future__ import annotations
 
 import hashlib

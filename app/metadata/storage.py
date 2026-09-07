@@ -1,3 +1,5 @@
+"""把版本化 Catalog 投影为元数据库、向量库和值索引的存储记录。"""
+
 from __future__ import annotations
 
 from typing import Any

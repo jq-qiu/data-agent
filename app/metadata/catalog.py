@@ -1,3 +1,5 @@
+"""加载并校验元数据 Catalog，作为表、列、指标、关系和粒度的事实源。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -65,6 +67,8 @@ class RelationshipDefinition:
 
 @dataclass(frozen=True)
 class MetadataCatalog:
+    """不可变元数据快照，集中提供表、列、指标、关系和值域版本。"""
+
     version: str
     tables: tuple[TableDefinition, ...]
     metrics: tuple[MetricDefinition, ...]
@@ -86,6 +90,8 @@ def _strings(value: Any) -> tuple[str, ...]:
 
 
 def load_catalog(path: Path) -> MetadataCatalog:
+    """从配置读取 Catalog，并在返回前执行跨对象引用和业务不变量校验。"""
+
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise MetadataValidationError("metadata config must be a mapping")
@@ -166,6 +172,8 @@ def load_catalog(path: Path) -> MetadataCatalog:
 
 
 def validate_catalog(catalog: MetadataCatalog) -> None:
+    """拒绝重复 ID、悬空字段/关系以及与冻结指标口径冲突的定义。"""
+
     table_names = [table.table_name for table in catalog.tables]
     if len(table_names) != len(set(table_names)):
         raise MetadataValidationError("duplicate table metadata")

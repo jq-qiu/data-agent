@@ -1,3 +1,5 @@
+"""运行 V1 运行时能力判断固定样本评测。"""
+
 from __future__ import annotations
 
 import hashlib

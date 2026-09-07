@@ -1,3 +1,5 @@
+"""在列指标关联 ORM 模型与领域实体之间转换。"""
+
 from dataclasses import asdict
 
 from app.entities.column_metric import ColumnMetric

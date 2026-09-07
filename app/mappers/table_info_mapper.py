@@ -1,3 +1,5 @@
+"""在表 ORM 模型与领域实体之间进行显式转换。"""
+
 from dataclasses import asdict
 
 from app.entities.table_info import TableInfo

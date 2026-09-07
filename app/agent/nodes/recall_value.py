@@ -1,3 +1,5 @@
+"""通过 Elasticsearch 召回真实字段值，把自然语言取值绑定到受控列。"""
+
 from time import perf_counter
 
 from langgraph.runtime import Runtime
@@ -28,6 +30,7 @@ async def recall_value(state: DataAgentState, runtime: Runtime[DataAgentContext]
         if keywords:
             for keyword in keywords:
                 es_started_at = perf_counter()
+                # ES 返回“规范列 ID + 真实规范值”，后续 WHERE 不直接使用用户的自由文本。
                 value_infos: list[ValueInfo] = await value_es_repository.search_v1_grounded(keyword)
                 logger.info(
                     f"ES字段取值检索耗时：{perf_counter() - es_started_at:.3f}秒，"

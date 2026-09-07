@@ -1,3 +1,5 @@
+"""运行语义绑定与安全上下文投影的固定契约评测。"""
+
 from __future__ import annotations
 
 import asyncio

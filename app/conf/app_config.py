@@ -1,3 +1,5 @@
+"""把本地应用配置加载并收敛为带类型的数据类对象。"""
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast

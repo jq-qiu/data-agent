@@ -1,3 +1,5 @@
+"""为 NL2SQL 请求补充当前日期和目标数仓方言等受控上下文。"""
+
 from datetime import UTC, datetime
 
 from langgraph.runtime import Runtime
@@ -8,6 +10,8 @@ from app.core.log import logger
 
 
 async def add_extra_context(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    """读取请求 State 和注入的数仓 Repository，返回日期与数据库方言上下文。"""
+
     write = runtime.stream_writer
     write({"type": "progress", "step": "添加额外上下文", "status": "running"})
 

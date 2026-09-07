@@ -1,3 +1,5 @@
+"""封装数仓只读查询与数据库信息访问，不调用 LLM。"""
+
 import asyncio
 from collections.abc import Mapping
 from typing import Any
@@ -42,6 +44,7 @@ class DWMySQLRepository:
         # 3.返回结果
         return {"version": str(version), "dialect": str(dialect)}
 
+    # 用 EXPLAIN 检查已受控查询的数据库可执行性，不返回业务结论。
     async def validate_sql(
         self,
         validated_sql: ValidatedSQL,
@@ -54,6 +57,7 @@ class DWMySQLRepository:
             timeout=validated_sql.timeout_seconds,
         )
 
+    # 执行上层已校验的只读语句并返回映射行；Repository 不调用 LLM。
     async def execute_sql(
         self,
         validated_sql: ValidatedSQL,

@@ -1,3 +1,5 @@
+"""运行 NL2SQL Golden Dataset 并记录执行结果与错误分类。"""
+
 from __future__ import annotations
 
 import argparse

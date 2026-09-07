@@ -1,3 +1,5 @@
+"""管理 Embedding 客户端的初始化与访问生命周期。"""
+
 import asyncio
 
 from langchain_core.embeddings import Embeddings
@@ -18,13 +20,17 @@ class EmbeddingClientManager:
 
     @property
     def client(self) -> Embeddings:
+        # 属性不隐式初始化网络客户端，生命周期错误会在调用点立即暴露。
         if self._client is None:
             raise RuntimeError("embedding client is not initialized; call init() first")
         return self._client
 
     def init(self):
+        """显式创建客户端；调用方必须先初始化，再通过只读属性访问。"""
+
         api_key = resolve_api_key(self.config.api_key_env, "硅基流动")
 
+        # Manager 只负责连接配置与生命周期；向量召回策略由 Repository/Service 决定。
         self._client = OpenAIEmbeddings(
             model=self.config.model,
             base_url=self.config.base_url,

@@ -1,3 +1,5 @@
+"""构建 Olist 数据基础层并输出确定性对账结果的命令行入口。"""
+
 from __future__ import annotations
 
 import argparse

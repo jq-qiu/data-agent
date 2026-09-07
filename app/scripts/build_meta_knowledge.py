@@ -1,3 +1,5 @@
+"""构建旧版元知识索引的兼容命令行入口。"""
+
 import argparse
 import asyncio
 from pathlib import Path

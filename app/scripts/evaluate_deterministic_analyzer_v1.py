@@ -1,3 +1,5 @@
+"""运行确定性 Analyzer 的数值与对账评测。"""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+"""通过 API 运行固定演示问题并检查 SSE 终态结果。"""
+
 from __future__ import annotations
 
 import json

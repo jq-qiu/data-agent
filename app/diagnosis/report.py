@@ -1,3 +1,5 @@
+"""仅根据 Validated Evidence 生成结构化诊断报告和 Markdown 表达。"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -82,6 +84,8 @@ class ReportSection(BaseModel):
 
 
 class DiagnosisReport(BaseModel):
+    """结构化报告及其确定性 Markdown 渲染，所有结论必须引用 Evidence ID。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     report_version: Literal["diagnosis-report-v1"] = "diagnosis-report-v1"
@@ -107,8 +111,13 @@ class DiagnosisReport(BaseModel):
 class ReportGenerator:
     """Renders only Validated Evidence; it cannot inspect Analysis or Query results."""
 
+    # 报告层不读取原始查询结果，避免绕过 Evidence Checker 直接拼接未经验证的数字。
+
     def generate(self, bundle: ValidatedEvidenceBundle) -> DiagnosisReport:
+        """根据异常状态和受支持候选生成固定章节；证据不足时返回降级报告。"""
+
         anomaly = bundle.evidence[0]
+        # UNSUPPORTED Evidence 只能出现在限制说明中，不能进入候选排序和结论。
         supported_candidates = sorted(
             (
                 item
@@ -128,6 +137,7 @@ class ReportGenerator:
         else:
             status = ReportStatus.DEGRADED
 
+        # 章节顺序固定，便于前端、测试和人工审查逐段核对 Evidence 血缘。
         sections = (
             self._problem_section(bundle, anomaly),
             self._anomaly_section(bundle, anomaly),
@@ -155,6 +165,9 @@ class ReportGenerator:
     def validate(
         report: DiagnosisReport, bundle: ValidatedEvidenceBundle
     ) -> None:
+        """反向核验报告状态、排名、引用血缘和非因果语言边界。"""
+
+        # 每个 Statement 的引用都回查 Evidence，防止报告出现无来源数字或未知结论。
         evidence_by_id = {item.evidence_id: item for item in bundle.evidence}
         if report.evidence_version != bundle.evidence_version:
             raise EvidenceValidationError("report_evidence_version_mismatch")
@@ -246,6 +259,7 @@ class ReportGenerator:
             f"baseline={_number(fact.baseline_value)}, current={_number(fact.current_value)}, "
             f"delta={_number(fact.absolute_delta)}, change_rate={_number(fact.change_rate)}"
         )
+        # 未确认下降时明确停止“找原因”，这是正确降级而不是分析失败。
         if bundle.anomaly_status is AnomalyStatus.DECLINE_CONFIRMED:
             text = f"GMV 下降已确认：{values}。"
         elif bundle.anomaly_status is AnomalyStatus.DECLINE_NOT_CONFIRMED:
@@ -349,6 +363,7 @@ class ReportGenerator:
         supported: Sequence[ValidatedEvidence],
     ) -> ReportSection:
         statements: list[ReportStatement] = []
+        # 这里只渲染 Evidence 已评定的关联强度，不把同向变化改写成“导致”。
         for item in supported:
             primary = item.facts[0]
             orders = _fact(

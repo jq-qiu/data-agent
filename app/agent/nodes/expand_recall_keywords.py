@@ -1,3 +1,5 @@
+"""把用户关键词扩展为字段、指标和值三类检索词，供并行召回使用。"""
+
 import json
 from time import perf_counter
 
@@ -30,6 +32,7 @@ async def expand_recall_keywords(state: DataAgentState, runtime: Runtime[DataAge
     started_at = perf_counter()
 
     try:
+        # 三类关键词一次模型调用生成，减少重复理解同一问题造成的分类漂移和额外调用。
         prompt = PromptTemplate(
             template=load_prompt("expand_recall_keywords"),
             input_variables=["query", "keywords"],
@@ -43,6 +46,7 @@ async def expand_recall_keywords(state: DataAgentState, runtime: Runtime[DataAge
         if not isinstance(result, dict):
             raise TypeError("统一关键词扩展结果必须是JSON对象")
 
+        # 模型输出先做类型、空白和顺序去重清洗，后续检索节点不直接信任原始 JSON。
         column_keywords = normalize_keywords(result.get("column_keywords"))
         metric_keywords = normalize_keywords(result.get("metric_keywords"))
         value_keywords = normalize_keywords(result.get("value_keywords"))

@@ -1,3 +1,5 @@
+"""把向量和值检索结果限制为 Catalog 中存在的受控语义候选。"""
+
 from __future__ import annotations
 
 import uuid
@@ -32,6 +34,8 @@ class RetrievedItem:
 
 
 def metadata_documents(catalog: MetadataCatalog) -> list[dict[str, Any]]:
+    """把 Catalog 投影为检索文档；文档仍保留规范 ID 以便召回后反查。"""
+
     documents: list[dict[str, Any]] = []
     for table in catalog.tables:
         documents.append(
@@ -131,6 +135,8 @@ async def retrieve_metadata(
     object_type: str,
     limit: int,
 ) -> list[RetrievedItem]:
+    """对问题向量执行有界召回，返回可追溯到 Catalog 的候选。"""
+
     embedding = await embedding_client.aembed_query(question)
     return await query_metadata_by_vector(client, embedding, object_type, limit)
 
@@ -229,6 +235,8 @@ async def retrieve_value(
     question: str,
     limit: int = 5,
 ) -> list[dict[str, str]]:
+    """从允许索引的字段中检索规范取值，不把自由文本直接当作 SQL 过滤值。"""
+
     response = await client.search(
         index=VALUE_INDEX_NAME,
         query={"match": {"matched_value": question}},

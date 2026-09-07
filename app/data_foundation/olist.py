@@ -1,3 +1,5 @@
+"""构建并校验 Olist DWD 与诊断 DWS，维护粒度、指标口径和对账约束。"""
+
 from __future__ import annotations
 
 import uuid
@@ -247,6 +249,8 @@ def build_foundation_tables() -> tuple[MetaData, dict[str, Table]]:
 
 
 class OlistDataFoundationBuilder:
+    """在已校验 ODS 批次上构建 DWD/DWS，并在事务内执行完整对账 Gate。"""
+
     def __init__(self, manifest: OlistManifest, chunk_size: int = 2_000):
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
@@ -254,6 +258,8 @@ class OlistDataFoundationBuilder:
         self.chunk_size = chunk_size
 
     def build(self, connection: Connection) -> DataFoundationResult:
+        """按维度、事实、汇总顺序加载目标表；任一约束失败即拒绝构建结果。"""
+
         metadata, tables = build_foundation_tables()
         ods = self._reflect_ods(connection)
         self._assert_source_batch(connection, ods)
@@ -665,6 +671,7 @@ class OlistDataFoundationBuilder:
         )
 
 
+# 核对行数、外键、粒度和 GMV 等核心口径，防止一对多 JOIN 放大金额。
 def reconcile_data_foundation(
     connection: Connection,
     tables: dict[str, Table],

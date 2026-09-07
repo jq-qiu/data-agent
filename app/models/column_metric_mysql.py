@@ -1,3 +1,5 @@
+"""定义列与指标关联在 MySQL 中的持久化模型。"""
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 

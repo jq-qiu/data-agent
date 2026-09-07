@@ -1,3 +1,5 @@
+"""装配开放式问数的 NL2SQL LangGraph，从语义召回到安全校验和只读执行。"""
+
 import asyncio
 from pathlib import Path
 
@@ -33,6 +35,7 @@ from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepositor
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
 from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
 
+# 这是开放式问数链路；标准诊断使用独立的受控 Query Builder，避免让 LLM 设计诊断数学逻辑。
 # 1.创建graph构建器对象
 graph_builder = StateGraph(state_schema=DataAgentState, context_schema=DataAgentContext)
 
@@ -72,6 +75,7 @@ graph_builder.add_edge("add_extra_context", "generate_sql")
 graph_builder.add_edge("generate_sql", "validate_sql")
 
 
+# 校验是执行前的强制 Gate：即使 SQL 来自修复节点，也不能绕过相同的安全与粒度规则。
 # 校验成功才执行；失败最多纠错一次，纠错结果必须回到同一校验节点。
 graph_builder.add_conditional_edges(
     "validate_sql",

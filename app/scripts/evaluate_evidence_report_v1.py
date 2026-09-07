@@ -1,3 +1,5 @@
+"""运行 Evidence 校验与报告生成的固定样本评测。"""
+
 from __future__ import annotations
 
 import json

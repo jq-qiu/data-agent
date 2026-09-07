@@ -1,3 +1,5 @@
+"""通过向量检索召回与字段关键词相关的列元数据。"""
+
 from langgraph.config import get_stream_writer
 from langgraph.runtime import Runtime
 
@@ -8,6 +10,8 @@ from app.entities.column_info import ColumnInfo
 
 
 async def recall_column(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    """并行召回列候选；结果只扩充上下文，不能自行创造字段或 JOIN。"""
+
     writer = get_stream_writer()
     writer({"type": "progress", "step": "召回字段", "status": "running"})
 
@@ -26,6 +30,7 @@ async def recall_column(state: DataAgentState, runtime: Runtime[DataAgentContext
             # 3.1 对关键词转为向量
             embedding = await embedding_client.aembed_query(keyword)
             # 3.2 检索字段信息向量集合
+            # 向量库只返回规范 ID，再回元数据库读取完整定义，避免把向量 payload 当事实源。
             column_ids = await column_qdrant_repository.search_v1_ids(embedding)
             colunm_infos: list[ColumnInfo] = [
                 await meta_mysql_repository.get_v1_column_info_by_id(column_id)

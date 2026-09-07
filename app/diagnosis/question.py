@@ -1,3 +1,5 @@
+"""以确定性规则解析诊断指标、期间、基期、范围、维度和候选因素。"""
+
 from __future__ import annotations
 
 import calendar
@@ -58,6 +60,8 @@ class AnalysisScope(BaseModel):
 
 
 class ParsedAnalysisQuestion(BaseModel):
+    """规范化的单轮诊断问题，完整保存指标、双期间、Scope 及请求方法范围。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     target_metric: Literal["gmv"]
@@ -349,6 +353,8 @@ class AnalysisQuestionParser:
         return cls(ParserVocabulary.from_catalog(catalog))
 
     def parse(self, question: str, intent: Intent | str) -> AnalysisQuestionParseResult:
+        """按受控词表解析问题；无法安全推导的时间、指标或范围返回结构化错误。"""
+
         try:
             parsed_intent = Intent(intent)
         except ValueError:

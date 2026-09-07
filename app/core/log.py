@@ -1,3 +1,5 @@
+"""配置应用日志，并把异步请求标识注入日志上下文。"""
+
 import asyncio
 import sys
 from pathlib import Path

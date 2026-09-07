@@ -1,3 +1,5 @@
+"""在首次 SQL 校验失败后调用模型进行一次受限修复，并把结果送回同一校验链路。"""
+
 import yaml
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -11,10 +13,13 @@ from app.prompt.prompt_loader import load_prompt
 
 
 async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    """根据校验错误修复候选 SQL；输出仍是未受信任文本，必须重新进入 Validator。"""
+
     write = runtime.stream_writer
     write({"type": "progress", "step": "校正SQL", "status": "running"})
 
     try:
+        # 修复 Prompt 同时接收原问题、受控元数据、原 SQL 和校验错误，避免模型脱离失败上下文重写。
         # 1.获取state中信息 包含：表信息、指标信息、日期、数仓信息、用户用户、SQL、SQL错误信息
         query = state["query"]
         table_infos = state["table_infos"]
@@ -44,6 +49,7 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
         str_output_parse = StrOutputParser()
         # 2.3 调用Langchain链，获取生成SQL
         chain = prompt | llm | str_output_parse
+        # TypedDict 等结构先序列化为 YAML，让 Prompt 看到明确字段层级而不是 Python 对象表示。
         sql = await chain.ainvoke(
             {
                 "query": query,
@@ -60,6 +66,7 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
 
         logger.info(f"修正SQL成功：{sql}")
         write({"type": "progress", "step": "校正SQL", "status": "success"})
+        # 这里只替换候选 SQL 并增加修复计数；Graph 会把它重新送回 validate_sql。
         return {"sql": sql, "repair_attempts": state.get("repair_attempts", 0) + 1}
     except Exception as e:
         logger.error(f"校正SQL发生异常：{e}")

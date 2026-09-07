@@ -1,3 +1,5 @@
+"""描述当前数仓的数据覆盖情况，供元数据与诊断能力判断使用。"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -18,6 +20,7 @@ async def inspect_warehouse(
     return schema
 
 
+# 核对物理表列是否满足 Catalog；缺列时禁止把计划能力当成当前可用。
 def validate_warehouse_schema(
     catalog: MetadataCatalog,
     schema: Mapping[str, Mapping[str, str]],

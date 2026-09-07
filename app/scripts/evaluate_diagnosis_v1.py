@@ -1,3 +1,5 @@
+"""运行端到端诊断回归集并保存分层错误分析。"""
+
 from __future__ import annotations
 
 import argparse

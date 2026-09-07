@@ -1,3 +1,5 @@
+"""结合问题与召回字段筛选相关表，避免向模型暴露无关 Schema。"""
+
 import yaml
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -28,6 +30,7 @@ async def filter_table(state: DataAgentState, runtime: Runtime[DataAgentContext]
         #     "表名1": ["字段1名称", "字段2名称", "..."],
         #     "表名2": ["字段1", "字段2", "..."]
         # }
+        # 输出只描述“表名 -> 所需列名”；真正的列详情继续来自召回后的元数据对象。
         result = await chain.ainvoke(
             {
                 "query": query,
@@ -37,6 +40,7 @@ async def filter_table(state: DataAgentState, runtime: Runtime[DataAgentContext]
 
         # 3.遍历表信息列表，将不需要的表信息以及表中字段删除
         # 3.1 将不需要表删除
+        # 先移除无关表，再在保留表内裁剪列，降低下一步 SQL Prompt 的无关 Schema 噪声。
         for table_info in table_infos[:]:
             table_name = table_info["name"]
             if table_name not in result:

@@ -1,3 +1,5 @@
+"""定义指标元数据实体，包括公式、粒度、维度和版本信息。"""
+
 from dataclasses import dataclass, field
 
 

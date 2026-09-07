@@ -1,3 +1,5 @@
+"""运行 V1 诊断问题解析固定样本评测。"""
+
 from __future__ import annotations
 
 import hashlib

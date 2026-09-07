@@ -1,3 +1,5 @@
+"""暴露单轮问数与合成诊断演示的 SSE 接口，并保持流式响应不被缓冲。"""
+
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
@@ -30,6 +32,8 @@ async def synthetic_diagnosis_demo(
     case_id: str,
     query_service: Annotated[QueryService, Depends(get_query_service)],
 ) -> StreamingResponse:
+    """运行白名单中的合成案例；case_id 不会被直接拼接为任意数据访问目标。"""
+
     question = _SYNTHETIC_DEMO_QUESTIONS.get(case_id)
     if question is None:
         raise HTTPException(status_code=422, detail="unknown synthetic case")
@@ -48,6 +52,8 @@ async def query(
     query_schema: QuerySchema,
     query_service: Annotated[QueryService, Depends(get_query_service)],
 ) -> StreamingResponse:
+    """接收一个完整问题并转交 QueryService，以 SSE 返回进度和单个终态。"""
+
     return StreamingResponse(
         query_service.query_answer(query_schema.resolved_question),
         media_type="text/event-stream",

@@ -1,3 +1,5 @@
+"""根据校验状态和修复次数决定执行、修复或停止 NL2SQL 流程。"""
+
 from collections.abc import Mapping
 from typing import Any
 

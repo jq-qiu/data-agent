@@ -1,3 +1,5 @@
+"""评估分组 TopN NL2SQL 的生成、校验和结果正确性。"""
+
 from __future__ import annotations
 
 import argparse

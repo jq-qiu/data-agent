@@ -1,3 +1,5 @@
+"""运行首版意图路由固定样本评测。"""
+
 from __future__ import annotations
 
 import hashlib

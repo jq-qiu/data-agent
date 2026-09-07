@@ -1,3 +1,5 @@
+"""从真实或合成数据源读取覆盖与质量信息，形成请求级运行时能力画像。"""
+
 from __future__ import annotations
 
 import re
@@ -64,6 +66,8 @@ class WarehouseCapabilityProfileProvider:
         self._validate_catalog()
 
     async def load(self) -> DataCapabilityProfile:
+        """通过统一 Validator 执行聚合探测，返回真实数仓当前可用的诊断能力。"""
+
         bounds: list[tuple[date, date]] = []
         non_empty: list[str] = []
         for table, columns in _PROFILE_COLUMNS.items():
@@ -178,6 +182,8 @@ class SyntheticCapabilityProfileProvider:
         self._validate_catalog()
 
     async def load(self) -> DataCapabilityProfile:
+        """仅在指定 case_id 范围探测合成数据，防止案例之间的 Evidence 混用。"""
+
         bounds: list[tuple[date, date]] = []
         non_empty: list[str] = []
         for table, columns in _SYNTHETIC_PROFILE_COLUMNS.items():

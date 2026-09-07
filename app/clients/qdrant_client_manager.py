@@ -1,3 +1,5 @@
+"""管理 Qdrant 异步客户端的初始化、访问与关闭。"""
+
 import asyncio
 
 from qdrant_client import AsyncQdrantClient
@@ -17,6 +19,7 @@ from app.conf.app_config import QdrantConfig, app_config
 
 
 class QdrantClientManager:
+    """持有 Qdrant 客户端生命周期，向 Repository 暴露已初始化的连接。"""
 
     def __init__(self, config: QdrantConfig):
         self.config = config
@@ -24,6 +27,7 @@ class QdrantClientManager:
 
     @property
     def client(self) -> AsyncQdrantClient:
+        # 调用方必须在应用 lifespan 启动后访问，禁止用 None 继续构造 Repository。
         if self._client is None:
             raise RuntimeError("Qdrant client is not initialized; call init() first")
         return self._client
@@ -32,6 +36,8 @@ class QdrantClientManager:
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
+        """创建向量数据库连接；集合创建、重建和查询属于 Repository 职责。"""
+
         self._client = AsyncQdrantClient(
             url=self._get_url(),
             timeout=600

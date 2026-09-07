@@ -1,3 +1,5 @@
+"""根据 V1 Catalog 构建元数据库、向量索引和值索引的命令行入口。"""
+
 from __future__ import annotations
 
 import argparse

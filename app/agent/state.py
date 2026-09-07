@@ -1,3 +1,5 @@
+"""声明开放式 NL2SQL 单次请求的可序列化动态 State 结构。"""
+
 from typing import TypedDict
 
 from app.entities.column_info import ColumnInfo
@@ -61,6 +63,8 @@ class DBInfoState(TypedDict):
 
 
 class DataAgentState(TypedDict, total=False):
+    """NL2SQL 单次执行状态；字段均可序列化，外部连接由 DataAgentContext 提供。"""
+
     # 提问问题
     query: str
     # 抽取关键字节点结果

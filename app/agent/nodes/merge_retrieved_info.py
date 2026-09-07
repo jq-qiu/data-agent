@@ -1,3 +1,5 @@
+"""合并字段、指标和值召回结果，并投影出表、关系和粒度警告。"""
+
 from langgraph.runtime import Runtime
 
 from app.agent.context import DataAgentContext
@@ -30,10 +32,12 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
 
         # 2. 封装已召回信息中包含所有字段信息 考虑重复问题
         # 2.1 已召回字段列表转为字典，得到字段字典 字典key:字段ID Value:字段信息ColumnInfo
+        # 使用规范 column_id 建索引，把三路召回中的同一列合并成唯一元数据对象。
         column_id_column_info_dict = {
             column_info.id: column_info for column_info in retrieved_columns
         }
         # 2.2 从已召回指标列表中，得到指标相关字段ID，将字段信息加入到“字段字典”中
+        # 指标可能依赖用户没有直接提到的计算列，因此按 Registry 的 relevant_columns 补齐。
         for retrieved_metric in retrieved_metrics:
             for column_id in retrieved_metric.relevant_columns:
                 # 2.2.1 判断指标包含字段ID知否存在于字典中
@@ -62,6 +66,7 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
         initial_table_ids = list(
             dict.fromkeys(column.table_id for column in column_id_column_info_dict.values())
         )
+        # JOIN 键只能沿 Relationship Registry 的已登记路径补齐，不能根据同名字段猜关系。
         for index, left_table in enumerate(initial_table_ids):
             for right_table in initial_table_ids[index + 1 :]:
                 path = await meta_mysql_repository.get_v1_relationship_path(
@@ -96,6 +101,7 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
 
         # 4. 补齐主外键字段信息
         # 4.1 遍历“表-字段列表”中key 得到每张表ID
+        # 每张候选表都补入主外键，使后续 SQL 生成拥有合法 JOIN 所需的完整键列。
         for table_id, table_columns in table_id_columns_dict.items():
             # 4.2 获取到当前表已召回所有字段ID
             column_ids = [column.id for column in table_columns]
@@ -158,6 +164,7 @@ async def merge_retrieved_info(state: DataAgentState, runtime: Runtime[DataAgent
                     alias=metric_info.alias,
                 )
                 metric_infos.append(metric_info_state)
+        # 最终单独返回关系和粒度警告，让 Prompt 与 Validator 都能识别一对多聚合风险。
         relationships = await meta_mysql_repository.get_v1_relationships_for_tables(
             set(table_id_columns_dict)
         )

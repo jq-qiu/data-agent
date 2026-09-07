@@ -1,3 +1,5 @@
+"""把 AnalysisTask 映射为参数化受控 SQL，统一校验、执行并返回带血缘的结构化结果。"""
+
 from __future__ import annotations
 
 import hashlib
@@ -57,6 +59,8 @@ class QueryValidationTrace(BaseModel):
 
 
 class AnalysisQueryResult(BaseModel):
+    """受控查询的结构化结果，附带任务、角色、指标版本和校验血缘。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     query_id: str = Field(pattern=r"^Q\d{3}$")
@@ -77,6 +81,8 @@ class AnalysisQueryResult(BaseModel):
 
 @dataclass(frozen=True)
 class ControlledQuery:
+    """Builder 产生的参数化 SQL 模板及预期结果字段，不接受任意自由参数。"""
+
     task_id: str
     method: TaskMethod
     query_role: str
@@ -220,6 +226,9 @@ class AnalysisQueryBuilder:
         self._validate_registry()
 
     def build(self, task: AnalysisTask) -> tuple[ControlledQuery, ...]:
+        """按 task.method 选择固定 Builder；未知方法或越界 Scope 直接失败。"""
+
+        # method 是有限枚举，每个分支落到预定义查询模板，不存在自由 SQL 入口。
         if task.method is TaskMethod.PERIOD_COMPARISON:
             return (self._period_query(task),)
         if task.method is TaskMethod.METRIC_DECOMPOSITION:
@@ -247,6 +256,7 @@ class AnalysisQueryBuilder:
 
     def _decomposition_query(self, task: AnalysisTask) -> ControlledQuery:
         layout = self._scope_layout(task)
+        # 品类 Scope 的订单数是“包含该品类的订单数”，不能冒充整体 order_count/AOV 口径。
         metric_ids = (
             ("gmv", "category_order_count")
             if task.scope.category is not None
@@ -284,6 +294,7 @@ class AnalysisQueryBuilder:
 
     def _candidate_query(self, task: AnalysisTask) -> ControlledQuery:
         layout = self._scope_layout(task)
+        # 比率不直接存储或跨天求和；这里只查可加分子/分母，交给 Analyzer 运行时重算。
         aggregate_map = {
             "order_count": layout.order_count,
             "visitors": layout.visitors,
@@ -322,6 +333,7 @@ class AnalysisQueryBuilder:
         dimension_column: str | None = None,
     ) -> ControlledQuery:
         parameters = self._parameters(task)
+        # 基期和本期使用相同表、Scope 与聚合表达式，避免比较两套不同口径。
         baseline = self._period_select(
             role="baseline",
             start_parameter="baseline_start",
@@ -346,6 +358,7 @@ class AnalysisQueryBuilder:
             if dimension_column
             else ("period_role",)
         ) + tuple(alias for _, alias in aggregates)
+        # UNION ALL 保留 period_role，Analyzer 可以按角色配对而不依赖行返回顺序。
         return ControlledQuery(
             task_id=task.task_id,
             method=task.method,
@@ -372,6 +385,7 @@ class AnalysisQueryBuilder:
         if dimension_column:
             projections.append(f"s.{dimension_column} AS dimension_value")
         projections.extend(f"SUM(s.{column}) AS {alias}" for column, alias in aggregates)
+        # 所有用户可变值都变成命名参数；字符串拼接部分仅来自内部白名单表列布局。
         predicates = [
             f"s.{layout.date} BETWEEN :{start_parameter} AND :{end_parameter}"
         ]
@@ -470,6 +484,9 @@ class AnalysisTaskExecutor:
         self._repository = repository
 
     async def execute(self, plan: AnalysisPlan) -> tuple[AnalysisQueryResult, ...]:
+        """逐任务构建、校验并只读执行 SQL，保留 Query ID 和指标版本以供追溯。"""
+
+        # 一个逻辑维度任务可能展开为多条物理查询，因此执行前再次限制总查询数。
         queries = tuple(query for task in plan.tasks for query in self._builder.build(task))
         if len(queries) > MAX_ANALYSIS_QUERIES:
             raise AnalysisQueryBuildError(
@@ -478,12 +495,14 @@ class AnalysisTaskExecutor:
 
         results: list[AnalysisQueryResult] = []
         for index, query in enumerate(queries, start=1):
+            # 每条 Builder SQL 仍复用统一 Validator，受控模板也不能绕过 Schema 和粒度 Gate。
             validated = self._validator.validate(
                 query.sql,
                 query.validation_metric_ids,
             )
             await self._repository.validate_sql(validated, query.parameters)
             rows = await self._repository.execute_sql(validated, query.parameters)
+            # 执行成功不代表结果可用；列集合必须与模板契约完全一致才交给 Analyzer。
             self._validate_result_shape(query, rows)
             results.append(
                 AnalysisQueryResult(
@@ -491,6 +510,7 @@ class AnalysisTaskExecutor:
                     task_id=query.task_id,
                     method=query.method,
                     query_role=query.query_role,
+                    # Trace 保存指纹而不是 SQL 正文，既可审计同一查询，又不泄漏内部语句。
                     sql_fingerprint=hashlib.sha256(
                         validated.sql.encode("utf-8")
                     ).hexdigest(),

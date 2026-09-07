@@ -1,3 +1,5 @@
+"""封装指标向量索引的写入与相似度检索。"""
+
 from dataclasses import asdict
 from typing import Any
 

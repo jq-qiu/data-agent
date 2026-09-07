@@ -1,3 +1,5 @@
+"""装配有界诊断 Graph，并统一发布各确定性阶段的流式进度事件。"""
+
 from __future__ import annotations
 
 import inspect
@@ -22,6 +24,8 @@ from app.diagnosis.report import ReportGeneratorNode
 
 
 class DiagnosisGraphState(TypedDict, total=False):
+    """诊断请求在节点间传递的可序列化状态，不保存 Repository、Client 或 Registry 实例。"""
+
     question: str
     intent: str
     parsed_question: dict[str, Any] | None
@@ -58,6 +62,7 @@ def build_diagnosis_graph(
 ) -> Any:
     """Compile the accepted seven-stage bounded diagnosis graph."""
 
+    # 诊断链路的任务数量和停止分支在图上显式固定，避免模型形成无上限自主循环。
     # LangGraph's current generic overloads do not accept wrapped TypedDict
     # callables precisely, although the runtime validates this schema.
     builder: Any = StateGraph(state_schema=DiagnosisGraphState)
@@ -130,6 +135,8 @@ def build_diagnosis_graph(
 
 
 def _with_progress(step: str, node: Node) -> WrappedNode:
+    """包装单个节点，在不改变节点返回值的前提下发送开始、成功或失败进度。"""
+
     async def wrapped(state: DiagnosisGraphState) -> dict[str, Any]:
         writer = get_stream_writer()
         writer({"type": "progress", "step": step, "status": "running"})
@@ -162,6 +169,8 @@ def _route_after_planner(state: DiagnosisGraphState) -> str:
 
 
 def _controlled_stop(state: DiagnosisGraphState) -> dict[str, Any]:
+    """把解析失败或空计划收敛为可解释的降级终态，而不是继续猜测业务原因。"""
+
     limitations: list[str] = []
     error = state.get("error")
     if isinstance(error, Mapping):

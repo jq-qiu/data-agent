@@ -1,3 +1,5 @@
+"""封装字段值索引的写入与检索，不承担语义判断或业务计算。"""
+
 from dataclasses import asdict
 
 from elastic_transport import ObjectApiResponse
@@ -130,6 +132,8 @@ class ValueESRepository:
         return [ValueInfo(**hit["_source"]) for hit in result["hits"]["hits"]]
 
     async def search_v1_grounded(self, keyword: str, limit: int = 5) -> list[ValueInfo]:
+        """返回带规范列 ID 的有限候选，最终绑定仍由 SemanticGrounder 判断。"""
+
         result = await self.client.search(
             index="data-agent-value-v1",
             query={

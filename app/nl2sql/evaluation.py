@@ -1,3 +1,5 @@
+"""在固定样本上评估 SQL 可执行性、结果正确性与 Schema/粒度安全。"""
+
 from __future__ import annotations
 
 import csv

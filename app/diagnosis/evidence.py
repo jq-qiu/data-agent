@@ -1,3 +1,5 @@
+"""把 Analyzer 结果校验为可追溯 Evidence，并阻止无数据或越界声明进入报告。"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -117,6 +119,8 @@ class EvidenceValidationError(ValueError):
 
 
 class EvidenceFact(BaseModel):
+    """一项可引用数字事实，必须标明指标、期间角色和值。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     fact_id: str = Field(pattern=r"^F\d{3}$")
@@ -147,6 +151,8 @@ class EvidenceFact(BaseModel):
 
 
 class ValidatedEvidence(BaseModel):
+    """经规则校验的结论单元，携带 Analysis/Query 血缘、支持等级与限制。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     evidence_id: str = Field(pattern=r"^E\d{3}$")
@@ -233,6 +239,8 @@ class ValidatedEvidence(BaseModel):
 
 
 class ValidatedEvidenceBundle(BaseModel):
+    """Report Generator 的唯一输入，汇总异常状态、证据和缺失能力。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     evidence_version: Literal["validated-evidence-v1"] = "validated-evidence-v1"
@@ -287,9 +295,13 @@ class ValidatedEvidenceBundle(BaseModel):
 class EvidenceChecker:
     """Validates numeric Analysis Results without consulting Ground Truth or an LLM."""
 
+    # Ground Truth 仅用于生成和评测；进入这里会把已知答案泄漏到业务结论。
+
     def check(
         self, plan: AnalysisPlan, analysis_results: Sequence[AnalysisResult]
     ) -> ValidatedEvidenceBundle:
+        """校验计划与结果一一对应，再按异常、拆解、维度和候选因素生成证据。"""
+
         if not plan.tasks:
             raise EvidenceValidationError("executable_analysis_plan_required")
         self._validate_result_contract(plan, analysis_results)
@@ -297,6 +309,7 @@ class EvidenceChecker:
         evidence: list[ValidatedEvidence] = []
         fact_index = 1
 
+        # 第一项必须是期间对比，它先决定“下降已确认/未确认/不可用”的总开关。
         period_result = analysis_results[0]
         if not isinstance(period_result.values, PeriodComparisonValues):
             raise EvidenceValidationError("period_result_values_invalid")
@@ -332,6 +345,7 @@ class EvidenceChecker:
             )
         )
 
+        # 后续结果严格按 Plan 顺序消费，不能挑选看起来更支持某个原因的结果。
         result_index = 1
         for plan_task in plan.tasks[1:]:
             if plan_task.method is TaskMethod.METRIC_DECOMPOSITION:
@@ -573,6 +587,7 @@ class EvidenceChecker:
             )
             for index, member in enumerate(values.members)
         )
+        # 只有分组和整体对账且每个成员都有比例时，才能称为“完整贡献率”。
         complete = (
             result.reconciliation is not None
             and result.reconciliation.status is ReconciliationStatus.PASS
@@ -620,6 +635,7 @@ class EvidenceChecker:
                 metric_id=order_metric_id,
             ),
         )
+        # 候选因素数据是 Synthetic 且没有实验设计，这两项限制无论支持级别如何都保留。
         limitations = [
             EvidenceLimitation.SYNTHETIC_CANDIDATE_DATA,
             EvidenceLimitation.NO_CAUSAL_DESIGN,
@@ -627,6 +643,7 @@ class EvidenceChecker:
         primary_delta = values.primary_change.absolute_delta
         order_delta = values.order_count_change.absolute_delta
         conversion_delta = values.conversion_rate_change.absolute_delta
+        # 先确认 GMV 下降，再检查主指标、订单量和转化率是否同向；任一 Gate 不满足就降级。
         if anomaly_status is not AnomalyStatus.DECLINE_CONFIRMED:
             limitations.append(EvidenceLimitation.DECLINE_NOT_CONFIRMED)
             return (

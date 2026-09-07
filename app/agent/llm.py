@@ -1,3 +1,5 @@
+"""按应用配置创建供开放式 NL2SQL 节点使用的聊天模型客户端。"""
+
 import asyncio
 
 from langchain_openai import ChatOpenAI

@@ -1,3 +1,5 @@
+"""校验并批量导入 Olist CSV，在不改写原始语义的前提下记录数据版本。"""
+
 from __future__ import annotations
 
 import csv
@@ -53,6 +55,8 @@ class OlistFileSpec:
 
 @dataclass(frozen=True)
 class OlistManifest:
+    """冻结源文件身份、列结构和数据版本，保证导入批次可复现。"""
+
     dataset_name: str
     dataset_version: str
     source_url: str
@@ -258,6 +262,8 @@ def _build_tables(manifest: OlistManifest) -> tuple[MetaData, Table, Table, dict
 
 
 class OlistImporter:
+    """把通过校验的 CSV 分批写入独立 ODS 表，不覆盖或合成原始字段。"""
+
     def __init__(self, manifest: OlistManifest, chunk_size: int = 2_000):
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")

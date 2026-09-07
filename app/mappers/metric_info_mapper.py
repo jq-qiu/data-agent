@@ -1,3 +1,5 @@
+"""在指标 ORM 模型、领域实体与检索文档之间进行显式转换。"""
+
 from dataclasses import asdict
 
 from app.entities.metric_info import MetricInfo

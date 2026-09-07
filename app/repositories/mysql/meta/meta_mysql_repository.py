@@ -1,3 +1,5 @@
+"""封装表、列、指标及其关系的元数据库访问。"""
+
 import json
 from typing import Any
 
@@ -19,6 +21,8 @@ from app.models.table_info_mysql import TableInfoMySQL
 
 class MetaMySQLRepository:
     """跟MySQL数据库（元数据库）交互持久层 必须通过Session对象进行CURD"""
+
+    # 本层只做持久化和查询；指标选择、语义绑定等判断由上层服务与 Registry 完成。
 
     def __init__(self, session: AsyncSession):
         self.session = session

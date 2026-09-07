@@ -1,3 +1,5 @@
+"""编排元数据、向量和值索引的构建过程，不在仓储层混入业务流程。"""
+
 import uuid
 from pathlib import Path
 from typing import cast

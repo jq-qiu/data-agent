@@ -1,3 +1,5 @@
+"""定义表元数据实体及其列、主键和允许关系。"""
+
 from dataclasses import dataclass, field
 
 

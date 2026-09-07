@@ -1,3 +1,5 @@
+"""按固定 Seed 和版本生成合成 Evidence 及 Ground Truth 数据。"""
+
 from __future__ import annotations
 
 import argparse

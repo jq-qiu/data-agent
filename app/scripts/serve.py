@@ -1,3 +1,5 @@
+"""创建并启动单进程 FastAPI 应用，注册 API 与前端静态资源。"""
+
 from __future__ import annotations
 
 import argparse

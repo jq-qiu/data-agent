@@ -1,3 +1,5 @@
+"""从版本化 Ground Truth 事件沿指标链确定性生成合成 Evidence 与 DWS 结果。"""
+
 from __future__ import annotations
 
 import hashlib
@@ -297,10 +299,14 @@ def build_synthetic_tables() -> tuple[MetaData, dict[str, Table]]:
 
 
 class SyntheticEvidenceGenerator:
+    """从事件定义出发生成证据，再沿 Visitors→Orders→GMV 链路推导结果变化。"""
+
     def __init__(self, config: SyntheticConfig):
         self.config = config
 
     def generate(self, connection: Connection) -> SyntheticGenerationResult:
+        """使用固定 Seed/版本生成隔离案例，并在持久化前后校验指标链一致性。"""
+
         source_tables = self._reflect_source_tables(connection)
         self._assert_data_foundation(source_tables, connection)
         source_before = _source_summary(connection, source_tables)
@@ -782,6 +788,8 @@ def reconcile_synthetic_evidence(
 
 
 def safe_ratio(numerator: int | Decimal, denominator: int | Decimal) -> Decimal | None:
+    """运行时由可加分子分母重算比率；分母为零时显式返回空值。"""
+
     denominator_decimal = Decimal(denominator)
     if denominator_decimal == 0:
         return None

@@ -1,3 +1,5 @@
+"""在合法计划集合上实施有界规划策略，并在模型选择失败时确定性回退。"""
+
 from __future__ import annotations
 
 from enum import StrEnum
@@ -78,6 +80,8 @@ class V1PlanVariantProvider:
 
 
 class BoundedPlanResult(BaseModel):
+    """记录最终合法计划、选择来源和回退原因，便于审计模型是否被调用。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     plan: AnalysisPlan
@@ -105,6 +109,7 @@ class BoundedPlannerPolicy:
         question: ParsedAnalysisQuestion,
         capability: CapabilityAssessment,
     ) -> BoundedPlanResult:
+        # 同步入口仅接受唯一合法计划；多选需要异步 selector，因此这里明确拒绝。
         options = self._valid_options(question, capability)
         if len(options) == 1:
             return self._result(
@@ -123,6 +128,9 @@ class BoundedPlannerPolicy:
         capability: CapabilityAssessment,
         context: PlannerSemanticContext | None = None,
     ) -> BoundedPlanResult:
+        """唯一合法方案直接确定；多方案才选择一次，失败后不重试模型。"""
+
+        # 所有候选先经过同一个 PlanValidator，模型永远看不到或选择不了非法计划。
         options = self._valid_options(question, capability)
         if len(options) == 1:
             return self._result(
@@ -131,6 +139,7 @@ class BoundedPlannerPolicy:
                 model_calls=0,
                 decision_reason="unique_legal_plan",
             )
+        # 第一项是确定性默认方案；selector 缺失、异常或输出非法时都立即回到它。
         default = options[0]
         if self._selector is None:
             return self._result(
@@ -145,6 +154,7 @@ class BoundedPlannerPolicy:
             for option in options
         )
         try:
+            # 选择器只收到逻辑摘要和 variant_id，不接触 SQL、表列、连接或原始数据。
             choice = await self._selector.choose(question, context, summaries)
         except Exception:  # noqa: BLE001 - any selector failure must fall back
             return self._result(

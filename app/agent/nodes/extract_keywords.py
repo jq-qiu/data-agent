@@ -1,4 +1,6 @@
 
+"""从自然语言问题中提取用于元数据召回的初始关键词。"""
+
 import jieba.analyse
 from langgraph.config import get_stream_writer
 from langgraph.runtime import Runtime

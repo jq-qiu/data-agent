@@ -1,3 +1,5 @@
+"""根据问题、Registry、数据覆盖和质量状态评估当前请求实际可用的诊断方法。"""
+
 from __future__ import annotations
 
 import re
@@ -56,6 +58,8 @@ _EVIDENCE_REFERENCE = re.compile(
 
 
 class DataCapabilityProfile(BaseModel):
+    """数据源在当前版本与时间范围内可提供的列、非空证据和质量状态。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     source: CapabilityDataSource
@@ -88,6 +92,8 @@ class DataCapabilityProfile(BaseModel):
 
 
 class CapabilityAssessment(BaseModel):
+    """针对单个已解析问题的能力结论，Planner 只能选择 supported_methods。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     level: CapabilityLevel
@@ -318,10 +324,14 @@ class CapabilityAssessor:
         question: ParsedAnalysisQuestion,
         profile: DataCapabilityProfile,
     ) -> CapabilityAssessment:
+        """校验期间、数据质量、字段和证据非空性，再返回实际可执行方法集合。"""
+
+        # 先拒绝 Profile 中 Catalog 未登记的列，防止能力判断建立在未知 Schema 上。
         self._validate_profile_columns(profile)
         desired = self._desired_methods(question)
         available_dimensions = self._available_dimensions(question, profile)
 
+        # 数据质量失败是硬停止条件：即使字段齐全，也不能继续生成诊断任务。
         if profile.data_quality_status is DataQualityStatus.FAIL:
             return CapabilityAssessment(
                 level=CapabilityLevel.UNSUPPORTED,
@@ -334,6 +344,7 @@ class CapabilityAssessor:
                 data_quality_status=profile.data_quality_status,
             )
 
+        # 期间覆盖和基础 GMV 列是所有诊断方法的公共前置 Gate。
         missing_periods = self._missing_periods(question, profile)
         base_required = self._base_requirements(question, profile.source)
         missing_base = self._missing_columns(profile, base_required)
@@ -353,6 +364,7 @@ class CapabilityAssessor:
         unsupported: list[AnalysisMethod] = [AnalysisMethod.CAUSAL_INFERENCE]
         missing: list[str] = []
 
+        # 公共 Gate 通过后逐项开放能力；某一方法缺列不会错误关闭其他独立方法。
         decomposition_missing = self._missing_columns(
             profile, self._decomposition_requirements(question, profile.source)
         )
@@ -380,6 +392,7 @@ class CapabilityAssessor:
                     )
                 )
 
+        # 真实 DWS 与 Synthetic 表的物理字段不同，由 source 选择对应的固定需求集合。
         factor_requirements = self._factor_requirements(question, profile.source)
         for factor in question.requested_factors:
             method = _FACTOR_METHOD[factor]

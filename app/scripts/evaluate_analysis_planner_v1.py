@@ -1,3 +1,5 @@
+"""运行 V1 分析计划固定样本评测并输出可复现摘要。"""
+
 from __future__ import annotations
 
 import json

@@ -1,3 +1,5 @@
+"""评测元数据召回与 Schema Linking 的命中、覆盖和泄漏情况。"""
+
 from __future__ import annotations
 
 import json

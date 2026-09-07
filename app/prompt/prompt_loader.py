@@ -1,3 +1,5 @@
+"""按名称读取固定 Prompt 模板，避免在业务节点中散落模板路径。"""
+
 from pathlib import Path
 
 

@@ -1,3 +1,5 @@
+"""结合问题与召回候选筛选相关指标，缩小 SQL 生成上下文。"""
+
 import yaml
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -11,6 +13,8 @@ from app.prompt.prompt_loader import load_prompt
 
 
 async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    """从召回候选中筛出问题所需指标，并保留 Registry 提供的公式与口径信息。"""
+
     write = runtime.stream_writer
     write({"type": "progress", "step": "过滤指标", "status": "running"})
 
@@ -32,6 +36,7 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
         # ]
         chain = prompt | llm | out_put
         # 2.4 处理传入的列表对象，将列表转为Yaml
+        # 模型只返回需要的指标名称；公式、粒度和版本仍保留自 Registry 召回的完整对象。
         result = await chain.ainvoke(
             {
                 "query": query,
@@ -42,6 +47,7 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
 
         # 3.遍历已有指标信息列表，将不需要的指标信息移除
         #  遍历中删除列表元素 可能存在漏删 解决方法采用切片表达式 对原列表进行复制得到列表副本 遍历列表副本 删除操作原列表
+        # 遍历副本是为了安全地从原列表删除未选指标，返回值仍沿用 State 中的结构化定义。
         for metric_info in metric_infos[:]:
             metric_name = metric_info["name"]
             if metric_name not in result:

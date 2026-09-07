@@ -1,3 +1,5 @@
+"""定义列元数据在服务层与检索层之间传递的数据实体。"""
+
 from dataclasses import dataclass
 from typing import Any
 

@@ -1,3 +1,5 @@
+"""导入版本化 Olist 源文件并输出批次摘要的命令行入口。"""
+
 from __future__ import annotations
 
 import argparse

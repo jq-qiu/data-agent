@@ -1,3 +1,5 @@
+"""执行诊断 Golden Dataset 回归，并计算数值一致性、证据与降级指标。"""
+
 from __future__ import annotations
 
 from decimal import ROUND_HALF_EVEN, Decimal, localcontext
@@ -84,6 +86,8 @@ class LatencySummary(BaseModel):
 
 
 class DiagnosisEvaluationSummary(BaseModel):
+    """固定回归集的分子/分母与错误分类摘要，不代表生产泛化准确率。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     evaluation_version: str
@@ -106,6 +110,7 @@ class DiagnosisEvaluationSummary(BaseModel):
     gate_5_passed: bool
 
 
+# 从逐案例观察值确定性计算回归指标，并保留失败所在链路层级。
 def score_diagnosis(
     observations: tuple[DiagnosisCaseObservation, ...],
     *,

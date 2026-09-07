@@ -1,3 +1,4 @@
+<!-- 单轮问数与诊断工作台：消费 SSE 进度/终态，并安全展示结果、Evidence 与 Trace。 -->
 <script setup>
 import { computed, nextTick, reactive, ref } from "vue";
 
@@ -40,6 +41,7 @@ function scrollToBottom() {
 }
 
 function reportLines(markdown) {
+  // 只识别少量 Markdown 行类型并用文本插值渲染，避免使用 v-html 注入任意 HTML。
   return String(markdown || "")
     .split(/\r?\n/)
     .map((line, index) => {
@@ -112,6 +114,7 @@ function cancelRequest() {
 async function runSyntheticDemo(demo) {
   if (loading.value) return;
   loading.value = true;
+  // exchange 必须自身可响应，流式回调对 steps/terminal 的增量修改才能立即触发渲染。
   const exchange = reactive({
     id: crypto.randomUUID(),
     question: demo.title,
@@ -133,6 +136,7 @@ async function runSyntheticDemo(demo) {
 
     const parser = createSseParser((event) => {
       if (event?.type === "progress") {
+        // 进度事件可多次更新同一步骤；终态只接受第一个，避免重复结果覆盖已展示内容。
         exchange.steps = upsertProgress(exchange.steps, event);
       } else if (!exchange.terminal && classifyTerminal(event)) {
         exchange.terminal = event;
@@ -140,18 +144,22 @@ async function runSyntheticDemo(demo) {
       scrollToBottom();
     });
     const reader = response.body.getReader();
+    // 流式解码保留跨网络分块的 UTF-8 字节，完整事件边界交给 SSE parser 处理。
     const decoder = new TextDecoder("utf-8");
     while (true) {
+      // reader.read() 每次得到的是网络字节块，不假设它与 SSE 事件一一对应。
       const { value: chunk, done } = await reader.read();
       if (done) break;
       parser.push(decoder.decode(chunk, { stream: true }));
     }
     parser.push(decoder.decode());
+    // flush TextDecoder 与 SSE buffer，处理服务端正常关闭但最后没有额外分隔符的情况。
     parser.finish();
     if (!exchange.terminal) throw new Error("TERMINAL_EVENT_MISSING");
     exchange.state = classifyTerminal(exchange.terminal) === "error" ? "error" : "done";
   } catch (error) {
     if (error?.name === "AbortError") {
+      // 用户主动取消与服务异常分开显示，取消不会伪造成后端错误。
       exchange.state = "cancelled";
     } else {
       exchange.state = "error";
@@ -169,11 +177,13 @@ async function runSyntheticDemo(demo) {
 }
 
 async function sendQuestion() {
+  /** 发送一个完整问题；当前页面不保存可供省略式追问使用的会话语义。 */
   const value = question.value.trim();
   if (!value || loading.value) return;
 
   question.value = "";
   loading.value = true;
+  // 每次请求维护独立状态，历史结果不会参与下一次问题的语义解析。
   const exchange = reactive({
     id: crypto.randomUUID(),
     question: value,
@@ -197,6 +207,7 @@ async function sendQuestion() {
 
     const parser = createSseParser((event) => {
       if (event?.type === "progress") {
+        // reactive exchange 使这次赋值立即触发进度列表重绘，无需等待整个请求结束。
         exchange.steps = upsertProgress(exchange.steps, event);
       } else if (!exchange.terminal && classifyTerminal(event)) {
         exchange.terminal = event;
@@ -212,6 +223,7 @@ async function sendQuestion() {
     }
     parser.push(decoder.decode());
     parser.finish();
+    // HTTP 流正常结束但没有 result/error 仍视为协议失败，不能把半成品当最终答案。
     if (!exchange.terminal) throw new Error("TERMINAL_EVENT_MISSING");
     exchange.state = classifyTerminal(exchange.terminal) === "error" ? "error" : "done";
   } catch (error) {
@@ -528,6 +540,7 @@ async function sendQuestion() {
 
                 <details v-if="exchange.terminal.analysis_trace?.length" class="trace-panel">
                   <summary>查看分析轨迹 · {{ exchange.terminal.analysis_trace.length }} 个阶段</summary>
+                  <!-- Trace 卡片只消费 trace.js 的白名单投影，不直接遍历后端原始对象。 -->
                   <div class="trace-cards">
                     <section
                       v-for="card in buildTraceCards(exchange.terminal.analysis_trace)"

@@ -1,3 +1,5 @@
+"""识别 QUERY、DIAGNOSIS 与 UNSUPPORTED 意图，并对低置信度结果安全降级。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -20,6 +22,8 @@ class Intent(StrEnum):
 
 
 class IntentDecision(BaseModel):
+    """可序列化路由结果；低于阈值的诊断倾向必须降级为安全终态。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     intent: Intent
@@ -332,6 +336,8 @@ class IntentRouter:
         )
 
     async def aroute(self, question: str) -> IntentDecision:
+        """先使用高精度规则，只有歧义问题才允许调用一次可选分类器。"""
+
         deterministic = self.route(question)
         if (
             deterministic.reason != "ambiguous_or_incomplete_question"

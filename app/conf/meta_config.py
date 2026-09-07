@@ -1,3 +1,5 @@
+"""把元数据配置解析为表、列、指标和关系的结构化对象。"""
+
 from dataclasses import dataclass
 
 """用于接受元信息转为对象"""

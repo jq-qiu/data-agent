@@ -1,3 +1,5 @@
+"""运行受控 AnalysisTask 查询构建与执行契约评测。"""
+
 from __future__ import annotations
 
 import argparse

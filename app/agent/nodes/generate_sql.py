@@ -1,3 +1,5 @@
+"""使用受控元数据上下文生成候选 SQL；生成结果仍必须经过独立校验。"""
+
 import yaml
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -11,6 +13,8 @@ from app.prompt.prompt_loader import load_prompt
 
 
 async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]):
+    """根据已筛选 Schema 和指标生成一条候选查询，返回值尚不具备执行资格。"""
+
     write = runtime.stream_writer
     write({"type": "progress", "step": "生成SQL", "status": "running"})
 
@@ -41,6 +45,7 @@ async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         str_output_parse = StrOutputParser()
         # 2.3 调用Langchain链，获取生成SQL
         chain = prompt | llm | str_output_parse
+        # 表、指标、JOIN 和粒度警告以结构化 YAML 注入，限制模型只能基于已召回事实生成。
         sql = await chain.ainvoke(
             {
                 "query": query,
@@ -55,6 +60,7 @@ async def generate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         write({"type": "progress", "step": "生成SQL", "status": "success"})
         logger.info(f"生成SQL成功：{sql}")
         # 3.更新state
+        # 该字符串只是候选语句；写入 sql 后必须经过 validate_sql 才能获得 validated_sql。
         return {"sql": sql, "repair_attempts": state.get("repair_attempts", 0)}
     except Exception as e:
         logger.error(f"生成SQL发生异常：{e}")

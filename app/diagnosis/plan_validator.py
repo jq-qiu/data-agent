@@ -1,3 +1,5 @@
+"""验证分析计划没有越过问题范围、Registry 能力、任务上限或依赖约束。"""
+
 from __future__ import annotations
 
 from typing import ClassVar
@@ -26,6 +28,8 @@ class PlanValidationIssue(BaseModel):
 
 
 class PlanValidationResult(BaseModel):
+    """计划校验结果；只有 accepted 为真时，validated_plan 才可进入执行器。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     valid: bool
@@ -51,6 +55,9 @@ class AnalysisPlanValidator:
         question: ParsedAnalysisQuestion,
         capability: CapabilityAssessment,
     ) -> PlanValidationResult:
+        """拒绝能力外方法、问题变异、越界参数、非法依赖以及超限任务。"""
+
+        # Validator 不修正模型计划，而是收集所有越界原因；调用方只能执行完全通过的计划。
         issues: list[PlanValidationIssue] = []
         if plan.tasks:
             for task in plan.tasks:
@@ -66,6 +73,7 @@ class AnalysisPlanValidator:
         capability: CapabilityAssessment,
     ) -> list[PlanValidationIssue]:
         issues: list[PlanValidationIssue] = []
+        # 以下四项冻结原问题语义，防止 Planner 在任务中悄悄改指标、期间或 Scope。
         if task.metric != question.target_metric:
             issues.append(
                 self._issue(
@@ -102,6 +110,7 @@ class AnalysisPlanValidator:
             if AnalysisMethod.METRIC_DECOMPOSITION not in capability.supported_methods:
                 issues.append(self._unsupported(task))
         elif task.method is TaskMethod.DIMENSION_CONTRIBUTION:
+            # 即使方法本身可用，每个维度也必须由用户请求且存在于当前能力画像。
             if AnalysisMethod.DIMENSION_CONTRIBUTION not in capability.supported_methods:
                 issues.append(self._unsupported(task))
             requested_dimensions = set(question.requested_dimensions)
@@ -122,6 +131,7 @@ class AnalysisPlanValidator:
                         )
                     )
         elif task.method is TaskMethod.CANDIDATE_VALIDATION:
+            # 因素验证不能借计划扩展成用户未请求或当前数据不支持的调查方向。
             requested_factors = set(question.requested_factors)
             for factor in task.factors:
                 method = self._FACTOR_METHOD[factor]
@@ -189,6 +199,7 @@ class AnalysisPlanValidator:
 
     @staticmethod
     def _result(issues: list[PlanValidationIssue]) -> PlanValidationResult:
+        # 去重后保持首次发现顺序，Trace 和测试可以稳定定位同一个拒绝原因。
         deduplicated: list[PlanValidationIssue] = []
         seen: set[tuple[str, str]] = set()
         for issue in issues:

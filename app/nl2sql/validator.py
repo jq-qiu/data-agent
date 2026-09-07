@@ -1,3 +1,5 @@
+"""以 AST 和 Registry 规则校验 SQL 的只读性、Schema、JOIN、粒度与结果规模。"""
+
 from __future__ import annotations
 
 import re
@@ -18,6 +20,8 @@ class SQLValidationError(ValueError):
 
 @dataclass(frozen=True)
 class ValidatedSQL:
+    """通过全部策略检查后的不可变 SQL 及其安全、Schema 和粒度审计信息。"""
+
     sql: str
     tables: tuple[str, ...]
     columns: tuple[str, ...]
@@ -40,6 +44,8 @@ class ValidatedSQL:
 
 
 class SQLValidator:
+    """SQL 执行前的强制边界；只接受 Registry 可解释的单条只读查询。"""
+
     def __init__(self, catalog: MetadataCatalog, policy: SQLPolicy):
         self.catalog = catalog
         self.policy = policy
@@ -64,6 +70,9 @@ class SQLValidator:
         }
 
     def validate(self, sql: str, metric_ids: tuple[str, ...] = ()) -> ValidatedSQL:
+        """解析并逐层校验候选 SQL，成功时返回规范化且带行数上限的语句。"""
+
+        # 先检查原始文本再建 AST，可提前阻断注释绕过、文件访问和会话变量等语法技巧。
         self._validate_raw_text(sql)
         try:
             statements = sqlglot.parse(sql, read="mysql")
@@ -96,6 +105,7 @@ class SQLValidator:
         self._validate_sensitive_projection(statement, tables, alias_map)
         self._validate_grain_rules(statement, tables, columns, metric_ids)
 
+        # LIMIT 在 Validator 内统一收紧，不能依赖生成模型主动遵守返回规模约束。
         statement = self._enforce_limit(statement)
         normalized_sql = statement.sql(dialect="mysql", pretty=False)
         return ValidatedSQL(
@@ -231,6 +241,8 @@ class SQLValidator:
         aliases: dict[str, str],
         cte_outputs: dict[str, set[str]],
     ) -> tuple[list[str], list[str]]:
+        """要求每个 JOIN 使用 Registry 白名单等值关系，并返回对应粒度警告。"""
+
         relation_ids: list[str] = []
         warnings: list[str] = []
         for join in statement.find_all(exp.Join):
@@ -329,6 +341,8 @@ class SQLValidator:
         columns: set[str],
         metric_ids: tuple[str, ...],
     ) -> None:
+        """检查无法仅靠 SQL 语法发现的指标口径与一对多聚合风险。"""
+
         if {"fact_order_item", "fact_payment"}.issubset(tables):
             risky = {"fact_order_item.price", "fact_payment.payment_value"} & columns
             if risky and next(statement.find_all(exp.AggFunc), None) is not None:

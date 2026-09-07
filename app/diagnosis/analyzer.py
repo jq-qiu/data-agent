@@ -1,3 +1,5 @@
+"""对受控查询结果执行确定性期间比较、Shapley 拆解、维度贡献和候选因素计算。"""
+
 from __future__ import annotations
 
 import re
@@ -143,6 +145,8 @@ class NumericReconciliation(BaseModel):
 
 
 class AnalysisResult(BaseModel):
+    """确定性计算产物，包含输入 Query ID、指标版本、对账状态和警告。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     analysis_result_id: str = Field(pattern=r"^A\d{3}$")
@@ -161,7 +165,10 @@ class AnalysisResult(BaseModel):
 
 
 class PeriodComparator:
+    """计算本期与基期绝对变化；基期为零时保留事实并将变化率降级为空。"""
+
     def analyze(self, result: AnalysisQueryResult) -> tuple[PeriodComparisonValues, tuple[AnalysisWarning, ...]]:
+        # period_role 把两行结果明确标成 baseline/current，避免依赖数据库返回顺序。
         rows = _period_rows(result, required_fields=("gmv",))
         baseline = _measure(rows["baseline"], "gmv")
         current = _measure(rows["current"], "gmv")
@@ -170,6 +177,8 @@ class PeriodComparator:
 
 
 class GmvShapleyAnalyzer:
+    """用 Decimal 执行 GMV=订单量×AOV 的对称两因素拆解，并强制对账。"""
+
     def analyze(
         self, result: AnalysisQueryResult
     ) -> tuple[GmvShapleyValues, NumericReconciliation | None, tuple[AnalysisWarning, ...]]:
@@ -189,7 +198,9 @@ class GmvShapleyAnalyzer:
                     f"{role}_gmv_nonzero_with_zero_orders",
                 )
 
+        # 总变化直接来自查询结果，后面的两个贡献项必须加总回这个基准值。
         total_delta = current_gmv - baseline_gmv
+        # 任一期间订单量为零时 AOV 无法完整定义：保留 GMV/订单事实，但不编造贡献值。
         if baseline_orders == 0 or current_orders == 0:
             values = GmvShapleyValues(
                 baseline_gmv=baseline_gmv,
@@ -204,11 +215,13 @@ class GmvShapleyAnalyzer:
             )
             return values, None, (AnalysisWarning.AOV_DENOMINATOR_ZERO,)
 
+        # 财务值使用 Decimal 和固定精度，避免二进制浮点误差破坏贡献项对账。
         with localcontext() as context:
             context.prec = 28
             context.rounding = ROUND_HALF_EVEN
             baseline_aov_raw = baseline_gmv / baseline_orders
             current_aov_raw = current_gmv / current_orders
+            # Shapley 对两个变化顺序取平均，公平分配订单量与 AOV 的交互项。
             order_contribution_raw = (
                 (current_orders - baseline_orders)
                 * (current_aov_raw + baseline_aov_raw)
@@ -220,6 +233,7 @@ class GmvShapleyAnalyzer:
                 / 2
             )
             actual = order_contribution_raw + aov_contribution_raw
+        # 贡献项与实际 GMV 变化超过金额容差时直接失败，不能带着不平衡数字生成报告。
         difference = actual - total_delta
         if abs(difference) > RECONCILIATION_TOLERANCE:
             raise AnalysisError(
@@ -247,6 +261,8 @@ class GmvShapleyAnalyzer:
 
 
 class DimensionContributionAnalyzer:
+    """按互斥维度汇总成员变化；只有与整体变化对账后才计算贡献率。"""
+
     def analyze(
         self,
         result: AnalysisQueryResult,
@@ -284,6 +300,7 @@ class DimensionContributionAnalyzer:
             - periods.get("baseline", Decimal(0))
             for member, periods in member_values.items()
         }
+        # 所有成员绝对变化之和必须回到同口径整体变化，才说明维度互斥且覆盖完整。
         grouped_delta = sum(member_deltas.values(), Decimal(0))
         difference = grouped_delta - overall_delta
         reconciled = abs(difference) <= RECONCILIATION_TOLERANCE
@@ -294,6 +311,7 @@ class DimensionContributionAnalyzer:
         if near_zero:
             warnings.append(AnalysisWarning.TOTAL_DELTA_NEAR_ZERO)
 
+        # 总变化接近零或分组未对账时，比例会失去解释意义，因此只保留绝对变化。
         members = tuple(
             DimensionMemberContribution(
                 dimension_value=member,
@@ -328,6 +346,8 @@ class DimensionContributionAnalyzer:
 
 
 class CandidateFactorAnalyzer:
+    """重算流量、促销、库存相关比率，输出关联链所需数值而不判断因果。"""
+
     def analyze(
         self, result: AnalysisQueryResult, factors: tuple[CandidateFactor, ...]
     ) -> tuple[CandidateFactorValues, tuple[AnalysisWarning, ...]]:
@@ -343,6 +363,7 @@ class CandidateFactorAnalyzer:
         current_orders = _count(rows["current"], "order_count")
         baseline_visitors = _optional_count(rows["baseline"], "visitors")
         current_visitors = _optional_count(rows["current"], "visitors")
+        # Conversion 等比率由聚合后的分子/分母重算，不能把每日比例直接相加或平均。
         conversion_baseline = _ratio(baseline_orders, baseline_visitors)
         conversion_current = _ratio(current_orders, current_visitors)
         warnings: list[AnalysisWarning] = []
@@ -359,6 +380,7 @@ class CandidateFactorAnalyzer:
         warnings.extend(conversion_warnings)
 
         analyses: list[CandidateFactorAnalysis] = []
+        # 三类因素共用订单和转化链路，但各自的主指标分子/分母不同。
         for factor in factors:
             if factor is CandidateFactor.TRAFFIC:
                 primary_metric = "visitors"
@@ -404,6 +426,8 @@ class CandidateFactorAnalyzer:
 
 class DeterministicAnalyzer:
     """Turns a frozen plan and validated query results into numeric facts only."""
+
+    # LLM 不参与财务计算，确保同一输入得到可复现、可逐项对账的结果。
 
     def __init__(self) -> None:
         self._period = PeriodComparator()

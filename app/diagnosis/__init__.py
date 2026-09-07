@@ -1,3 +1,4 @@
+# 模块职责：受控诊断组件包，按解析、规划、查询、计算、证据和报告分离职责。
 """Controlled diagnosis components introduced feature by feature."""
 
 from app.diagnosis.analyzer import (

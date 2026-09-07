@@ -1,3 +1,5 @@
+"""加载 SQL 安全策略，包括只读限制、白名单和修复预算。"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

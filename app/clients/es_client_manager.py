@@ -1,3 +1,5 @@
+"""管理 Elasticsearch 异步客户端的初始化、访问与关闭。"""
+
 import asyncio
 
 from elasticsearch import AsyncElasticsearch
@@ -6,12 +8,15 @@ from app.conf.app_config import ESConfig, app_config
 
 
 class ESClientManager:
+    """持有单个异步 ES 客户端；未初始化访问会立即失败，避免传播 None。"""
+
     def __init__(self, config: ESConfig):
         self.config = config
         self._client: AsyncElasticsearch | None = None
 
     @property
     def client(self) -> AsyncElasticsearch:
+        # 未启动时直接报错，避免下游拿到 Optional 客户端后在更深层才失败。
         if self._client is None:
             raise RuntimeError("Elasticsearch client is not initialized; call init() first")
         return self._client
@@ -20,12 +25,16 @@ class ESClientManager:
         return f"http://{self.config.host}:{self.config.port}"
 
     def init(self):
+        """依据配置创建连接；索引名称和检索策略仍由 Repository 管理。"""
+
         self._client = AsyncElasticsearch(
             hosts=self._get_url(),
             request_timeout=600
         )
 
     async def close(self):
+        """释放底层连接；生命周期由 FastAPI lifespan 或命令行入口负责。"""
+
         if self._client:
             await self._client.close()
 

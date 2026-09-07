@@ -1,3 +1,5 @@
+"""定义单轮查询请求模型，并兼容规范 question 字段和旧 query 字段。"""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -6,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class QuerySchema(BaseModel):
     """Single-turn API input with a canonical field and legacy compatibility."""
 
+    # extra=forbid 防止调用方夹带未定义控制参数，保持单轮 API 边界明确。
     model_config = ConfigDict(extra="forbid")
 
     question: str | None = Field(default=None, max_length=2000)

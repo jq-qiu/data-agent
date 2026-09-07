@@ -1,3 +1,5 @@
+"""封装列向量索引的写入与相似度检索。"""
+
 from dataclasses import asdict
 from typing import Any
 
@@ -24,6 +26,8 @@ def _payload(point: Any) -> dict[str, Any]:
 
 
 class ColumnQdrantRepository:
+    """列向量持久层；只返回检索候选，不决定哪些列可以进入 SQL。"""
+
     coll_name = "data-agent-column"
 
     def __init__(self, client: AsyncQdrantClient):

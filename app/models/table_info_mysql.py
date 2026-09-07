@@ -1,3 +1,5 @@
+"""定义表元数据在 MySQL 中的持久化模型。"""
+
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 

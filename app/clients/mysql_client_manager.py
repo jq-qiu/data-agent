@@ -1,3 +1,5 @@
+"""管理数仓和元数据库的异步引擎及 Session 工厂生命周期。"""
+
 import asyncio
 
 from sqlalchemy import Result, text
@@ -29,6 +31,7 @@ class MysqlClientManager:
 
     @property
     def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        # Repository 按请求创建 Session；Manager 不保存具体请求的事务状态。
         if self._session_factory is None:
             raise RuntimeError("MySQL session factory is not initialized; call init() first")
         return self._session_factory
@@ -38,6 +41,7 @@ class MysqlClientManager:
 
     def init(self):
         """创建引擎对象，用于创建数据库连接,内部集成连接池"""
+        # Engine 持有连接池，初始化一次后由多个短生命周期 Session 复用。
         self._engine = create_async_engine(
             url=self._get_url(),
             echo=False,
@@ -57,6 +61,8 @@ class MysqlClientManager:
         )
 
     async def close(self):
+        """关闭连接池；业务 Repository 只接收 Session，不管理全局引擎。"""
+
         if self._engine:
             await self._engine.dispose()
 

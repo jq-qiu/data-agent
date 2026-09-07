@@ -1,3 +1,5 @@
+"""编排单轮意图路由、语义绑定、问数或诊断 Graph，并输出安全 SSE 事件。"""
+
 from __future__ import annotations
 
 import json
@@ -81,6 +83,8 @@ _BINDING_GUIDANCE = MappingProxyType(
 
 
 class QueryService:
+    """单轮请求编排器：按意图选择 NL2SQL 或诊断路径，并保证流中产生安全终态。"""
+
     def __init__(
         self,
         embedding_client: Embeddings,
@@ -109,6 +113,9 @@ class QueryService:
         )
 
     async def query_answer(self, question: str) -> AsyncIterator[str]:
+        """路由一个完整问题并逐条产出 SSE；未处理异常收敛为公共错误事件。"""
+
+        # aroute 先执行确定性规则，只有歧义场景才可能使用受限语义分类器。
         decision = await self.intent_router.aroute(question)
         yield _event(
             {"type": "progress", "step": "识别请求意图", "status": "running"}
@@ -117,12 +124,14 @@ class QueryService:
             {"type": "progress", "step": "识别请求意图", "status": "success"}
         )
         try:
+            # QUERY 复用开放 NL2SQL；DIAGNOSIS 进入受控分析链；其他意图直接返回能力边界。
             if decision.intent is Intent.QUERY:
                 async for event in self._query_events(question, decision):
                     yield _event(event)
             elif decision.intent is Intent.DIAGNOSIS or (
                 decision.reason == "non_gmv_diagnosis_unsupported"
             ):
+                # 非 GMV 诊断仍交给 Grounder 输出具体“指标不支持”，比泛化的不支持提示更可解释。
                 diagnosis_decision = (
                     decision
                     if decision.intent is Intent.DIAGNOSIS
@@ -154,6 +163,9 @@ class QueryService:
         question: str,
         decision: IntentDecision,
     ) -> AsyncIterator[dict[str, Any]]:
+        """运行开放式 NL2SQL Graph，并为结果补充不含敏感细节的统一 Trace。"""
+
+        # State 只保存本次请求的可序列化数据；Repository、模型和 Validator 放在 Context。
         state = DataAgentState(query=question, repair_attempts=0)
         context = DataAgentContext(
             meta_mysql_repository=self.meta_mysql_repository,
@@ -164,6 +176,7 @@ class QueryService:
             value_es_repository=self.value_es_repository,
             sql_validator=self.sql_validator,
         )
+        # 记录是否收到结果/错误终态，防止 Graph 意外结束后浏览器一直等待。
         terminal_emitted = False
         async for chunk in nl2sql_graph.astream(
             input=state,
@@ -175,6 +188,7 @@ class QueryService:
             event = dict(chunk)
             if event.get("type") == "result":
                 terminal_emitted = True
+                # 内部校验对象只投影安全字段，原 SQL 和执行细节不进入公共 Trace。
                 validation = _safe_validation(event.get("validation"))
                 event.update(
                     {
@@ -207,17 +221,22 @@ class QueryService:
         question: str,
         decision: IntentDecision,
     ) -> AsyncIterator[dict[str, Any]]:
+        """先完成语义绑定和能力探测，再运行有限的确定性诊断 Graph。"""
+
         grounding_step = "理解诊断问题"
         yield {"type": "progress", "step": grounding_step, "status": "running"}
+        # Grounder 把自然语言绑定成规范指标、期间和 Scope；后续节点不再处理任意自由文本语义。
         binding = await self.semantic_grounder.bind(question, Intent.DIAGNOSIS)
         yield {"type": "progress", "step": grounding_step, "status": "success"}
         if binding.status is not SemanticBindingStatus.READY:
+            # 非 READY 在读取运行时数据前结束，既避免无意义查询，也不会猜测缺失的分析范围。
             yield _binding_result(decision, binding)
             return
 
         parsed = binding.parsed_question
         if parsed is None:
             raise RuntimeError("READY semantic binding requires a parsed question")
+        # 只有检索补全过的绑定才重写规范问题；纯确定性解析继续使用原问题，保持既有行为。
         graph_question = (
             _canonical_analysis_question(parsed)
             if binding.retrieval_used
@@ -226,6 +245,7 @@ class QueryService:
 
         profile_step = "读取运行时数据能力"
         yield {"type": "progress", "step": profile_step, "status": "running"}
+        # 能力画像读取当前 DWS 的实际覆盖和非空 Evidence，Planner 只能使用真实可用能力。
         profile = await WarehouseCapabilityProfileProvider(
             self.sql_validator.catalog,
             self.sql_validator,
@@ -249,6 +269,7 @@ class QueryService:
             "question": graph_question,
             "intent": decision.intent.value,
         }
+        # custom 流承载进度，values 流更新完整状态；只把 custom 事件直接发给客户端。
         async for mode, chunk in diagnosis_graph.astream(
             input=latest_state,
             stream_mode=["custom", "values"],
@@ -264,8 +285,11 @@ class QueryService:
         case_id: str,
         question: str,
     ) -> AsyncIterator[str]:
+        """在指定合成案例的数据隔离范围内运行同一诊断算法，用于可复现演示。"""
+
         profile_step = "读取合成诊断数据能力"
         yield _event({"type": "progress", "step": profile_step, "status": "running"})
+        # 合成演示绑定到单个 case_id，避免不同 Ground Truth 案例的数据互相污染。
         profile = await SyntheticCapabilityProfileProvider(
             self.sql_validator.catalog,
             self.sql_validator,
@@ -310,6 +334,8 @@ class QueryService:
 
 
 def _event(payload: Mapping[str, Any]) -> str:
+    """把一个结构化事件编码为 SSE data block，并保留中文字符。"""
+
     return f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
 
 
@@ -342,6 +368,8 @@ def _binding_result(
     decision: IntentDecision,
     binding: SemanticBindingResult,
 ) -> dict[str, Any]:
+    """把澄清/不支持绑定转换为公共终态，只暴露逻辑候选和稳定原因。"""
+
     if binding.status is SemanticBindingStatus.READY:
         raise ValueError("READY binding must continue to diagnosis")
     reason = str(binding.reason or "semantic_binding_failed")
@@ -397,6 +425,8 @@ def _diagnosis_result(
     state: Mapping[str, Any],
     binding: SemanticBindingResult | None = None,
 ) -> dict[str, Any]:
+    """汇总 Graph 终态，并从 Evidence 中提取面向 API 的限制说明。"""
+
     bundle = state.get("validated_evidence")
     evidence = []
     limitations = list(state.get("api_limitations") or [])
@@ -412,6 +442,7 @@ def _diagnosis_result(
         missing = bundle.get("missing_evidence")
         if isinstance(missing, list):
             limitations.extend(str(value) for value in missing)
+    # 没有通过 Report Generator 的结果一律按 DEGRADED 返回，不能伪装成完整诊断。
     report = state.get("final_report")
     report_status = report.get("status") if isinstance(report, Mapping) else "DEGRADED"
     result = {
@@ -433,6 +464,8 @@ def _diagnosis_trace(
     state: Mapping[str, Any],
     binding: SemanticBindingResult | None = None,
 ) -> list[dict[str, Any]]:
+    """按白名单投影公开 Trace，不返回 SQL、参数、原始行、连接信息或 Ground Truth。"""
+
     trace: list[dict[str, Any]] = [_intent_trace(decision)]
     if binding is not None:
         trace.append(_semantic_grounding_trace(binding))
@@ -531,6 +564,8 @@ def _semantic_grounding_trace(
 
 
 def _canonical_analysis_question(parsed: ParsedAnalysisQuestion) -> str:
+    """把检索补全后的规范绑定重写为完整单轮问题，交给既有确定性 Parser 复核。"""
+
     current = parsed.current_period.start
     baseline = parsed.baseline_period.start
     scope = ""
@@ -571,6 +606,8 @@ def _canonical_analysis_question(parsed: ParsedAnalysisQuestion) -> str:
 
 
 def _safe_query_trace(item: Any) -> dict[str, Any]:
+    """从内部 Query Result 提取允许公开的标识、血缘版本和校验摘要。"""
+
     if not isinstance(item, Mapping):
         return {}
     return {
@@ -587,6 +624,8 @@ def _safe_query_trace(item: Any) -> dict[str, Any]:
 
 
 def _safe_analysis_trace(item: Any) -> dict[str, Any]:
+    """从 Analyzer Result 提取方法与对账摘要，不暴露内部数值载荷。"""
+
     if not isinstance(item, Mapping):
         return {}
     reconciliation = item.get("reconciliation")

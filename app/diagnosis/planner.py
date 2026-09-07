@@ -1,3 +1,5 @@
+"""把已解析问题与运行时能力转换为数量受限、依赖明确的结构化 AnalysisTask。"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -45,6 +47,8 @@ _FACTOR_CAPABILITY = {
 
 
 class AnalysisTask(BaseModel):
+    """类型化分析工具调用，只允许白名单 method、Scope、维度、因素和显式依赖。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     task_id: str = Field(pattern=r"^T[1-4]$")
@@ -91,6 +95,8 @@ class AnalysisTask(BaseModel):
 
 
 class AnalysisPlan(BaseModel):
+    """数量受限且依赖有序的任务集合；空任务计划必须给出停止原因。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     plan_version: Literal["analysis-plan-v1"] = "analysis-plan-v1"
@@ -136,6 +142,9 @@ class AnalysisPlanner:
         question: ParsedAnalysisQuestion,
         capability: CapabilityAssessment,
     ) -> AnalysisPlan:
+        """从问题与 supported_methods 的交集生成最多四类任务，不生成 SQL。"""
+
+        # Capability 已把“理论支持”收窄为“当前切片可执行”，Planner 只读取这个白名单。
         supported = set(capability.supported_methods)
         if AnalysisMethod.PERIOD_COMPARISON not in supported:
             reason = (
@@ -143,6 +152,7 @@ class AnalysisPlanner:
                 if capability.data_quality_status is DataQualityStatus.FAIL
                 else PlanStopReason.INSUFFICIENT_DATA
             )
+            # 连期间对比都不可用时直接生成带原因的空计划，后续查询和分析节点不会运行。
             return AnalysisPlan(
                 tasks=(),
                 stop_reason=reason,
@@ -155,6 +165,7 @@ class AnalysisPlanner:
         if AnalysisMethod.METRIC_DECOMPOSITION in supported:
             task_inputs.append((TaskMethod.METRIC_DECOMPOSITION, (), ()))
 
+        # 维度任务只取“用户明确请求”和“运行时可用”的交集，不能擅自增加下钻方向。
         requested_dimensions = set(question.requested_dimensions)
         available_dimensions = set(capability.available_dimensions)
         dimensions = tuple(
@@ -165,6 +176,7 @@ class AnalysisPlanner:
         if AnalysisMethod.DIMENSION_CONTRIBUTION in supported and dimensions:
             task_inputs.append((TaskMethod.DIMENSION_CONTRIBUTION, dimensions, ()))
 
+        # 每个候选因素还必须有对应 Evidence 方法可用，缺数据的因素不会进入任务。
         requested_factors = set(question.requested_factors)
         factors = tuple(
             factor
@@ -174,6 +186,7 @@ class AnalysisPlanner:
         if factors:
             task_inputs.append((TaskMethod.CANDIDATE_VALIDATION, (), factors))
 
+        # 除 T1 外的任务都显式依赖期间对比，确保先确认异常再解释变化来源。
         tasks = tuple(
             AnalysisTask(
                 task_id=f"T{index}",
