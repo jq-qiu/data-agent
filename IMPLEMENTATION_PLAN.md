@@ -174,6 +174,6 @@ INTERVIEW-001 Demo Script and Architecture Narrative
 | CLARIFY-001 | 将绑定状态接入单轮 API 与前端 | 缺少或歧义信息时展示具体补充项、候选和推荐完整问题 | 已完成，仅剩真实外部检索准确率未评测 |
 | PLAN-LLM-001 | 实现确定性优先、最多一次模型规划、Validator 与回退 | 让复杂问题能在有限合法路径中动态取舍，同时保持可控和可审计 | 组件已完成，未接入生产 Graph/API |
 | PLAN-UI-001 | 展示规范问题、能力、计划、回退与 Evidence Trace | 让演示和问题定位更直观 | 已完成，纯前端展示 |
-| INTERVIEW-001 | 固化演示脚本和架构讲解 | 清晰说明 LLM 与确定性模块的职责边界 | 未授权、未实现 |
+| INTERVIEW-001 | 固化演示脚本和架构讲解 | 清晰说明 LLM 与确定性模块的职责边界 | 已完成，文档产物 |
 
 `AnalysisTask` 继续作为类型化工具调用；后续不另建一套重复的通用 ToolCall。PLAN-LLM-001 组件已可独立调用，接入生产 Graph/API 与真实模型适配器需在新的 Feature 中单独实施。

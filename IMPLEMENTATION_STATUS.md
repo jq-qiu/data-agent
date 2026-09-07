@@ -2,26 +2,29 @@
 
 ## Current Phase
 
-MVP V1 已完成澄清响应、工程清理、受限规划组件与分析计划 Trace 展示。前端诊断报告现在可展开显示语义绑定、规范问题、能力范围、T1–T4 计划、查询/计算/Evidence 与报告状态；后端与诊断逻辑保持不变。
+MVP V1 的功能、工程与讲解资料全部收口：除澄清响应、工程清理、受限规划组件和分析计划 Trace 展示外，INTERVIEW-001 新增演示脚本与架构讲解/Q&A，供面试前直接练习。
 
 ## Current Feature
 
-PLAN-UI-001 Analysis Plan Trace.
+INTERVIEW-001 Demo Script and Architecture Narrative.
 
 ## Feature Status
 
-Completed. 新增纯函数 `frontend/src/lib/trace.js` 将后端已有的安全 `analysis_trace` 转换为分阶段中文卡片；诊断详情不再只显示阶段名。未知阶段不会 dump 原始对象；仍无 v-html、本地存储或客户端业务计算。
+Completed. 产出公开的 `INTERVIEW-001_ARCHITECTURE_NARRATIVE.md`（分层职责、语义层、LLM 调用边界/预算、安全审计与评测）。所有描述与仓库真实状态一致，不宣称未接入能力已运行；演示辅助资料仅在本地保留。
 
 ## Last Completed Feature
 
-PLAN-LLM-001 Bounded LLM Planner and Plan Validator.
+PLAN-UI-001 Analysis Plan Trace.
 
 ## Next Feature
 
-INTERVIEW-001 Demo Script and Architecture Narrative，需用户明确授权和单独 Feature Scoping。
+当前 V1 路线图 Feature 已全部完成。后续需由用户给出新的 Feature（例如生产接入 LLM Planner、真实语义检索评测、受限多轮、部署监控等）并单独授权。
 
 ## Last Successful Validation
 
+- INTERVIEW-001 deliverables: 2 documents created and linked from README；
+- INTERVIEW-001 documentation contract: 22 passed + new assertions；
+- INTERVIEW-001 full pytest regression: 338 passed；frontend 11 passed/build passed；Ruff/mypy 0/0；
 - PLAN-UI-001 frontend Node tests: 11 passed（含 trace 各阶段提取、未知阶段安全与澄清不泄露）；
 - PLAN-UI-001 Vite production build: passed；
 - PLAN-UI-001 full pytest regression: 337 passed；Ruff/mypy 保持 0/0；
@@ -223,11 +226,11 @@ INTERVIEW-001 Demo Script and Architecture Narrative，需用户明确授权和�
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-The PLAN-UI-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
+The INTERVIEW-001 completion commit containing this file. Resolve the immutable commit ID with `git log -1 --oneline` when resuming.
 
 ## Push Status
 
-Pending push for the PLAN-UI-001 completion commit. If Git metadata disagrees, Git is authoritative.
+Pending push for the INTERVIEW-001 completion commit. If Git metadata disagrees, Git is authoritative.
 
 ## Known Blockers
 
@@ -237,6 +240,5 @@ None blocking deterministic routing. Semantic fallback requires the configured e
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `PLAN-UI-001_COMPLETION.md` and `specs/PLAN-UI-001_analysis_plan_trace.md`.
-4. Do not enter a new Feature until its Spec, scope, allowed files, and verification commands are explicitly established.
-5. Next documented Feature is INTERVIEW-001; requires explicit user authorization.
+3. Review `INTERVIEW-001_COMPLETION.md` and `specs/INTERVIEW-001_demo_script_architecture_narrative.md`.
+4. The V1 roadmap Features are complete; do not enter a new Feature until its Spec, scope, and verification commands are explicitly established.

@@ -31,7 +31,7 @@ V1 实现的是指标拆解、变化贡献和关联诊断，不是严格的因�
 - FastAPI 同源托管前端与 API 的单进程本地运行方式。
 - 可复现的 Synthetic 诊断演示入口，展示 Traffic Drop、Promotion End 与 Stockout 完整证据链。
 - 单轮不完整/歧义诊断请求在数据访问前返回澄清卡片与推荐完整问题，超出 V1 能力的问题返回受控说明。
-- Ruff 与 mypy 静态检查全绿（0 项诊断），全量 pytest 337 项回归通过。
+- Ruff 与 mypy 静态检查全绿（0 项诊断），全量 pytest 338 项回归通过。
 - 诊断报告的“分析轨迹”可展开显示语义绑定、规范问题、数据能力、T1–T4 计划、查询/计算/Evidence 与报告状态的分阶段明细。
 
 API-001 的六个固定问题已通过真实服务依赖的 HTTP/SSE 演示。真实
@@ -176,6 +176,7 @@ Inventory Fill Rate = Available SKU Count / Required SKU Count
 6. [评测设计](docs/06_evaluation.md)
 7. [实施计划](IMPLEMENTATION_PLAN.md)
 8. [Coding Agent 工作约束](AGENTS.md)
+9. [架构讲解](INTERVIEW-001_ARCHITECTURE_NARRATIVE.md)
 
 实施进度以 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) 为准。已完成 Feature 的规范和报告保留在仓库中，例如 [ENG-001 Engineering Baseline](specs/ENG-001_engineering_baseline.md) 与 [ENG-001 Baseline Report](ENG-001_BASELINE.md)。进入新 Feature 时必须先在 `specs/` 中建立对应 Spec，不得依赖 README 中容易过时的“当前任务”描述。
 
@@ -199,6 +200,7 @@ ENG-001 Engineering Baseline
   → CLARIFY-001 Clarification Response Integration（已完成）
   → PLAN-LLM-001 Bounded LLM Planner（组件已完成，未接入生产 Graph/API）
   → PLAN-UI-001 Analysis Plan Trace（已完成）
+  → INTERVIEW-001 Demo Script and Architecture Narrative（已完成）
 ```
 
 任何前置 Gate 未通过时，不得提前实现下游 Feature。

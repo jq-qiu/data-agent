@@ -127,3 +127,16 @@ def test_semantic_grounding_implementation_boundary_is_documented() -> None:
     assert "真实/Synthetic 的字段可用性仍由现有 Capability 链决定" in methodology
     assert "Physical Schema Leakage Count = 0" in evaluation
     assert "不代表真实外部检索准确率" in evaluation
+
+
+def test_architecture_narrative_keeps_production_boundaries_honest() -> None:
+    narrative = (
+        REPOSITORY_ROOT / "INTERVIEW-001_ARCHITECTURE_NARRATIVE.md"
+    ).read_text(encoding="utf-8")
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "已实现但未接入生产" in narrative
+    assert "Planner Model Calls <= 1" in narrative
+    assert "标准诊断规划" in narrative
+    assert "0 次" in narrative
+    assert "[架构讲解](INTERVIEW-001_ARCHITECTURE_NARRATIVE.md)" in readme
