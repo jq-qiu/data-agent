@@ -343,11 +343,14 @@ V1 支持单轮问数和 GMV 关联诊断，但不支持：
 `attribution-analysis-agent-spec/` 是早期设计参考，不是 V1 事实源。若内容冲突，以根目录
 README、实施计划和 `docs/01` 至 `docs/06` 为准。
 
-## 数据与许可证说明
+## 数据说明
 
 Olist 订单、商品、客户、卖家、支付、物流和评价来自匿名公开数据的转换结果；原始
 CSV 不纳入 Git。Traffic、Promotion、Inventory 和 Business Event 是用于功能验证的
 Synthetic 数据，不能包装成真实经营事实。
 
-仓库当前未添加开源许可证。公开可见不等于自动授予复制、修改或分发权；如需开放
-复用，应由仓库所有者明确选择并添加许可证。
+## License
+
+本仓库基于 [MIT License](LICENSE) 开源。
+
+Copyright (c) 2026 jq-qiu
