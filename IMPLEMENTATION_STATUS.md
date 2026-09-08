@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-015 已补齐 T03 的无前缀
-派生列扁平化与 Plan 内 ISO `date_id` 归一；真实复测待 SQL-016。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-016 已确认 SQL-015 后真实
+结果为 24/30 且 Gate true；T03 仍受 DWS Plan 强制 Region ID 必需列影响。
 
 ## Current Feature
 
-SQL-015 Unqualified Derived-column and Date ID Repair.
+SQL-016 Post-SQL-015 Real-model Rerun.
 
-## Feature Status (SQL-015 completed)
+## Feature Status (SQL-016 completed)
 
-Completed and validated. 安全扁平化现接受无表名前缀的派生列引用；Plan 内任意物理
-`date_id` 的 ISO 字符串按仓库 `YYYYMMDD` 整数归一。T03 实际形状经原 Validator 通过。
+Completed and validated. Compatible/Strict Execution 24/30，Metric Accuracy 30/30，
+Safety 12/12，Gate 3 true，Live/Replay 完全一致。
 
 ## Last Completed Feature
 
-SQL-015 Unqualified Derived-column and Date ID Repair.
+SQL-016 Post-SQL-015 Real-model Rerun.
 
 ## Next Feature
 
-SQL-016 Post-SQL-015 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
-Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
+SQL-017 Overall DWS Required Columns。按整体/Region Scope 约束 DWS-only 必需列，
+避免整体订单数强制引用 Region ID；只处理一个口径假设，不现场修本次评测。
 
 ## Last Successful Validation
 
+- SQL-016 real-model rerun: compatible/strict Execution 24/30；Metric Accuracy 30/30；
+  Gate 3 true；Live/Replay identical；N02 new drift；T03/A02 plan-region issue remains；
 - SQL-015 unqualified derived/date-id repair: SQL repair contract 18 passed；T03 exact
   shape passes original Validator and Plan；SQL-014/historical artifacts changed: 0；
 - SQL-014 real-model rerun: compatible/strict Execution 25/30；Gate 3 true；A02 infra
@@ -266,20 +268,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-015 开始前，本地 `HEAD` 为 SQL-014 commit `64a76d1`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-015 不执行远端推送或仓库可见性变更。
+SQL-016 开始前，本地 `HEAD` 为 SQL-015 commit `15e7ddd`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-016 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-015 已本地修复 T03 的派生列与 date_id 归一缺口，但尚未真实复测；SQL-014 的
-25/30 仍是最近实测。C05 条件聚合、J02 Group 偏差、N04 指标漂移仍待处理，A02 为
-MySQL 连接环境失败。诊断 Semantic Grounder 的真实召回与真实 LLM Planner 未评测。
+SQL-016 实测兼容/严格 Execution 为 24/30，Gate true；Metric Accuracy 30/30。T03/A02
+仍因 DWS-only Plan 强制 `region_id` 必需列而拒绝整体订单查询；C05/J02 仍失败，N02 为
+本轮新增 TopN 漂移。SQL-010/014 的 26/30、25/30 均为历史一次运行。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-015_unqualified_derived_dateid_repair.md` and
-   `docs/reports/SQL-015_COMPLETION.md`.
-4. Create and freeze a SQL-016 Spec for the post-SQL-015 Live/Replay rerun.
-5. Keep C05/J02 and future reruns outside that evaluation Feature.
+3. Review `specs/SQL-016_post_sql015_real_model_rerun.md` and
+   `docs/reports/SQL-016_COMPLETION.md`.
+4. Create and freeze a SQL-017 Spec for overall DWS required columns.
+5. Keep C05/J02/TopN drift and future reruns outside that runtime repair Feature.

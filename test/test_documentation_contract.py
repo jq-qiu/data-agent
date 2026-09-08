@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "SQL-015 Unqualified Derived-column and Date ID Repair" in _markdown_section(
+    assert "SQL-016 Post-SQL-015 Real-model Rerun" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "SQL-015 Unqualified Derived-column and Date ID Repair" in _markdown_section(
+    assert "SQL-016 Post-SQL-015 Real-model Rerun" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "SQL-016 Post-SQL-015 Real-model Rerun" in _markdown_section(
+    assert "SQL-017 Overall DWS Required Columns" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "SQL-016 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-017 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 
