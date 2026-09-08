@@ -2,18 +2,18 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。EVAL-002 已修复 NL2SQL 严格
-结果、Trace/Grain、Correction 和 Replay 身份评测契约；未运行真实模型复测。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-010 已在 EVAL-002 评测器上
+完成真实 Live/Replay：兼容与严格 Execution 均为 26/30，但分类完整性 Gate 未通过。
 
 ## Current Feature
 
-EVAL-002 NL2SQL Evaluation Integrity.
+SQL-010 Post-SQL-009 Real-model Rerun.
 
-## Feature Status (EVAL-002 completed)
+## Feature Status (SQL-010 run completed; integrity Gate failed)
 
-Completed and validated. 历史 Execution Accuracy 保留兼容口径，同时新增投影位置敏感
-结果、独立 Trace/Grain、结果正确性约束下的 Correction 与运行时代码绑定 Replay；
-历史评测结果保持不变。
+Live/Replay 主体完全一致，30 条严格参考摘要齐全，Safety 12/12，兼容与严格 Execution
+均为 26/30。`N04`、`C01` 只有额外 Schema Trace，多标签已记录但兼容主分类为空，导致
+`all_failures_classified=false` 和 Gate 3 false；本 Feature 不越界修改 Evaluator。
 
 ## Last Completed Feature
 
@@ -21,11 +21,13 @@ EVAL-002 NL2SQL Evaluation Integrity.
 
 ## Next Feature
 
-SQL-010 Post-SQL-009 Real-model Rerun，计划但未开始。它将在 EVAL-002 可信评测器上
-执行真实模型 Live/Replay 复测；在完成前仍不得更新 SQL-008 的 22/30。
+EVAL-003 Primary Failure Classification Completeness。只修 `classify_failure` 对额外表/列
+Trace 的主分类遗漏，不修改 SQL-010 真实运行、运行时规则或历史产物。
 
 ## Last Successful Validation
 
+- SQL-010 real-model rerun: compatible/strict Execution 26/30；Live/Replay identical；
+  Safety 12/12；Gate 3 false because 2 multi-label failures lack a primary category；
 - EVAL-002 evaluator contract: 10 passed；full pytest regression: 373 passed；
   Ruff/mypy 0/0；historical evaluation artifacts changed: 0；
 - DOC-002 documentation contract: 25 passed；full pytest regression: 371 passed；
@@ -251,20 +253,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-EVAL-002 开始前，本地 `HEAD` 为 DOC-002 commit `9e83bd5`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。EVAL-002 不执行远端推送或仓库可见性变更。
+SQL-010 开始前，本地 `HEAD` 为 EVAL-002 commit `6f71b4b`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-010 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-009 的真实模型收益尚未复测，最近一次真实 NL2SQL Execution Accuracy 仍为
-SQL-008 的 22/30。诊断 Semantic Grounder 的真实 Qdrant/Elasticsearch 召回准确率和
-真实 LLM Planner 尚未评测；外部服务与本地忽略配置仍是运行前置条件。
+SQL-010 实测兼容/严格 Execution 为 26/30，但分类完整性 Gate 未通过；结果失败为 T03、
+J02、C02、C05，另有 14 条 Trace 偏差和 10/15 Grain 契约偏差。诊断 Semantic Grounder
+的真实 Qdrant/Elasticsearch 召回准确率和真实 LLM Planner 尚未评测。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/EVAL-002_nl2sql_evaluation_integrity.md` and
-   `docs/reports/EVAL-002_COMPLETION.md`.
-4. If authorized to continue, create and freeze a SQL-010 Spec before running external services.
-5. Use Live mode without `--skip-reference`, then verify the same evaluation subject in Replay.
+3. Review `specs/SQL-010_post_semantics_real_model_rerun.md` and
+   `docs/reports/SQL-010_COMPLETION.md`.
+4. Create and freeze an EVAL-003 Spec for the primary-classification omission only.
+5. Do not modify SQL-010 artifacts or NL2SQL Runtime while repairing that evaluator Gate.

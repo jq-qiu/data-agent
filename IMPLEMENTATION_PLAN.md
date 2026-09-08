@@ -190,6 +190,8 @@ EVAL-002 NL2SQL Evaluation Integrity
         ↓
 SQL-010 Post-SQL-009 Real-model Rerun
         ↓
+EVAL-003 Primary Failure Classification Completeness
+        ↓
 根据真实失败决定后续 Runtime Remediation
 ```
 
@@ -197,7 +199,8 @@ SQL-010 Post-SQL-009 Real-model Rerun
 |---|---|---|
 | DOC-002 | 同步当前状态、能力边界和恢复指引 | 当前文档一致性 Feature |
 | EVAL-002 | 修复结果列语义、Grain、Correction 和 Replay 身份等评测可信度问题 | 已完成；未运行真实模型，不更新运行时准确率 |
-| SQL-010 | 在可信评测器上执行 SQL-009 后 Live/Replay 真实复测 | 计划，未开始；不得预先声明提升 |
+| SQL-010 | 在可信评测器上执行 SQL-009 后 Live/Replay 真实复测 | 已执行；26/30，但单主分类完整性 Gate 未通过 |
+| EVAL-003 | 让额外表/列等 Trace 偏差获得兼容主错误分类 | 下一项；只修分类，不修改本次真实结果 |
 
-SQL-010 完成前不根据 SQL-008 的旧失败继续叠加 Runtime 规则。真实复测后若仍有失败，
-每个后续 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。
+SQL-010 已产生真实结果，但 EVAL-003 完成前不将其声明为全 Gate 通过。之后若处理真实
+失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。

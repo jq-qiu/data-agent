@@ -235,7 +235,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 22/30 | SQL-008 Metric/Calendar 真实模型复测；Time、TopN 均为 5/5 |
+| NL2SQL Execution Accuracy | 26/30 | SQL-010 真实模型复测；兼容与严格口径相同，分类完整性 Gate 未通过 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
@@ -249,7 +249,11 @@ SQL-009 进一步把月份字面量类型、明细行数与业务指标区分、
 需要独立真实复测后才能更新。EVAL-002 已升级评测契约：保留历史 Execution Accuracy，
 新增列位置敏感的严格结果口径、独立 Trace/Grain 口径和结果正确性约束下的 Correction
 Success；Replay 现在还绑定提交、工作树状态与实际运行时代码摘要。该评测器改造本身未
-运行真实模型，因此没有更新 22/30。
+运行真实模型，因此没有更新 22/30。SQL-010 随后完成真实复测：兼容与严格 Execution
+均为 26/30，Simple/Aggregate/TopN 5/5、Time/Join 4/5、Comparison 3/5；30 条严格参考
+摘要和 Live/Replay 对账均通过，Safety 仍为 12/12。由于 `N04`、`C01` 的额外 Schema
+Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评测器遗漏由独立 EVAL-003
+处理，不能把本次运行表述为全 Gate 通过。
 
 ## 技术栈
 

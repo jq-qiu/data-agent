@@ -35,6 +35,7 @@
 - [SQL-008 Metric/Calendar Real-Model Rerun](SQL-008_COMPLETION.md)
 - [SQL-009 Query Semantics Remediation](SQL-009_COMPLETION.md)
 - [EVAL-002 NL2SQL Evaluation Integrity](EVAL-002_COMPLETION.md)
+- [SQL-010 Post-SQL-009 Real-model Rerun](SQL-010_COMPLETION.md)
 
 ## 诊断分析与评测
 
