@@ -129,6 +129,50 @@ def test_semantic_grounding_implementation_boundary_is_documented() -> None:
     assert "不代表真实外部检索准确率" in evaluation
 
 
+def _markdown_section(content: str, heading: str) -> str:
+    start = content.index(heading) + len(heading)
+    remainder = content[start:]
+    next_heading = remainder.find("\n## ")
+    return remainder if next_heading < 0 else remainder[:next_heading]
+
+
+def test_current_status_and_resume_instructions_are_consistent() -> None:
+    status = (REPOSITORY_ROOT / "IMPLEMENTATION_STATUS.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "DOC-002 Status and Capability Truth Sync" in _markdown_section(
+        status, "## Current Feature"
+    )
+    assert "DOC-002 Status and Capability Truth Sync" in _markdown_section(
+        status, "## Last Completed Feature"
+    )
+    assert "EVAL-002 NL2SQL Evaluation Integrity" in _markdown_section(
+        status, "## Next Feature"
+    )
+    assert "EVAL-002 Spec" in _markdown_section(status, "## Resume From")
+    assert "Commit and explicitly push the complete SHOWCASE-001" not in status
+    assert "GitHub CLI 尚未登录" not in status
+
+
+def test_semantic_grounding_and_planner_boundaries_are_current() -> None:
+    metadata_design = (
+        REPOSITORY_ROOT / "docs/03_metadata_and_nl2sql.md"
+    ).read_text(encoding="utf-8")
+    implementation_plan = (
+        REPOSITORY_ROOT / "IMPLEMENTATION_PLAN.md"
+    ).read_text(encoding="utf-8")
+
+    assert "`CLARIFY-001` 已把三种绑定结果接入生产单轮 API 与前端" in metadata_design
+    assert "`PLAN-LLM-001` 已实现 `BoundedPlannerPolicy`" in metadata_design
+    assert "真实模型规划尚未评测，也未接入生产 Graph/API" in metadata_design
+    assert "受控检索兜底属于后续 Feature，尚未实现" not in metadata_design
+    assert "LLM Planner 尚未实现" not in metadata_design
+    assert "绑定能力经 CLARIFY-001 接入生产单轮 API" in implementation_plan
+    assert "EVAL-002 NL2SQL Evaluation Integrity" in implementation_plan
+    assert "计划，未开始" in implementation_plan
+
+
 def test_architecture_narrative_keeps_production_boundaries_honest() -> None:
     narrative = (
         REPOSITORY_ROOT / "INTERVIEW-001_ARCHITECTURE_NARRATIVE.md"

@@ -10,6 +10,7 @@
 - [ENG-001 Engineering Baseline](ENG-001_BASELINE.md)
 - [ENG-002 Lint and Type Cleanup](ENG-002_COMPLETION.md)
 - [DOC-001 Specification Cleanup](DOC-001_COMPLETION.md)
+- [DOC-002 Status and Capability Truth Sync](DOC-002_COMPLETION.md)
 - [COMMENT-001 Chinese Code Explanation](COMMENT-001_COMPLETION.md)
 - [INTERVIEW-001 Architecture Narrative（演示脚本仅本地保留）](INTERVIEW-001_COMPLETION.md)
 - [SHOWCASE-001 Public Repository Presentation](SHOWCASE-001_COMPLETION.md)

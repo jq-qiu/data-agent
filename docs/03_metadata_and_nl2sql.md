@@ -249,7 +249,7 @@ Scope Validator（分析范围校验）
 ParsedAnalysisQuestion（规范化分析问题）
 ```
 
-绑定优先级为“精确规范值 → 受控别名 → 受控检索候选 → 结构化歧义或不支持”。检索只能召回 Registry 已存在的对象，不能创造指标、维度、字段值或时间范围。当前诊断 Parser 已实现确定性规范值和别名绑定；受控检索兜底属于后续 Feature，尚未实现。
+绑定优先级为“精确规范值 → 受控别名 → 受控检索候选 → 结构化歧义或不支持”。检索只能召回 Registry 已存在的对象，不能创造指标、维度、字段值或时间范围。当前诊断 Parser 已实现确定性规范值和别名绑定；`SEM-002` 实现受控检索兜底，`CLARIFY-001` 已把三种绑定结果接入生产单轮 API 与前端。真实 Qdrant/Elasticsearch 召回准确率仍未评测，不能用 Stub 契约结果替代。
 
 维度值绑定需要保留业务角色。例如问题中的 `PR` 在当前 Olist 诊断口径中绑定为客户所在州，不得因为物理库同时存在卖家州就自动改写 Scope。高基数字段只能按当前问题检索少量候选，不能把完整值域塞入模型上下文。
 
@@ -267,4 +267,4 @@ ParsedAnalysisQuestion（规范化分析问题）
 
 `SEM-002` 已实现可独立调用的绑定与投影组件：确定性 Parser 优先；绑定不足时，Qdrant 只召回 Catalog 中存在的指标及可映射为 `region | category` 的字段候选，Elasticsearch 只召回允许值列中的规范地区/品类值。唯一、超过阈值且分差足够的候选才可自动绑定，否则输出 `CLARIFICATION_REQUIRED` 或 `UNSUPPORTED`。检索结果不会把物理字段 ID 带入 `PlannerSemanticContext`。
 
-当前这些组件尚未接入生产 Graph、API 或前端；现有对外诊断运行时仍使用原有确定性 Parser、Capability Assessment 和 Planner。LLM Planner 尚未实现。
+当前生产单轮 API 已使用 `SemanticGrounder` 完成确定性优先、受控检索兜底和澄清分流；`PlannerSemanticContextBuilder` 仍是可独立调用的规划上下文组件，尚未进入生产诊断规划路径。`PLAN-LLM-001` 已实现 `BoundedPlannerPolicy` 与 `AnalysisPlanValidator`，但真实模型规划尚未评测，也未接入生产 Graph/API；现有对外诊断运行时继续使用确定性 Planner。

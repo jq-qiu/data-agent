@@ -2,31 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口。SQL-009 已完成 SQL-008 查询语义问题的受控修复：
-指标粒度、日历类型、分组、排序和固定过滤由 Plan/Validator 双重约束。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。DOC-002 已同步 SQL-009 后的
+Feature 状态、Semantic Grounding/Planner 能力边界和恢复指引；未修改运行时代码。
 
 ## Current Feature
 
-SQL-009 NL2SQL Query Semantics Remediation.
+DOC-002 Status and Capability Truth Sync.
 
-## Feature Status (SQL-009 completed)
+## Feature Status (DOC-002 completed)
 
-Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
-GitHub visibility remains unchanged until the separate action-time confirmation.
-README 已覆盖项目定位、两条执行链、ODS→DWD→DWS、混合意图路由、安全边界、
-真实评测与快速开始；34份历史完成/基线报告已移动到 `docs/reports/` 并建立索引。
+Completed and validated. Current/last/next Feature、生产语义绑定、未接生产的 LLM Planner
+以及 SQL-009 后的可靠性路线已在事实源中对齐；历史评测结果保持不变。
 
 ## Last Completed Feature
 
-SQL-009 NL2SQL Query Semantics Remediation.
+DOC-002 Status and Capability Truth Sync.
 
 ## Next Feature
 
-未安排。SQL-009 后的真实模型复测必须作为独立 Feature 执行；未经用户明确授权不继续。
-生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
+EVAL-002 NL2SQL Evaluation Integrity，计划但未开始。它只修复评测可信度，不更新
+SQL-009 运行时准确率；完成后再以独立 SQL-010 执行真实模型 Live/Replay 复测。
 
 ## Last Successful Validation
 
+- DOC-002 documentation contract: 25 passed；full pytest regression: 371 passed；
+  Ruff/mypy 0/0；runtime files and historical evaluation artifacts changed: 0；
 - SQL-009 full pytest regression: 369 passed；Ruff/mypy 0/0；
 - SQL-009 deterministic semantics: 17 个专项覆盖指标选择、日历类型、Plan 分组/排序/过滤；
 - SQL-008 real-model rerun: Execution Accuracy 22/30；Time 5/5；TopN 5/5；Comparison 2/5；
@@ -244,27 +244,24 @@ SQL-009 NL2SQL Query Semantics Remediation.
 - REPORT-002 follow-up: the report now appends the most likely associated candidate using non-causal wording; 291 backend tests passed.
 ## Last Commit
 
-SHOWCASE-001 completion commit. Resolve the immutable commit ID with
-`git log -1 --oneline`; its parent history does not contain the local interview demo script or Q&A.
+DOC-002 completion commit. Resolve the immutable local commit ID with `git log -1 --oneline`.
 
 ## Push Status
 
-用户已授权显式推送 `main`；最终结果以 Git 为准。GitHub CLI 尚未登录，之前 Git push
-曾因无法连接 GitHub 443 端口失败。仓库可见性不会随 Git push 自动改变。
+DOC-002 开始前，本地 `HEAD`、`origin/main` 和远端 `main` 均为 SQL-009 commit
+`5b29094`。DOC-002 只创建本地完成提交，不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-公开操作需要可用的 GitHub 登录会话与网络，并且必须在最终修改仓库可见性前再次取得
-用户确认。运行能力方面，语义兜底仍依赖外部 LLM；真实 Qdrant/Elasticsearch 召回
-准确率和真实 LLM Planner 尚未评测；外部服务与本地忽略配置仍是运行前置条件。
+SQL-009 的真实模型收益尚未复测，最近一次真实 NL2SQL Execution Accuracy 仍为
+SQL-008 的 22/30。诊断 Semantic Grounder 的真实 Qdrant/Elasticsearch 召回准确率和
+真实 LLM Planner 尚未评测；外部服务与本地忽略配置仍是运行前置条件。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `README.md`, `docs/reports/README.md`,
-   `docs/reports/SHOWCASE-001_COMPLETION.md` and
-   `specs/SHOWCASE-001_public_repository_presentation.md`.
-4. Commit and explicitly push the complete SHOWCASE-001 change set to `origin/main`.
-5. Run the final public-exposure audit, then request action-time confirmation before changing the
-   GitHub repository visibility to Public.
+3. Review `specs/DOC-002_status_capability_truth_sync.md` and
+   `docs/reports/DOC-002_COMPLETION.md`.
+4. If authorized to continue, create and freeze an EVAL-002 Spec before changing the evaluator.
+5. Do not run SQL-010 or claim a post-SQL-009 accuracy change until EVAL-002 completes.

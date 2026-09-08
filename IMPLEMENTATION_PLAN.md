@@ -170,10 +170,34 @@ INTERVIEW-001 Demo Script and Architecture Narrative
 | Feature | 目标 | 改善内容 | 状态边界 |
 |---|---|---|---|
 | SEM-001 | 冻结语义绑定、分析语义和规划上下文 | 回答字段、指标、字段取值和当前能力如何进入归因规划 | 只做设计与契约测试 |
-| SEM-002 | 实现 Registry 投影、受控语义绑定与 `PlannerSemanticContext` Builder | 统一归因语义来源，使用 Qdrant/ES 候选兜底且不把全量 Schema 交给模型 | 已实现独立组件，尚未接生产 Graph/API |
+| SEM-002 | 实现 Registry 投影、受控语义绑定与 `PlannerSemanticContext` Builder | 统一归因语义来源，使用 Qdrant/ES 候选兜底且不把全量 Schema 交给模型 | 绑定能力经 CLARIFY-001 接入生产单轮 API；规划上下文 Builder 仍未接生产规划路径 |
 | CLARIFY-001 | 将绑定状态接入单轮 API 与前端 | 缺少或歧义信息时展示具体补充项、候选和推荐完整问题 | 已完成，仅剩真实外部检索准确率未评测 |
 | PLAN-LLM-001 | 实现确定性优先、最多一次模型规划、Validator 与回退 | 让复杂问题能在有限合法路径中动态取舍，同时保持可控和可审计 | 组件已完成，未接入生产 Graph/API |
 | PLAN-UI-001 | 展示规范问题、能力、计划、回退与 Evidence Trace | 让演示和问题定位更直观 | 已完成，纯前端展示 |
 | INTERVIEW-001 | 固化演示脚本和架构讲解 | 清晰说明 LLM 与确定性模块的职责边界 | 已完成，文档产物 |
 
 `AnalysisTask` 继续作为类型化工具调用；后续不另建一套重复的通用 ToolCall。PLAN-LLM-001 组件已可独立调用，接入生产 Graph/API 与真实模型适配器需在新的 Feature 中单独实施。
+
+## 8. MVP 可靠性加固路线
+
+SQL-009 后按以下顺序继续，每项仍须建立独立 Spec、完成验证并在报告后停止；表中“计划”
+不表示已实现能力：
+
+```text
+DOC-002 Status and Capability Truth Sync
+        ↓
+EVAL-002 NL2SQL Evaluation Integrity
+        ↓
+SQL-010 Post-SQL-009 Real-model Rerun
+        ↓
+根据真实失败决定后续 Runtime Remediation
+```
+
+| Feature | 目标 | 状态边界 |
+|---|---|---|
+| DOC-002 | 同步当前状态、能力边界和恢复指引 | 当前文档一致性 Feature |
+| EVAL-002 | 修复结果列语义、Grain、Correction 和 Replay 身份等评测可信度问题 | 计划，未开始；不得更新运行时准确率 |
+| SQL-010 | 在可信评测器上执行 SQL-009 后 Live/Replay 真实复测 | 计划，未开始；不得预先声明提升 |
+
+SQL-010 完成前不根据 SQL-008 的旧失败继续叠加 Runtime 规则。真实复测后若仍有失败，
+每个后续 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。
