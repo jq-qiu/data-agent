@@ -473,3 +473,28 @@ async def test_region_grouping_keeps_region_id_outside_required_metric_columns(
     assert set(plan.required_metric_columns) == {
         "dws_sales_region_daily.order_count"
     }
+
+
+
+@pytest.mark.asyncio
+async def test_registered_join_columns_are_added_to_plan_columns(catalog) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="按商品英文品类统计有效订单GMV",
+        table_infos=[
+            _table("fact_order_item", ("order_id", "product_id", "price")),
+            _table("fact_order", ("order_id", "status")),
+            _table("dim_product", ("product_id",), role="dimension"),
+            _table(
+                "dim_category",
+                ("category_id", "category_name_en"),
+                role="dimension",
+            ),
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=_relationships(catalog),
+    )
+
+    assert "dim_product.category_id" in plan.columns
+    assert "dim_product.product_id" in plan.columns
+    assert "dim_category.category_id" in plan.columns

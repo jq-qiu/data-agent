@@ -45,6 +45,7 @@
 - [SQL-016 Post-SQL-015 Real-model Rerun](SQL-016_COMPLETION.md)
 - [SQL-017 Overall DWS Required Columns](SQL-017_COMPLETION.md)
 - [SQL-018 Post-SQL-017 Real-model Rerun](SQL-018_COMPLETION.md)
+- [SQL-019 Group-by Join-key Canonicalization](SQL-019_COMPLETION.md)
 
 ## 诊断分析与评测
 

@@ -475,7 +475,7 @@ class SchemaLinkingPlanBuilder:
             columns.add(column)
         for query_filter in filters:
             columns.add(query_filter.column_id)
-        for join in dimension_paths:
+        for join in (*planned_joins.values(), *dimension_paths):
             columns.add(_qualified(join.left_table, join.left_column))
             columns.add(_qualified(join.right_table, join.right_column))
 

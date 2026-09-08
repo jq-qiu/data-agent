@@ -206,6 +206,84 @@ def flatten_redundant_metric_subquery(
     return statement.sql(dialect="mysql")
 
 
+def canonicalize_group_join_keys(
+    sql: str,
+    schema_linking_plan: SchemaLinkingPlan | Mapping[str, Any] | None,
+) -> str:
+    """Rewrite GROUP BY columns that are equality-joined to the planned group column."""
+    plan = _coerce_plan(schema_linking_plan)
+    if plan is None:
+        return sql
+    target_columns = {*plan.group_by_columns, *plan.display_columns}
+    if not target_columns:
+        return sql
+    if not plan.join_relations:
+        return sql
+    try:
+        statement = sqlglot.parse_one(sql, read="mysql")
+    except (ParseError, TokenError):
+        return sql
+    if not isinstance(statement, exp.Select):
+        return sql
+
+    table_aliases: dict[str, str] = {}
+    alias_to_table: dict[str, str] = {}
+    table_names: set[str] = set()
+    for table in statement.find_all(exp.Table):
+        table_names.add(table.name)
+        table_aliases[table.name] = table.alias_or_name
+        alias_to_table[table.alias_or_name] = table.name
+
+    targets_by_table: dict[str, set[str]] = {}
+    for column_id in target_columns:
+        table_name, _, column_name = column_id.partition(".")
+        targets_by_table.setdefault(table_name, set()).add(column_name)
+
+    changed = False
+
+    def physical_column_id(column: exp.Column) -> str | None:
+        if not column.table:
+            return None
+        table_name = alias_to_table.get(column.table, column.table)
+        if table_name not in table_names:
+            return None
+        return f"{table_name}.{column.name}"
+
+    for group in statement.find_all(exp.Group):
+        for grouped in tuple(group.expressions):
+            if not isinstance(grouped, exp.Column):
+                continue
+            current_id = physical_column_id(grouped)
+            if current_id is None or current_id in target_columns:
+                continue
+            replacements: list[str] = []
+            for join in plan.join_relations:
+                left_id = f"{join.left_table}.{join.left_column}"
+                right_id = f"{join.right_table}.{join.right_column}"
+                if current_id == left_id and right_id in target_columns:
+                    replacements.append(right_id)
+                elif current_id == right_id and left_id in target_columns:
+                    replacements.append(left_id)
+            if len(replacements) != 1:
+                continue
+            target_id = replacements[0]
+            target_table, _, target_column = target_id.partition(".")
+            if target_table not in table_names or target_column not in targets_by_table.get(
+                target_table,
+                set(),
+            ):
+                continue
+            grouped.replace(
+                exp.column(
+                    target_column,
+                    table=table_aliases.get(target_table, target_table),
+                )
+            )
+            changed = True
+
+    return statement.sql(dialect="mysql") if changed else sql
+
+
 def build_structured_repair_constraints(
     error: str,
     schema_linking_plan: SchemaLinkingPlan | Mapping[str, Any] | None,

@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 394 passed | 当前仓库行为回归 |
+| Python 全量回归 | 397 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -261,8 +261,9 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
 SQL-010 的 26/30、SQL-014 与 SQL-018 的 25/30 均为单次真实运行，模型存在显著
-非确定性。SQL-017 收窄整体 DWS required 列后，SQL-018 中 T03/A02/N04 转通过，
-Grain 升至 7/15；J02/C05 仍失败，T05/N03 为本轮新漂移。
+非确定性。SQL-017 收窄整体 DWS required 列后，SQL-018 中 T03/A02/N04 转通过。
+SQL-019 再补全 registered Join 列并把等价 Join 键 GROUP BY 规范成 Plan 分组列；
+尚未执行新的真实复测。
 
 ## 技术栈
 

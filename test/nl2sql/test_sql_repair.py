@@ -6,6 +6,7 @@ from app.metadata.catalog import load_catalog
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.repair import (
     build_structured_repair_constraints,
+    canonicalize_group_join_keys,
     flatten_redundant_metric_subquery,
     normalize_calendar_numeric_literals,
 )
@@ -298,3 +299,95 @@ def test_flattens_unqualified_derived_column_references() -> None:
 
     assert "SUM(dws_sales_region_daily.order_count)" in flattened
     assert "FROM dws_sales_region_daily" in flattened
+
+
+
+def test_canonicalizes_group_by_to_equality_join_plan_column() -> None:
+    sql = (
+        "SELECT dc.category_name_en AS 英文品类, SUM(foi.price) AS 成交总额 "
+        "FROM fact_order_item foi "
+        "JOIN fact_order fo ON foi.order_id = fo.order_id "
+        "JOIN dim_product dp ON foi.product_id = dp.product_id "
+        "JOIN dim_category dc ON dp.category_id = dc.category_id "
+        "WHERE fo.status NOT IN ('canceled','unavailable') "
+        "GROUP BY dp.category_id, dc.category_name_en "
+        "ORDER BY dc.category_name_en ASC"
+    )
+    plan = SchemaLinkingPlan(
+        tables=(
+            "fact_order_item",
+            "fact_order",
+            "dim_product",
+            "dim_category",
+        ),
+        columns=(
+            "fact_order_item.price",
+            "fact_order_item.order_id",
+            "fact_order_item.product_id",
+            "fact_order.order_id",
+            "fact_order.status",
+            "dim_product.product_id",
+            "dim_product.category_id",
+            "dim_category.category_id",
+            "dim_category.category_name_en",
+        ),
+        join_relations=(
+            SchemaLinkingJoin(
+                relation_id="product_to_category",
+                left_table="dim_product",
+                left_column="category_id",
+                right_table="dim_category",
+                right_column="category_id",
+            ),
+            SchemaLinkingJoin(
+                relation_id="order_item_to_product",
+                left_table="fact_order_item",
+                left_column="product_id",
+                right_table="dim_product",
+                right_column="product_id",
+            ),
+            SchemaLinkingJoin(
+                relation_id="order_item_to_order",
+                left_table="fact_order_item",
+                left_column="order_id",
+                right_table="fact_order",
+                right_column="order_id",
+            ),
+        ),
+        group_by_columns=("dim_category.category_id",),
+        display_columns=("dim_category.category_name_en",),
+    )
+
+    normalized = canonicalize_group_join_keys(sql, plan)
+
+    assert "GROUP BY dc.category_id, dc.category_name_en" in normalized
+    assert "GROUP BY dp.category_id" not in normalized
+
+
+def test_group_join_key_rewrite_requires_unique_plan_target() -> None:
+    sql = (
+        "SELECT dp.category_id, SUM(foi.price) FROM fact_order_item foi "
+        "JOIN dim_product dp ON foi.product_id = dp.product_id "
+        "GROUP BY dp.category_id"
+    )
+    plan = SchemaLinkingPlan(
+        tables=("fact_order_item", "dim_product"),
+        columns=(
+            "fact_order_item.price",
+            "fact_order_item.product_id",
+            "dim_product.product_id",
+            "dim_product.category_id",
+        ),
+        join_relations=(
+            SchemaLinkingJoin(
+                relation_id="order_item_to_product",
+                left_table="fact_order_item",
+                left_column="product_id",
+                right_table="dim_product",
+                right_column="product_id",
+            ),
+        ),
+        group_by_columns=(),
+    )
+
+    assert canonicalize_group_join_keys(sql, plan) == sql

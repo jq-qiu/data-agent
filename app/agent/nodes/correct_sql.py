@@ -11,6 +11,7 @@ from app.agent.state import DataAgentState
 from app.core.log import logger
 from app.nl2sql.repair import (
     build_structured_repair_constraints,
+    canonicalize_group_join_keys,
     flatten_redundant_metric_subquery,
     normalize_calendar_numeric_literals,
 )
@@ -84,6 +85,8 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
         sql = normalize_calendar_numeric_literals(sql, schema_linking_plan)
         # 单表指标修复若仅套了冗余投影子查询，则安全还原为可追踪的物理列查询。
         sql = flatten_redundant_metric_subquery(sql, schema_linking_plan)
+        # 等价 Join 键的 GROUP BY 按 Plan 规范列固定，避免模型使用方案外的同值列。
+        sql = canonicalize_group_join_keys(sql, schema_linking_plan)
 
         logger.info(f"修正SQL成功：{sql}")
         write({"type": "progress", "step": "校正SQL", "status": "success"})

@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-018 已验证 SQL-017 的
-整体 DWS required 修复：25/30，T03/A02/N04 转通过。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-019 已补全已登记 Join 列
+并规范等价 Join 键 GROUP BY；真实复测待 SQL-020。
 
 ## Current Feature
 
-SQL-018 Post-SQL-017 Real-model Rerun.
+SQL-019 Group-by Join-key Canonicalization.
 
-## Feature Status (SQL-018 completed)
+## Feature Status (SQL-019 completed)
 
-Completed and validated. Compatible/Strict Execution 25/30，Grain 7/15，Trace 18/30，
-Gate 3 true，Live/Replay 完全一致。T03/A02/N04 转通过，T05/N03 为新漂移。
+Completed and validated. Builder 把 registered Join 两端列补入 plan.columns；修复器将
+GROUP BY 中等价 Join 键规范成唯一 Plan 分组/显示列。
 
 ## Last Completed Feature
 
-SQL-018 Post-SQL-017 Real-model Rerun.
+SQL-019 Group-by Join-key Canonicalization.
 
 ## Next Feature
 
-SQL-019 Group-by Join-key Canonicalization。当 SQL 分组使用与 Plan 分组列等价的
-Join 键时，确定性地规范为 Plan 分组列；目标 SQL-018 J02。
+SQL-020 Post-SQL-019 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
+Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
 
 ## Last Successful Validation
 
+- SQL-019 join-key canonicalization: schema/repair contract 39 passed；registered Join
+  columns always in plan.columns；equivalent GROUP BY key canonicalized；
 - SQL-018 real-model rerun: compatible/strict Execution 25/30；Grain 7/15；Trace 18/30；
   Gate 3 true；Live/Replay identical；T03/A02/N04 fixed vs SQL-016；
 - SQL-017 overall DWS required columns: schema-linking repair contract 36 passed；
@@ -272,20 +274,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-018 开始前，本地 `HEAD` 为 SQL-017 commit `ac286cc`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-018 不执行远端推送或仓库可见性变更。
+SQL-019 开始前，本地 `HEAD` 为 SQL-018 commit `de9c289`，并已推送至 `origin/main`。
+SQL-019 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-018 实测兼容/严格 Execution 为 25/30，Gate true；Grain Contract 7/15，
-Trace Conformance 18/30。T03/A02/N04 相对 SQL-016 转通过，T05/N03 为新模型漂移；
-J02/C05 仍是稳定 Runtime/语义失败。SQL-010/014/016 都是历史一次运行。
+SQL-019 已本地补全 Join 列并规范化 J02 等价 Group 键，但尚未真实复测；SQL-018 的
+25/30 仍是最近实测。C05 Pivot、N03 缺失 Join/Filter、T05 日历过度 Join 与 TopN 漂移
+仍待处理。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-018_post_sql017_real_model_rerun.md` and
-   `docs/reports/SQL-018_COMPLETION.md`.
-4. Create and freeze a SQL-019 Spec for J02 group-by join-key canonicalization only.
-5. Keep C05 and future reruns outside that runtime repair Feature.
+3. Review `specs/SQL-019_group_join_key_canonicalization.md` and
+   `docs/reports/SQL-019_COMPLETION.md`.
+4. Create and freeze a SQL-020 Spec for the post-SQL-019 Live/Replay rerun.
+5. Keep C05/N03/T05 and future reruns outside that evaluation Feature.
