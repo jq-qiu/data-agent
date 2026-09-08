@@ -5,6 +5,12 @@ import pytest
 from app.metadata.catalog import load_catalog
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.routing import route_after_validation
+from app.nl2sql.schema_linking import (
+    SchemaLinkingFilter,
+    SchemaLinkingJoin,
+    SchemaLinkingOrder,
+    SchemaLinkingPlan,
+)
 from app.nl2sql.validator import SQLValidationError, SQLValidator
 
 ROOT = Path(__file__).parents[2]
@@ -124,6 +130,118 @@ def test_item_count_rejects_non_dws_source(validator: SQLValidator) -> None:
             "SELECT COUNT(order_id) AS item_count FROM fact_order_item",
             ("item_count",),
         )
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT month FROM dim_date WHERE month IN (4, 5)",
+        "SELECT year FROM dim_date WHERE year = '2018'",
+        "SELECT quarter FROM dim_date WHERE quarter = '2'",
+        "SELECT date_id FROM dim_date WHERE date_id = '20180501'",
+    ],
+)
+def test_calendar_literals_reject_type_mismatches(
+    validator: SQLValidator,
+    sql: str,
+) -> None:
+    with pytest.raises(SQLValidationError, match="dim_date"):
+        validator.validate(sql)
+
+
+def test_calendar_literals_accept_canonical_formats(validator: SQLValidator) -> None:
+    result = validator.validate(
+        "SELECT month FROM dim_date "
+        "WHERE month IN ('2018-04', '2018-05') "
+        "AND year = 2018 AND quarter IN (1, 2) AND date_id >= 20180101"
+    )
+
+    assert "'2018-04'" in result.sql
+
+
+def test_schema_plan_enforces_group_order_and_filter(validator: SQLValidator) -> None:
+    plan = SchemaLinkingPlan(
+        tables=("fact_order", "fact_payment"),
+        columns=(
+            "fact_order.order_id",
+            "fact_order.status",
+            "fact_payment.order_id",
+            "fact_payment.payment_type",
+        ),
+        join_relations=(
+            SchemaLinkingJoin(
+                relation_id="payment_to_order",
+                left_table="fact_payment",
+                left_column="order_id",
+                right_table="fact_order",
+                right_column="order_id",
+            ),
+        ),
+        group_by_columns=("fact_payment.payment_type",),
+        filters=(
+            SchemaLinkingFilter(
+                column_id="fact_order.status",
+                values=("canceled", "unavailable"),
+                exclude=True,
+            ),
+        ),
+        order_by=(SchemaLinkingOrder(column="fact_payment.payment_type"),),
+    )
+    missing_filter = (
+        "SELECT p.payment_type, COUNT(*) FROM fact_payment p "
+        "JOIN fact_order o ON p.order_id = o.order_id "
+        "GROUP BY p.payment_type ORDER BY p.payment_type"
+    )
+
+    with pytest.raises(SQLValidationError, match="planned filter"):
+        validator.validate(missing_filter, schema_linking_plan=plan)
+
+    accepted = validator.validate(
+        missing_filter.replace(
+            "p.payment_type,",
+            "p.payment_type AS payment_method,",
+        ).replace(
+            "GROUP BY",
+            "WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY",
+        ).replace("ORDER BY p.payment_type", "ORDER BY payment_method"),
+        schema_linking_plan=plan,
+    )
+    assert "NOT o.status IN" in accepted.sql
+
+
+def test_schema_plan_rejects_extra_calendar_group(validator: SQLValidator) -> None:
+    plan = SchemaLinkingPlan(
+        metric_ids=("order_count",),
+        tables=("dws_sales_region_daily", "dim_date"),
+        columns=(
+            "dws_sales_region_daily.order_count",
+            "dws_sales_region_daily.date_id",
+            "dim_date.date_id",
+            "dim_date.month",
+            "dim_date.year",
+        ),
+        required_metric_columns=("dws_sales_region_daily.order_count",),
+        calendar_table="dim_date",
+        join_relations=(
+            SchemaLinkingJoin(
+                relation_id="region_daily_to_date",
+                left_table="dws_sales_region_daily",
+                left_column="date_id",
+                right_table="dim_date",
+                right_column="date_id",
+            ),
+        ),
+        group_by_columns=("dim_date.month",),
+        order_by=(SchemaLinkingOrder(column="dim_date.month"),),
+    )
+    sql = (
+        "SELECT d.year, d.month, SUM(r.order_count) "
+        "FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id "
+        "GROUP BY d.year, d.month ORDER BY d.year, d.month"
+    )
+
+    with pytest.raises(SQLValidationError, match="GROUP BY"):
+        validator.validate(sql, ("order_count",), schema_linking_plan=plan)
 
 
 def test_category_order_count_requires_category_scope(validator: SQLValidator) -> None:

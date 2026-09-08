@@ -73,6 +73,19 @@ def _metric(metric_id: str) -> dict[str, Any]:
     }
 
 
+def _relationships(catalog) -> list[dict[str, str]]:
+    return [
+        {
+            "relation_id": relation.relation_id,
+            "left_table": relation.left_table,
+            "left_column": relation.left_column,
+            "right_table": relation.right_table,
+            "right_column": relation.right_column,
+        }
+        for relation in catalog.relationships
+    ]
+
+
 class StubPathProvider:
     def __init__(self, path: tuple[SchemaLinkingJoin, ...] = ()) -> None:
         self._path = path
@@ -302,3 +315,119 @@ async def test_comparison_question_adds_dim_date_calendar_table(catalog) -> None
     assert plan.calendar_table == "dim_date"
     assert "dim_date" in plan.tables
     assert any(join.relation_id == "region_daily_to_date" for join in plan.join_relations)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("query", "table_name", "column_name"),
+    [
+        ("Olist订单有哪些订单状态", "fact_order", "status"),
+        ("支付记录中有哪些付款方式", "fact_payment", "payment_type"),
+    ],
+)
+async def test_canonical_value_lists_receive_stable_dimension_order(
+    catalog,
+    query: str,
+    table_name: str,
+    column_name: str,
+) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query=query,
+        table_infos=[_table(table_name, (column_name,))],
+        metric_infos=[],
+        join_relations=[],
+    )
+
+    assert tuple(item.column for item in plan.order_by) == (
+        f"{table_name}.{column_name}",
+    )
+
+
+@pytest.mark.asyncio
+async def test_valid_order_payment_group_adds_filter_group_and_order(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="按付款方式统计有效订单的支付明细记录数",
+        table_infos=[
+            _table("fact_payment", ("payment_type", "order_id")),
+            _table("fact_order", ("order_id",)),
+        ],
+        metric_infos=[],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.group_by_columns == ("fact_payment.payment_type",)
+    assert tuple(item.column for item in plan.order_by) == (
+        "fact_payment.payment_type",
+    )
+    assert len(plan.filters) == 1
+    assert plan.filters[0].column_id == "fact_order.status"
+    assert plan.filters[0].values == ("canceled", "unavailable")
+    assert "fact_order.status" in plan.columns
+
+
+@pytest.mark.asyncio
+async def test_month_comparison_uses_canonical_calendar_group_and_order(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="对比2018年4月和5月的整体订单数",
+        table_infos=[_table("fact_order", ("order_id", "date_id"))],
+        metric_infos=[_metric("order_count")],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.group_by_columns == ("dim_date.month",)
+    assert tuple(item.column for item in plan.order_by) == ("dim_date.month",)
+    assert plan.calendar_table == "dim_date"
+
+
+@pytest.mark.asyncio
+async def test_status_comparison_keeps_fact_grain_and_groups_month_status(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="对比2018年4月和5月已送达与已取消订单的数量",
+        table_infos=[
+            _table("fact_order", ("order_id", "status", "date_id")),
+            _table("dim_date", ("date_id", "month"), role="dimension"),
+        ],
+        metric_infos=[],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.tables == ("dim_date", "fact_order")
+    assert plan.metric_ids == ()
+    assert plan.group_by_columns == ("dim_date.month", "fact_order.status")
+    assert tuple(item.column for item in plan.order_by) == plan.group_by_columns
+
+
+@pytest.mark.asyncio
+async def test_single_status_filter_does_not_force_status_group(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="已取消订单的数量",
+        table_infos=[_table("fact_order", ("order_id", "status"))],
+        metric_infos=[],
+        join_relations=[],
+    )
+
+    assert plan.group_by_columns == ()
+
+
+@pytest.mark.asyncio
+async def test_display_name_grouping_orders_by_requested_display(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="按商品英文品类统计有效订单GMV",
+        table_infos=[
+            _table("fact_order_item", ("order_id", "product_id", "price")),
+            _table("fact_order", ("order_id", "status")),
+            _table("dim_product", ("product_id", "category_id"), role="dimension"),
+            _table(
+                "dim_category",
+                ("category_id", "category_name_en"),
+                role="dimension",
+            ),
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.group_by_columns == ("dim_category.category_id",)
+    assert plan.display_columns == ("dim_category.category_name_en",)
+    assert tuple(item.column for item in plan.order_by) == plan.display_columns
+    assert len(plan.filters) == 1

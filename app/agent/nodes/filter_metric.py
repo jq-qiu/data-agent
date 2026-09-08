@@ -1,5 +1,7 @@
 """结合问题与召回候选筛选相关指标，缩小 SQL 生成上下文。"""
 
+from collections.abc import Collection, Sequence
+
 import yaml
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -10,6 +12,34 @@ from app.agent.llm import llm
 from app.agent.state import DataAgentState, MetricInfoState
 from app.core.log import logger
 from app.prompt.prompt_loader import load_prompt
+
+
+def apply_metric_selection_policy(
+    query: str,
+    metric_infos: Sequence[MetricInfoState],
+    selected_names: Collection[str],
+    grounded_columns: Collection[str] = (),
+) -> list[MetricInfoState]:
+    """对 LLM 选择结果施加 Registry 粒度无法表达的确定性收紧。"""
+
+    normalized = query.casefold()
+    physical_detail_count = "明细" in normalized and any(
+        term in normalized
+        for term in ("记录数", "多少条", "一共有多少", "一共多少")
+    )
+    status_sliced_order_count = "fact_order.status" in grounded_columns
+
+    selected: list[MetricInfoState] = []
+    for metric_info in metric_infos:
+        if metric_info["name"] not in selected_names:
+            continue
+        metric_id = metric_info["id"]
+        if metric_id == "item_count" and physical_detail_count:
+            continue
+        if metric_id == "order_count" and status_sliced_order_count:
+            continue
+        selected.append(metric_info)
+    return selected
 
 
 async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext]):
@@ -45,13 +75,15 @@ async def filter_metric(state: DataAgentState, runtime: Runtime[DataAgentContext
         )
         logger.info(f"调用llm获取所需指标：{result}")
 
-        # 3.遍历已有指标信息列表，将不需要的指标信息移除
-        #  遍历中删除列表元素 可能存在漏删 解决方法采用切片表达式 对原列表进行复制得到列表副本 遍历列表副本 删除操作原列表
-        # 遍历副本是为了安全地从原列表删除未选指标，返回值仍沿用 State 中的结构化定义。
-        for metric_info in metric_infos[:]:
-            metric_name = metric_info["name"]
-            if metric_name not in result:
-                metric_infos.remove(metric_info)
+        grounded_columns = {
+            value.column_id for value in state.get("retrieved_values", [])
+        }
+        metric_infos = apply_metric_selection_policy(
+            query,
+            metric_infos,
+            result,
+            grounded_columns,
+        )
         # 4.更新state中指标信息列表 “metric_infos”
         write({"type": "progress", "step": "过滤指标", "status": "success"})
         logger.info(f"过滤指标成功，指标：{[metric_info['name'] for metric_info in metric_infos]}")

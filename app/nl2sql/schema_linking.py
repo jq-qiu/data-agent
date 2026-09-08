@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -112,6 +112,8 @@ class SchemaLinkingPlan(BaseModel):
             raise ValueError("calendar_table must be in tables")
         if not set(self.display_columns).issubset(self.columns):
             raise ValueError("display_columns must be in columns")
+        if not {item.column_id for item in self.filters}.issubset(self.columns):
+            raise ValueError("filter columns must be in columns")
         for order in self.order_by:
             if order.column not in self.columns:
                 raise ValueError("order_by columns must be in columns")
@@ -197,6 +199,11 @@ _CALENDAR_QUERY_TERMS = (
     "环比",
 )
 _CALENDAR_DATE_COLUMNS = ("date_id", "date", "month", "quarter", "year")
+_CALENDAR_MONTH_GROUP_TERMS = ("按月", "月份")
+_CALENDAR_QUARTER_GROUP_TERMS = ("按季度", "各季度", "季度对比")
+_CALENDAR_DATE_GROUP_TERMS = ("每日", "按日", "按日期")
+_COMPARISON_TERMS = ("对比", "相比", "同比", "环比")
+_VALID_ORDER_TERMS = ("有效订单",)
 
 
 def _normalize(value: str) -> str:
@@ -273,6 +280,26 @@ class SchemaLinkingPlanBuilder:
         self._catalog = catalog
         self._path_provider = path_provider
         self._metric_map = {item.metric_id: item for item in catalog.metrics}
+        self._column_roles = {
+            f"{table.table_name}.{column.name}": column.role
+            for table in catalog.tables
+            for column in table.columns
+        }
+        self._column_terms = {
+            f"{table.table_name}.{column.name}": tuple(
+                dict.fromkeys((column.name, *column.aliases))
+            )
+            for table in catalog.tables
+            for column in table.columns
+        }
+        self._status_value_terms = tuple(
+            tuple(dict.fromkeys((canonical, *aliases)))
+            for table in catalog.tables
+            if table.table_name == "fact_order"
+            for column in table.columns
+            if column.name == "status"
+            for canonical, aliases in column.value_aliases.items()
+        )
 
     async def build(
         self,
@@ -409,13 +436,43 @@ class SchemaLinkingPlanBuilder:
         ):
             display_columns.append("dim_category.category_name_en")
 
+        if (
+            "fact_order" in plan_tables
+            and "fact_order.status" in self._catalog.column_ids
+            and self._status_dimension_requested(query)
+        ):
+            group_columns.append("fact_order.status")
+
+        mentioned_dimensions = self._mentioned_dimension_columns(
+            query,
+            plan_tables,
+        )
+        if not group_columns and _contains_any(query, _AGGREGATE_TERMS) and _contains_any(
+            query,
+            _GROUP_CUES,
+        ):
+            group_columns.extend(mentioned_dimensions)
+
         calendar_table = self._calendar_table(
             query,
             plan_tables,
             dimension_paths,
         )
+        calendar_groups = self._calendar_group_columns(query, calendar_table)
+        group_columns = [
+            *calendar_groups,
+            *(column for column in group_columns if column not in calendar_groups),
+        ]
 
         table_names = tuple(sorted(plan_tables))
+        filters = tuple(
+            dict.fromkeys(
+                (
+                    *self._metric_filters(metric_ids, table_names),
+                    *self._query_filters(query, table_names),
+                )
+            )
+        )
         selected_columns = {
             _qualified(str(ti["name"]), str(column["name"]))
             for ti in table_infos
@@ -434,6 +491,8 @@ class SchemaLinkingPlanBuilder:
         )
         for column in (*group_columns, *display_columns):
             columns.add(column)
+        for query_filter in filters:
+            columns.add(query_filter.column_id)
         for join in dimension_paths:
             columns.add(_qualified(join.left_table, join.left_column))
             columns.add(_qualified(join.right_table, join.right_column))
@@ -462,8 +521,12 @@ class SchemaLinkingPlanBuilder:
                 )
             )
 
-        order_by = self._infer_order(query, group_columns)
-        filters = self._metric_filters(metric_ids)
+        order_by = self._infer_order(
+            query,
+            group_columns,
+            display_columns,
+            columns,
+        )
         plan = SchemaLinkingPlan(
             metric_ids=metric_ids,
             tables=table_names,
@@ -601,6 +664,52 @@ class SchemaLinkingPlanBuilder:
             )
         )
 
+    @staticmethod
+    def _calendar_group_columns(
+        query: str,
+        calendar_table: str | None,
+    ) -> tuple[str, ...]:
+        if calendar_table is None:
+            return ()
+        if _contains_any(query, _CALENDAR_DATE_GROUP_TERMS):
+            return (f"{calendar_table}.date",)
+        if _contains_any(query, _CALENDAR_QUARTER_GROUP_TERMS):
+            return (f"{calendar_table}.quarter",)
+        month_mentions = re.findall(r"(?<!\d)(?:1[0-2]|[1-9])月", query)
+        if _contains_any(query, _CALENDAR_MONTH_GROUP_TERMS) or (
+            len(month_mentions) >= 2 and _contains_any(query, _COMPARISON_TERMS)
+        ):
+            return (f"{calendar_table}.month",)
+        year_mentions = re.findall(r"(?<!\d)\d{4}年", query)
+        if len(year_mentions) >= 2 and _contains_any(query, _COMPARISON_TERMS):
+            return (f"{calendar_table}.year",)
+        return ()
+
+    def _status_dimension_requested(self, query: str) -> bool:
+        if _contains_any(query, ("按订单状态", "各订单状态", "订单状态分布")):
+            return True
+        return sum(_contains_any(query, terms) for terms in self._status_value_terms) >= 2
+
+    def _mentioned_dimension_columns(
+        self,
+        query: str,
+        plan_tables: Mapping[str, Mapping[str, Any]],
+    ) -> tuple[str, ...]:
+        normalized = _normalize(query)
+        matches: list[str] = []
+        for column_id, terms in self._column_terms.items():
+            if _table_of(column_id) not in plan_tables:
+                continue
+            if self._column_roles.get(column_id) != "dimension":
+                continue
+            if any(
+                len(normalized_term := _normalize(term)) >= 2
+                and normalized_term in normalized
+                for term in terms
+            ):
+                matches.append(column_id)
+        return tuple(matches)
+
     async def _ensure_dimension_table(
         self,
         plan_tables: dict[str, Mapping[str, Any]],
@@ -718,20 +827,46 @@ class SchemaLinkingPlanBuilder:
             return None
         return tuple(selected)
 
-    @staticmethod
     def _infer_order(
+        self,
         query: str,
         group_columns: Sequence[str],
+        display_columns: Sequence[str],
+        columns: Collection[str],
     ) -> tuple[SchemaLinkingOrder, ...]:
+        calendar_groups = tuple(
+            column for column in group_columns if column.startswith("dim_date.")
+        )
+        if calendar_groups:
+            return tuple(
+                SchemaLinkingOrder(column=column)
+                for column in group_columns
+            )
+        if display_columns and _contains_any(query, _LIST_TERMS):
+            return tuple(
+                SchemaLinkingOrder(column=column) for column in display_columns
+            )
         if group_columns and _contains_any(query, _LIST_TERMS):
             return tuple(
                 SchemaLinkingOrder(column=column) for column in group_columns
             )
+        if _contains_any(query, _LIST_TERMS):
+            mentioned = self._mentioned_dimension_columns(
+                query,
+                {
+                    _table_of(column): {}
+                    for column in columns
+                },
+            )
+            mentioned = tuple(column for column in mentioned if column in columns)
+            if len(mentioned) == 1:
+                return (SchemaLinkingOrder(column=mentioned[0]),)
         return ()
 
     def _metric_filters(
         self,
         metric_ids: Sequence[str],
+        table_names: Sequence[str],
     ) -> tuple[SchemaLinkingFilter, ...]:
         filters: list[SchemaLinkingFilter] = []
         for metric_id in metric_ids:
@@ -740,7 +875,10 @@ class SchemaLinkingPlanBuilder:
                 continue
             for key, values in metric.status_filters.items():
                 column_id = key.partition(":")[2] if key.startswith("exclude:") else key
-                if column_id in self._catalog.column_ids:
+                if (
+                    column_id in self._catalog.column_ids
+                    and _table_of(column_id) in table_names
+                ):
                     filters.append(
                         SchemaLinkingFilter(
                             column_id=column_id,
@@ -749,6 +887,21 @@ class SchemaLinkingPlanBuilder:
                         )
                     )
         return tuple(filters)
+
+    @staticmethod
+    def _query_filters(
+        query: str,
+        table_names: Sequence[str],
+    ) -> tuple[SchemaLinkingFilter, ...]:
+        if "fact_order" not in table_names or not _contains_any(query, _VALID_ORDER_TERMS):
+            return ()
+        return (
+            SchemaLinkingFilter(
+                column_id="fact_order.status",
+                values=("canceled", "unavailable"),
+                exclude=True,
+            ),
+        )
 
     @staticmethod
     @staticmethod

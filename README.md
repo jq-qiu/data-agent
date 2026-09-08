@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 352 passed | 当前仓库行为回归 |
+| Python 全量回归 | 369 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -244,6 +244,9 @@ SQL-008 使用同一 30 条 Golden 在 SQL-006 后完成真实模型复测：Exe
 从 SQL-002 的 16/30、SQL-005 的 19/30 提升到 22/30；Time 与 TopN 均达到 5/5，
 Comparison 仍为 2/5。历史报告保持不可变。评测器支持 `--mode live|replay`：Live
 将候选运行记录到 Git 忽略的类型安全缓存，Replay 校验身份与摘要后离线复现结果。
+SQL-009 进一步把月份字面量类型、明细行数与业务指标区分、状态粒度、有效订单过滤、
+规范分组和稳定排序固化到确定性 Plan/Validator；22/30 仍是最近一次 SQL-008 实测值，
+需要独立真实复测后才能更新。
 
 ## 技术栈
 

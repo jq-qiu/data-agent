@@ -20,7 +20,11 @@ async def execute_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
         # normalized rendering can change an allowlisted IF node into CASE.
         sql = state["sql"]
         metric_ids = tuple(item["id"] for item in state.get("metric_infos", []))
-        validated_sql = runtime.context["sql_validator"].validate(sql, metric_ids)
+        validated_sql = runtime.context["sql_validator"].validate(
+            sql,
+            metric_ids,
+            schema_linking_plan=state.get("schema_linking_plan"),
+        )
         # 2.调用数仓持久层执行SQL
         dw_mysql_repository = runtime.context["dw_mysql_repository"]
         # Repository 只接受 ValidatedSQL，而不是任意字符串；查询结果由本节点转换为终态 SSE。

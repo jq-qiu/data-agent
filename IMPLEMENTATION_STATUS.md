@@ -2,14 +2,14 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口。SQL-008 已完成 SQL-006 后的 30 条真实模型复测：
-Execution Accuracy 22/30，Live/Replay 评测主体一致，Gate 3 通过。
+MVP V1 的功能与工程链路已收口。SQL-009 已完成 SQL-008 查询语义问题的受控修复：
+指标粒度、日历类型、分组、排序和固定过滤由 Plan/Validator 双重约束。
 
 ## Current Feature
 
-SQL-008 NL2SQL Metric/Calendar Real-Model Rerun.
+SQL-009 NL2SQL Query Semantics Remediation.
 
-## Feature Status (SQL-008 completed)
+## Feature Status (SQL-009 completed)
 
 Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
 GitHub visibility remains unchanged until the separate action-time confirmation.
@@ -18,15 +18,17 @@ README 已覆盖项目定位、两条执行链、ODS→DWD→DWS、混合意图�
 
 ## Last Completed Feature
 
-SQL-008 NL2SQL Metric/Calendar Real-Model Rerun.
+SQL-009 NL2SQL Query Semantics Remediation.
 
 ## Next Feature
 
-执行 SQL-009，针对 SQL-008 暴露的比较月份类型、稳定排序和有效订单过滤问题做受控修复。
+未安排。SQL-009 后的真实模型复测必须作为独立 Feature 执行；未经用户明确授权不继续。
 生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
 
 ## Last Successful Validation
 
+- SQL-009 full pytest regression: 369 passed；Ruff/mypy 0/0；
+- SQL-009 deterministic semantics: 17 个专项覆盖指标选择、日历类型、Plan 分组/排序/过滤；
 - SQL-008 real-model rerun: Execution Accuracy 22/30；Time 5/5；TopN 5/5；Comparison 2/5；
 - SQL-008 Live/Replay: 30 条评测主体一致，Safety 12/12 拒绝，Gate 3 passed；
 - SQL-007 full pytest regression: 352 passed；Ruff/mypy 0/0；

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,6 +13,7 @@ from sqlglot.errors import ParseError
 
 from app.metadata.catalog import MetadataCatalog
 from app.nl2sql.policy import SQLPolicy
+from app.nl2sql.schema_linking import SchemaLinkingFilter, SchemaLinkingPlan
 
 _METRIC_REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
     "order_count": frozenset({"dws_sales_region_daily.order_count"}),
@@ -32,6 +34,10 @@ _METRIC_REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
             "dws_sales_region_daily.required_sku_count",
         }
     ),
+}
+_CALENDAR_LITERAL_PATTERNS = {
+    "dim_date.month": re.compile(r"^\d{4}-(?:0[1-9]|1[0-2])$"),
+    "dim_date.date": re.compile(r"^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$"),
 }
 
 
@@ -90,7 +96,13 @@ class SQLValidator:
             if item.allowed
         }
 
-    def validate(self, sql: str, metric_ids: tuple[str, ...] = ()) -> ValidatedSQL:
+    def validate(
+        self,
+        sql: str,
+        metric_ids: tuple[str, ...] = (),
+        *,
+        schema_linking_plan: SchemaLinkingPlan | Mapping[str, Any] | None = None,
+    ) -> ValidatedSQL:
         """解析并逐层校验候选 SQL，成功时返回规范化且带行数上限的语句。"""
 
         # 先检查原始文本再建 AST，可提前阻断注释绕过、文件访问和会话变量等语法技巧。
@@ -123,6 +135,7 @@ class SQLValidator:
         join_relations, grain_warnings = self._validate_joins(statement, alias_map, virtual_outputs)
         self._validate_window_functions(statement)
         self._validate_functions(statement)
+        self._validate_calendar_literals(statement, tables, alias_map)
         self._validate_sensitive_projection(statement, tables, alias_map)
         self._validate_grain_rules(
             statement,
@@ -131,6 +144,20 @@ class SQLValidator:
             metric_ids,
             alias_map,
         )
+        if schema_linking_plan is not None:
+            plan = (
+                schema_linking_plan
+                if isinstance(schema_linking_plan, SchemaLinkingPlan)
+                else SchemaLinkingPlan.model_validate(schema_linking_plan)
+            )
+            self._validate_schema_linking_constraints(
+                statement,
+                tables,
+                columns,
+                join_relations,
+                alias_map,
+                plan,
+            )
 
         # LIMIT 在 Validator 内统一收紧，不能依赖生成模型主动遵守返回规模约束。
         statement = self._enforce_limit(statement)
@@ -327,6 +354,91 @@ class SQLValidator:
             if name not in self.policy.allowed_functions:
                 raise SQLValidationError(f"function is not allowlisted: {name}")
 
+    def _validate_calendar_literals(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        aliases: dict[str, str],
+    ) -> None:
+        for predicate in statement.find_all(exp.In):
+            if not isinstance(predicate.this, exp.Column):
+                continue
+            column_id = self._source_column_id(predicate.this, tables, aliases)
+            for value in predicate.expressions:
+                self._validate_calendar_literal(column_id, value)
+
+        for predicate in statement.find_all(exp.Between):
+            if not isinstance(predicate.this, exp.Column):
+                continue
+            column_id = self._source_column_id(predicate.this, tables, aliases)
+            self._validate_calendar_literal(column_id, predicate.args.get("low"))
+            self._validate_calendar_literal(column_id, predicate.args.get("high"))
+
+        comparison_types = (exp.EQ, exp.NEQ, exp.GT, exp.GTE, exp.LT, exp.LTE)
+        for predicate in statement.find_all(*comparison_types):
+            left = predicate.this
+            right = predicate.expression
+            if isinstance(left, exp.Column):
+                self._validate_calendar_literal(
+                    self._source_column_id(left, tables, aliases),
+                    right,
+                )
+            if isinstance(right, exp.Column):
+                self._validate_calendar_literal(
+                    self._source_column_id(right, tables, aliases),
+                    left,
+                )
+
+    def _source_column_id(
+        self,
+        column: exp.Column,
+        tables: set[str],
+        aliases: dict[str, str],
+    ) -> str | None:
+        if column.table:
+            source_name = aliases.get(column.table)
+            if source_name in tables:
+                return f"{source_name}.{column.name}"
+            return None
+        candidates = [table for table in tables if column.name in self.table_columns[table]]
+        if len(candidates) == 1:
+            return f"{candidates[0]}.{column.name}"
+        return None
+
+    @staticmethod
+    def _validate_calendar_literal(
+        column_id: str | None,
+        value: exp.Expression | None,
+    ) -> None:
+        if column_id not in {
+            "dim_date.month",
+            "dim_date.date",
+            "dim_date.year",
+            "dim_date.quarter",
+            "dim_date.date_id",
+        }:
+            return
+        if column_id == "dim_date.date" and isinstance(value, exp.Cast):
+            value = value.this
+        if not isinstance(value, exp.Literal):
+            return
+        if column_id in _CALENDAR_LITERAL_PATTERNS:
+            pattern = _CALENDAR_LITERAL_PATTERNS[column_id]
+            if not value.is_string or pattern.fullmatch(str(value.this)) is None:
+                raise SQLValidationError(
+                    f"{column_id} requires its canonical string literal format"
+                )
+            return
+        if not value.is_int:
+            raise SQLValidationError(f"{column_id} requires an integer literal")
+        number = int(value.this)
+        if column_id == "dim_date.year" and len(str(value.this)) != 4:
+            raise SQLValidationError("dim_date.year requires a four-digit integer")
+        if column_id == "dim_date.quarter" and number not in {1, 2, 3, 4}:
+            raise SQLValidationError("dim_date.quarter literal is out of range")
+        if column_id == "dim_date.date_id" and len(str(value.this)) != 8:
+            raise SQLValidationError("dim_date.date_id requires YYYYMMDD integer format")
+
     def _validate_window_functions(self, statement: exp.Expression) -> None:
         for row_number in statement.find_all(exp.RowNumber):
             window = row_number.parent
@@ -414,6 +526,118 @@ class SQLValidator:
             raise SQLValidationError(
                 "category_order_count requires category grouping or a category filter"
             )
+
+    def _validate_schema_linking_constraints(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        columns: set[str],
+        join_relations: list[str],
+        aliases: dict[str, str],
+        plan: SchemaLinkingPlan,
+    ) -> None:
+        if not tables.issubset(plan.tables):
+            raise SQLValidationError("SQL uses a table outside SchemaLinkingPlan")
+        if not columns.issubset(plan.columns):
+            raise SQLValidationError("SQL uses a column outside SchemaLinkingPlan")
+        if not set(join_relations).issubset(
+            {relation.relation_id for relation in plan.join_relations}
+        ):
+            raise SQLValidationError("SQL uses a JOIN outside SchemaLinkingPlan")
+        if not set(plan.required_metric_columns).issubset(columns):
+            raise SQLValidationError("SQL omits required Metric Registry columns")
+        if plan.calendar_table is not None and plan.calendar_table not in tables:
+            raise SQLValidationError("SQL omits the planned calendar table")
+
+        select_aliases = self._select_alias_source_columns(
+            statement,
+            tables,
+            aliases,
+        )
+        expected_groups = {*plan.group_by_columns, *plan.display_columns}
+        if expected_groups:
+            actual_groups: set[str] = set()
+            for group in statement.find_all(exp.Group):
+                for column in group.find_all(exp.Column):
+                    column_id = self._source_column_id(column, tables, aliases)
+                    if column_id is None and not column.table:
+                        column_id = select_aliases.get(column.name)
+                    if column_id is not None:
+                        actual_groups.add(column_id)
+            if actual_groups != expected_groups:
+                raise SQLValidationError("SQL GROUP BY differs from SchemaLinkingPlan")
+
+        if plan.order_by and next(statement.find_all(exp.RowNumber), None) is None:
+            actual_order: list[tuple[str, str]] = []
+            for order in statement.find_all(exp.Order):
+                for ordered in order.expressions:
+                    expression = ordered.this
+                    if not isinstance(expression, exp.Column):
+                        continue
+                    column_id = self._source_column_id(expression, tables, aliases)
+                    if column_id is None and not expression.table:
+                        column_id = select_aliases.get(expression.name)
+                    if column_id is not None:
+                        direction = "desc" if bool(ordered.args.get("desc")) else "asc"
+                        actual_order.append((column_id, direction))
+            expected_order = [
+                (item.column, item.direction) for item in plan.order_by
+            ]
+            if actual_order != expected_order:
+                raise SQLValidationError("SQL ORDER BY differs from SchemaLinkingPlan")
+
+        for required_filter in plan.filters:
+            if not self._has_planned_filter(
+                statement,
+                tables,
+                aliases,
+                required_filter,
+            ):
+                raise SQLValidationError(
+                    f"SQL omits planned filter: {required_filter.column_id}"
+                )
+
+    def _has_planned_filter(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        aliases: dict[str, str],
+        required_filter: SchemaLinkingFilter,
+    ) -> bool:
+        for predicate in statement.find_all(exp.In):
+            if not isinstance(predicate.this, exp.Column):
+                continue
+            column_id = self._source_column_id(predicate.this, tables, aliases)
+            if column_id != required_filter.column_id:
+                continue
+            values = {
+                str(item.this)
+                for item in predicate.expressions
+                if isinstance(item, exp.Literal) and item.is_string
+            }
+            excluded = isinstance(predicate.parent, exp.Not)
+            if excluded == required_filter.exclude and set(required_filter.values) == values:
+                return True
+        return False
+
+    def _select_alias_source_columns(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        aliases: dict[str, str],
+    ) -> dict[str, str]:
+        sources: dict[str, str] = {}
+        for select in statement.find_all(exp.Select):
+            for projection in select.expressions:
+                if not isinstance(projection, exp.Alias):
+                    continue
+                expression = projection.this
+                if not isinstance(expression, exp.Column):
+                    continue
+                column_id = self._source_column_id(expression, tables, aliases)
+                if column_id is not None:
+                    sources[projection.alias] = column_id
+        return sources
 
     def _statement_source_columns(
         self,

@@ -139,6 +139,15 @@ JOIN 关系必须来自 Relationship Registry，不能让 LLM 根据字段名自
 - 字段值是否属于目标列；
 - 时间字段和粒度是否正确。
 
+`SchemaLinkingPlan` 同时冻结 `required_metric_columns`、`calendar_table`、规范分组列、
+显示列、排序和固定过滤。开放式问数的 Validator 必须再次核对 SQL 没有使用方案外
+表、列或 JOIN，并要求 GROUP BY、ORDER BY 和固定过滤与方案一致；生成节点和执行节点
+都使用同一 Plan 复验，不能在修复后绕过。
+
+`dim_date.month` 使用 `YYYY-MM` 字符串，`date` 比较值使用 `YYYY-MM-DD`，`year`、
+`quarter` 和 `date_id` 使用整数。Validator 在执行前拒绝类型错配。物理明细行数不绑定
+业务 `item_count`；包含订单状态筛选/拆分时，不使用缺少状态粒度的 DWS `order_count`。
+
 ## 6. 两类 SQL 路径
 
 ### 6.1 开放式问数

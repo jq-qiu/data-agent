@@ -32,6 +32,7 @@
 - [SQL-006 Metric and Calendar Enforcement](SQL-006_COMPLETION.md)
 - [SQL-007 Live/Replay Evaluation](SQL-007_COMPLETION.md)
 - [SQL-008 Metric/Calendar Real-Model Rerun](SQL-008_COMPLETION.md)
+- [SQL-009 Query Semantics Remediation](SQL-009_COMPLETION.md)
 
 ## 诊断分析与评测
 

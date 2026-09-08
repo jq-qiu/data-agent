@@ -19,9 +19,14 @@ async def validate_sql(state: DataAgentState, runtime: Runtime[DataAgentContext]
         # 1.获取state中生成SQL
         sql = state["sql"]
         metric_ids = tuple(item["id"] for item in state.get("metric_infos", []))
+        schema_linking_plan = state.get("schema_linking_plan")
         sql_validator = runtime.context["sql_validator"]
         # 第一层做 AST、白名单、JOIN、指标口径和粒度检查，得到不可变 ValidatedSQL。
-        validated_sql = sql_validator.validate(sql, metric_ids)
+        validated_sql = sql_validator.validate(
+            sql,
+            metric_ids,
+            schema_linking_plan=schema_linking_plan,
+        )
         # 2.调用数仓持久层通过执行计划关键字验证SQL
         dw_mysql_repository = runtime.context["dw_mysql_repository"]
         # 第二层用数据库 EXPLAIN 验证实际方言可执行性，但此时仍不运行真实业务查询。
