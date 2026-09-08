@@ -235,7 +235,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 26/30 | SQL-010 真实模型复测；兼容与严格口径相同，分类完整性 Gate 未通过 |
+| NL2SQL Execution Accuracy | 25/30 | SQL-014 真实模型复测；Gate 3 通过，兼容/严格口径相同 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
@@ -257,7 +257,10 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 符合判断，并升级 Evaluator v3；SQL-010 作为历史运行仍保留原 Gate false。SQL-011 又
 针对 C02 增加 Plan 限定的修复后日历数字 Literal 规范化。SQL-012 针对 T03 只扁平化
 严格安全的单表裸列派生查询，使必需指标列可回溯。SQL-013 针对 C05 将 Calendar Join、
-精确分组/排序等冻结 Plan 提炼为错误导向修复约束；三项都尚未执行新的真实模型复测。
+精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
+上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
+C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
+SQL-010 的 26/30 是历史一次运行，不等于 SQL-014 的当前 25/30。
 
 ## 技术栈
 
