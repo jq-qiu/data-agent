@@ -52,5 +52,6 @@ SQL 执行错误信息如下：
 12. 分组 TopN 必须保留“先聚合、后 ROW_NUMBER 分组编号、再按 rn <= N 外层过滤”的结构，并在指标排序后追加稳定实体标识 ASC 打破并列；全局 TopN 的 ROW_NUMBER 只使用 ORDER BY，不写 PARTITION BY。禁止 PARTITION BY 1 或任何位置数字；只允许 ROW_NUMBER，不得替换为 RANK、DENSE_RANK、相关 COUNT 子查询或其他窗口函数。COUNT(*) 仅可用于真正的行数聚合，不能用于模拟排名。
 13. 当提供 SchemaLinkingPlan 时，修复不得把表、列或 JOIN 改成方案外的对象；GROUP BY 必须严格等于 group_by_columns 加 display_columns，order_by 与 filters 必须逐项使用，不得额外增加维度或省略有效订单过滤。
 14. 修复时同样遵循 required_metric_columns：DWS 已登记指标不能替换成事实表 COUNT；calendar_table 为 dim_date 时禁止用 LEFT/SUBSTRING/DIV/CONCAT 转换 date_id。dim_date.month/date 使用 YYYY-MM / YYYY-MM-DD 字符串，year/quarter/date_id 使用整数，必须修复 month IN (4, 5) 或 year = '2018' 之类错配。
+15. 当 schema_linking_plan.source_table 存在时，修复不得改回明细事实表或新增 JOIN，且最终 SELECT 的投影数量与顺序必须严格等于 result_projections；不得为了“补全”而增加额外指标列。
 
 输出：

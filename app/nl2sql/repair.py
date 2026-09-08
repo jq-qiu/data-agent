@@ -319,6 +319,13 @@ def build_structured_repair_constraints(
         f"Required ORDER BY exactly: {render(orders)}",
         f"Required filters: {render(filters)}",
     ]
+    if plan.source_table is not None:
+        lines.append(f"Exact source table only: {plan.source_table}")
+    if plan.result_projections:
+        projections = ", ".join(
+            f"{item.kind}({item.column})" for item in plan.result_projections
+        )
+        lines.append(f"Exact result projections in order: {projections}")
     if "GROUP BY differs from SchemaLinkingPlan" in error:
         lines.append(
             "Return one row per required group; do not pivot group values into "

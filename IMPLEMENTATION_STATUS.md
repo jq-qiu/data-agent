@@ -3,27 +3,31 @@
 ## Current Phase
 
 MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-023 完成 V4-flash 同版本
-Head-to-head：25/30，优于 V3.2 的 23/30；模型保持 V4-flash。
+Head-to-head：25/30，优于 V3.2 的 23/30；模型保持 V4-flash。SQL-024 已把整体每日
+GMV 的 DWS 源表与 date_id/SUM(gmv) 投影契约冻结到 Plan/Validator。
 
 ## Current Feature
 
-SQL-023 V4-flash Head-to-head Rerun.
+SQL-024 Daily GMV DWS Source and Projection Contract.
 
-## Feature Status (SQL-023 completed)
+## Feature Status (SQL-024 completed)
 
-Completed and validated. Compatible/Strict Execution 25/30，Metric Accuracy 29/30，
-Validator Acceptance 30/30，Gate 3 true，Live/Replay 完全一致。
+Completed and validated without a real-model rerun. T05 Plan locks
+`dws_sales_region_daily` as the only source and `date_id, SUM(gmv)` as the ordered
+projection contract; Validator rejects DWD/dim_date/extra-column variants by AST.
 
 ## Last Completed Feature
 
-SQL-023 V4-flash Head-to-head Rerun.
+SQL-024 Daily GMV DWS Source and Projection Contract.
 
 ## Next Feature
 
-SQL-024 Post-SQL-023 Continuation。用户已选择 V4-flash；后续按单一失败假设继续修复。
+SQL-025 Post-SQL-024 T05 Real-model Rerun。以 V4-flash 验证 T05 是否从 0 转为 1。
 
 ## Last Successful Validation
 
+- SQL-024 daily GMV source/projection contract: full pytest 410 passed；T05 Plan only
+  dws_sales_region_daily with date_id/SUM(gmv)；historical evaluation artifacts changed: 0；
 - SQL-023 V4 rerun: compatible/strict Execution 25/30；Metric Accuracy 29/30；
   Validator Acceptance 30/30；Gate true；Live/Replay identical；
 - SQL-022 V3.2 rerun: compatible/strict Execution 23/30；Metric Accuracy 26/30；
@@ -287,14 +291,14 @@ SQL-023 开始前，本地 `HEAD` 为 SQL-022 commit `9375a22`，本地 LLM 配�
 ## Known Blockers
 
 SQL-023 实测 V4-flash 同版本 Execution 25/30（Metric 29/30），高于 V3.2 SQL-022 的
-23/30（Metric 26/30），确认 V4-flash 仍是当前最佳模型选择。T04/T05/J02/N02/C05 仍为
-剩余失败。
+23/30（Metric 26/30），确认 V4-flash 仍是当前最佳模型选择。SQL-024 已修复 T05 的
+Plan/Validator 契约但尚未真实复测；T04/J02/N02/C05 仍为剩余失败。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-023_v4_post_sql021_real_model_rerun.md` and
-   `docs/reports/SQL-023_COMPLETION.md`.
+3. Review `specs/SQL-024_daily_gmv_dws_source_projection_contract.md` and
+   `docs/reports/SQL-024_COMPLETION.md`.
 4. Model choice confirmed：V4-flash。
-5. Next：按单一失败假设冻结 SQL-024（T04/T05/J02/N02/C05 中选一个）。
+5. Next：冻结 SQL-025 Post-SQL-024 T05 Real-model Rerun。

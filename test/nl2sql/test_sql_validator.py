@@ -10,6 +10,7 @@ from app.nl2sql.schema_linking import (
     SchemaLinkingJoin,
     SchemaLinkingOrder,
     SchemaLinkingPlan,
+    SchemaLinkingProjection,
 )
 from app.nl2sql.validator import SQLValidationError, SQLValidator
 
@@ -434,3 +435,80 @@ def test_global_top3_derived_table_without_partition_is_allowed(
     assert result.tables == ("fact_order", "fact_order_item")
     assert result.join_relations == ("order_item_to_order",)
     assert "ROW_NUMBER() OVER" in result.sql
+
+def _daily_gmv_contract_plan() -> SchemaLinkingPlan:
+    return SchemaLinkingPlan(
+        metric_ids=("gmv",),
+        tables=("dws_sales_region_daily",),
+        columns=(
+            "dws_sales_region_daily.date_id",
+            "dws_sales_region_daily.gmv",
+        ),
+        join_relations=(),
+        source_table="dws_sales_region_daily",
+        result_projections=(
+            SchemaLinkingProjection(
+                kind="column",
+                column="dws_sales_region_daily.date_id",
+            ),
+            SchemaLinkingProjection(
+                kind="sum",
+                column="dws_sales_region_daily.gmv",
+            ),
+        ),
+        group_by_columns=("dws_sales_region_daily.date_id",),
+        order_by=(SchemaLinkingOrder(column="dws_sales_region_daily.date_id"),),
+    )
+
+
+def test_daily_gmv_contract_accepts_aliased_canonical_sql(
+    validator: SQLValidator,
+) -> None:
+    sql = (
+        "SELECT r.date_id AS 日期, SUM(r.gmv) AS 每日成交总额 "
+        "FROM dws_sales_region_daily r "
+        "WHERE r.date_id BETWEEN 20180501 AND 20180531 "
+        "GROUP BY r.date_id ORDER BY r.date_id"
+    )
+
+    result = validator.validate(
+        sql,
+        ("gmv",),
+        schema_linking_plan=_daily_gmv_contract_plan(),
+    )
+
+    assert "dws_sales_region_daily" in result.tables
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        (
+            "SELECT r.date_id, SUM(r.gmv) FROM dws_sales_region_daily r "
+            "JOIN dim_date d ON r.date_id = d.date_id GROUP BY r.date_id"
+        ),
+        "SELECT SUM(gmv) FROM dws_sales_region_daily",
+        (
+            "SELECT date_id, SUM(gmv), SUM(gmv) FROM dws_sales_region_daily "
+            "GROUP BY date_id"
+        ),
+        (
+            "SELECT SUM(gmv), date_id FROM dws_sales_region_daily "
+            "GROUP BY date_id"
+        ),
+        (
+            "SELECT d.date, SUM(r.gmv) FROM dws_sales_region_daily r "
+            "JOIN dim_date d ON r.date_id = d.date_id GROUP BY d.date"
+        ),
+        (
+            "SELECT i.order_id, SUM(i.price) FROM fact_order_item i "
+            "JOIN fact_order o ON i.order_id = o.order_id GROUP BY i.order_id"
+        ),
+    ],
+)
+def test_daily_gmv_contract_rejects_wrong_source_or_projection(
+    validator: SQLValidator,
+    sql: str,
+) -> None:
+    with pytest.raises(SQLValidationError, match="SchemaLinkingPlan|DWD GMV"):
+        validator.validate(sql, ("gmv",), schema_linking_plan=_daily_gmv_contract_plan())

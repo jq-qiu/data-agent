@@ -522,3 +522,75 @@ async def test_daily_dws_groups_and_orders_by_physical_date_id(catalog) -> None:
     assert tuple(item.column for item in plan.order_by) == (
         "dws_sales_region_daily.date_id",
     )
+
+@pytest.mark.asyncio
+async def test_daily_gmv_dwd_candidates_restore_region_dws_source(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="列出2018年5月每日GMV，按日期排序",
+        table_infos=[
+            _table("fact_order_item", ("order_id", "product_id", "price")),
+            _table("fact_order", ("order_id", "purchase_date", "status")),
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=[],
+    )
+
+    assert plan.source_table == "dws_sales_region_daily"
+    assert plan.tables == ("dws_sales_region_daily",)
+    assert plan.columns == (
+        "dws_sales_region_daily.date_id",
+        "dws_sales_region_daily.gmv",
+    )
+    assert tuple((item.kind, item.column) for item in plan.result_projections) == (
+        ("column", "dws_sales_region_daily.date_id"),
+        ("sum", "dws_sales_region_daily.gmv"),
+    )
+    assert plan.group_by_columns == ("dws_sales_region_daily.date_id",)
+    assert tuple(item.column for item in plan.order_by) == (
+        "dws_sales_region_daily.date_id",
+    )
+
+
+@pytest.mark.asyncio
+async def test_daily_gmv_contract_drops_dwd_and_dim_date_candidates(catalog) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="列出2018年5月每日GMV，按日期排序",
+        table_infos=[
+            _table(
+                "dws_sales_region_daily",
+                ("date_id", "region_id", "gmv"),
+                role="aggregate",
+            ),
+            _table("dim_date", ("date_id", "date", "month"), role="dimension"),
+            _table("fact_order_item", ("order_id", "product_id", "price")),
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.source_table == "dws_sales_region_daily"
+    assert plan.tables == ("dws_sales_region_daily",)
+    assert not any(column.startswith("dim_date.") for column in plan.columns)
+    assert not any(column.startswith("fact_order") for column in plan.columns)
+    assert plan.calendar_table is None
+
+
+@pytest.mark.asyncio
+async def test_daily_gmv_category_dimension_does_not_force_region_dws(
+    catalog,
+) -> None:
+    plan = await SchemaLinkingPlanBuilder(catalog, StubPathProvider()).build(
+        query="按商品品类列出2018年5月每日GMV",
+        table_infos=[
+            _table(
+                "dws_sales_category_daily",
+                ("date_id", "category_id", "gmv"),
+                role="aggregate",
+            )
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=[],
+    )
+
+    assert plan.source_table is None
+    assert plan.tables == ("dws_sales_category_daily",)

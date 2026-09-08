@@ -538,6 +538,10 @@ class SQLValidator:
     ) -> None:
         if not tables.issubset(plan.tables):
             raise SQLValidationError("SQL uses a table outside SchemaLinkingPlan")
+        if plan.source_table is not None and (
+            tables != {plan.source_table} or join_relations
+        ):
+            raise SQLValidationError("SQL source table differs from SchemaLinkingPlan")
         if not columns.issubset(plan.columns):
             raise SQLValidationError("SQL uses a column outside SchemaLinkingPlan")
         if not set(join_relations).issubset(
@@ -595,6 +599,51 @@ class SQLValidator:
             ):
                 raise SQLValidationError(
                     f"SQL omits planned filter: {required_filter.column_id}"
+                )
+
+        self._validate_result_projections(statement, tables, aliases, plan)
+
+    def _validate_result_projections(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        aliases: dict[str, str],
+        plan: SchemaLinkingPlan,
+    ) -> None:
+        """按 AST 校验根 SELECT 的投影数量、顺序与聚合类型。"""
+        if not plan.result_projections:
+            return
+        if not isinstance(statement, exp.Select):
+            raise SQLValidationError(
+                "SQL result projections require a top-level SELECT"
+            )
+        projections = statement.expressions
+        if len(projections) != len(plan.result_projections):
+            raise SQLValidationError(
+                "SQL SELECT projection count differs from SchemaLinkingPlan"
+            )
+        for actual, expected in zip(projections, plan.result_projections):
+            expression = actual.this if isinstance(actual, exp.Alias) else actual
+            if expected.kind == "sum":
+                if not isinstance(expression, exp.Sum):
+                    raise SQLValidationError(
+                        f"projection {expected.column} must be SUM(...)"
+                    )
+                inner = expression.this
+                if not isinstance(inner, exp.Column):
+                    raise SQLValidationError(
+                        f"projection {expected.column} must be a plain SUM column"
+                    )
+                column_id = self._source_column_id(inner, tables, aliases)
+            else:
+                if not isinstance(expression, exp.Column):
+                    raise SQLValidationError(
+                        f"projection {expected.column} must be a plain column"
+                    )
+                column_id = self._source_column_id(expression, tables, aliases)
+            if column_id != expected.column:
+                raise SQLValidationError(
+                    "SQL SELECT projection differs from SchemaLinkingPlan"
                 )
 
     def _has_planned_filter(

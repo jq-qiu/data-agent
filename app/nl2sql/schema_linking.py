@@ -46,6 +46,15 @@ class SchemaLinkingOrder(BaseModel):
     direction: Literal["asc", "desc"] = "asc"
 
 
+class SchemaLinkingProjection(BaseModel):
+    """结果投影契约：根 SELECT 某一列必须是裸物理列或该列的 SUM 聚合。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: Literal["column", "sum"] = "column"
+    column: str = Field(pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+
+
 class SchemaLinkingFilter(BaseModel):
     """从 Metric Registry status_filters 投影出的值过滤，不接收自由文本。"""
 
@@ -80,6 +89,8 @@ class SchemaLinkingPlan(BaseModel):
     join_relations: tuple[SchemaLinkingJoin, ...]
     group_by_columns: tuple[str, ...] = ()
     display_columns: tuple[str, ...] = ()
+    source_table: str | None = None
+    result_projections: tuple[SchemaLinkingProjection, ...] = ()
     filters: tuple[SchemaLinkingFilter, ...] = ()
     order_by: tuple[SchemaLinkingOrder, ...] = ()
     topn: SchemaLinkingTopN | None = None
@@ -117,6 +128,18 @@ class SchemaLinkingPlan(BaseModel):
         for order in self.order_by:
             if order.column not in self.columns:
                 raise ValueError("order_by columns must be in columns")
+        if self.source_table is not None:
+            if self.source_table not in self.tables:
+                raise ValueError("source_table must be in tables")
+            if tuple(self.tables) != (self.source_table,):
+                raise ValueError("source_table requires tables to contain only that table")
+        if self.result_projections:
+            if any(item.column not in self.columns for item in self.result_projections):
+                raise ValueError("result_projections columns must be in columns")
+            if len({item.column for item in self.result_projections}) != len(
+                self.result_projections
+            ):
+                raise ValueError("result_projections columns must be unique")
         return self
 
 
@@ -340,6 +363,14 @@ class SchemaLinkingPlanBuilder:
         }
 
         requested = self._requested_dimensions(query, bool(metric_ids))
+        status_requested = self._status_dimension_requested(query)
+        source_table: str | None = None
+        result_projections: tuple[SchemaLinkingProjection, ...] = ()
+        if metric_ids == ("gmv",):
+            source_table = self._daily_gmv_dws_source(query, requested, status_requested)
+        if source_table is not None:
+            self._restore_single_source_table(plan_tables, source_table)
+            result_projections = self._daily_gmv_projections(source_table)
         dimension_paths: list[SchemaLinkingJoin] = []
         group_columns: list[str] = []
         display_columns: list[str] = []
@@ -466,6 +497,12 @@ class SchemaLinkingPlanBuilder:
             for ti in table_infos
             for column in ti.get("columns", [])
         }
+        if source_table is not None:
+            selected_columns = {
+                _qualified(str(ti["name"]), str(column["name"]))
+                for ti in plan_tables.values()
+                for column in ti.get("columns", [])
+            }
         metric_columns = {
             column
             for column in self._metric_columns(metric_ids)
@@ -490,6 +527,15 @@ class SchemaLinkingPlanBuilder:
             for column in columns
             if column in self._catalog.column_ids and _table_of(column) in table_names
         }
+        if source_table is not None and result_projections:
+            contract_columns = {
+                projection.column for projection in result_projections
+            }
+            contract_columns.update(group_columns)
+            contract_columns.update(display_columns)
+            columns = {
+                column for column in columns if column in contract_columns
+            }
 
         join_list = (*planned_joins.values(), *dimension_paths)
         connected = self._connect_plan_tables(table_names, join_list)
@@ -526,6 +572,8 @@ class SchemaLinkingPlanBuilder:
             display_columns=_unique(display_columns),
             filters=filters,
             order_by=order_by,
+            source_table=source_table,
+            result_projections=result_projections,
             grain_warnings=tuple(grain_warnings),
         )
         validate_schema_linking_plan(plan, self._catalog)
@@ -569,6 +617,54 @@ class SchemaLinkingPlanBuilder:
                 if column_id in self._catalog.column_ids:
                     columns.append(column_id)
         return tuple(dict.fromkeys(columns))
+
+    def _restore_single_source_table(
+        self,
+        plan_tables: dict[str, Mapping[str, Any]],
+        source_table: str,
+    ) -> None:
+        """精确源表契约：清空候选并只保留 Registry 中该汇总表的完整状态。"""
+        definition = self._catalog.table_map.get(source_table)
+        if definition is None:
+            raise SchemaLinkingPlanError(
+                f"metric_source_table_missing_from_catalog:{source_table}"
+            )
+        plan_tables.clear()
+        plan_tables[source_table] = self.table_state_from_catalog(definition)
+
+    def _daily_gmv_dws_source(
+        self,
+        query: str,
+        requested: Mapping[str, bool],
+        status_requested: bool,
+    ) -> str | None:
+        """整体每日 GMV 锁地区 DWS；品类/卖家/状态/月季对比语义不进入该契约。"""
+        if requested.get("region") or requested.get("category"):
+            return None
+        if status_requested:
+            return None
+        if _contains_any(query, ("卖家", "商家", "seller")):
+            return None
+        if not _contains_any(query, _CALENDAR_DATE_GROUP_TERMS):
+            return None
+        if "dws_sales_region_daily" not in self._catalog.table_map:
+            return None
+        return "dws_sales_region_daily"
+
+    def _daily_gmv_projections(
+        self,
+        source_table: str,
+    ) -> tuple[SchemaLinkingProjection, ...]:
+        date_id = _qualified(source_table, "date_id")
+        gmv = _qualified(source_table, "gmv")
+        if date_id not in self._catalog.column_ids or gmv not in self._catalog.column_ids:
+            raise SchemaLinkingPlanError(
+                f"daily_gmv_source_columns_missing:{source_table}"
+            )
+        return (
+            SchemaLinkingProjection(kind="column", column=date_id),
+            SchemaLinkingProjection(kind="sum", column=gmv),
+        )
 
     def _restore_dws_metric_tables(
         self,
@@ -965,6 +1061,13 @@ def validate_schema_linking_plan(
                 issues.append(f"relation_mismatch:{join.relation_id}")
             if relation.left_table not in table_set or relation.right_table not in table_set:
                 issues.append(f"relation_outside_plan:{join.relation_id}")
+    if plan.source_table is not None and plan.source_table not in catalog.table_map:
+        issues.append(f"unknown_source_table:{plan.source_table}")
+    for projection in plan.result_projections:
+        if projection.column not in catalog.column_ids:
+            issues.append(f"unknown_projection_column:{projection.column}")
+        if _table_of(projection.column) not in table_set:
+            issues.append(f"projection_without_table:{projection.column}")
     metric_map = {item.metric_id for item in catalog.metrics}
     for metric_id in plan.metric_ids:
         if metric_id not in metric_map:

@@ -39,6 +39,7 @@ SQL 生成前已确定的 Schema 方案如下：
 13. 当提供 SchemaLinkingPlan 时，SQL 只能引用该方案 tables、columns 和 join_relations 中声明的对象，不得新增方案外表、列或 JOIN。需要按维度聚合时，GROUP BY 必须严格等于 schema_linking_plan.group_by_columns 加 display_columns，不得额外增加 year 等维度；SELECT 只投影问题所需的这些维度。order_by 与 filters 必须逐项使用，不得省略或替换。
 14. 当 schema_linking_plan.required_metric_columns 非空时，相关指标必须引用这些注册来源列所在的表与列，不得用 COUNT(事实表主键) 替代 DWS 已登记口径。
 15. 当 schema_linking_plan.calendar_table 为 dim_date 时，年/月/季度/日期比较必须通过 dim_date 字段表达，禁止对 date_id 使用 LEFT、SUBSTRING、DIV、CONCAT 等字符串或算术转换。dim_date.month 使用 YYYY-MM 字符串（如 '2018-04'），dim_date.date 的比较值使用 YYYY-MM-DD，dim_date.year、quarter、date_id 使用整数；禁止 month IN (4, 5) 或 year = '2018' 这类类型错配。
+16. 当 schema_linking_plan.source_table 存在时，FROM 只能使用该单表并禁止任何 JOIN；最终 SELECT 的投影数量与顺序必须与 result_projections 完全一致，列数一致时禁止额外输出其他指标或维度。例如 source_table 为 dws_sales_region_daily 且 result_projections 为 [column date_id, sum gmv] 时，只能输出 SELECT date_id, SUM(gmv) ... 形式。
 用户查询如下：
 {query}
 

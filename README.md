@@ -262,7 +262,8 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
 DeepSeek-V4-flash SQL-020 为 26/30，SQL-023（同版本 Head-to-head）为 25/30；
 DeepSeek-V3.2 SQL-022 为 23/30。V4-flash 是当前模型选择。J02 差异已定位为 NULL
-category_name_en 的 Golden/Plan 分组语义冲突。
+category_name_en 的 Golden/Plan 分组语义冲突。SQL-024 已将整体每日 GMV 的 DWS 源表
+与 date_id/SUM(gmv) 投影契约固定进 Plan/Validator，尚未真实模型复测。
 
 ## 技术栈
 

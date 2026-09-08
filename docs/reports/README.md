@@ -50,6 +50,7 @@
 - [SQL-021 Daily DWS Calendar Scope](SQL-021_COMPLETION.md)
 - [SQL-022 DeepSeek-V3.2 Real-model Rerun](SQL-022_COMPLETION.md)
 - [SQL-023 V4-flash Head-to-head Rerun](SQL-023_COMPLETION.md)
+- [SQL-024 Daily GMV DWS Source and Projection Contract](SQL-024_COMPLETION.md)
 
 ## 诊断分析与评测
 
