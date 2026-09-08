@@ -153,6 +153,11 @@ JOIN 关系必须来自 Relationship Registry，不能让 LLM 根据字段名自
 1-4 `quarter` 和八位 `date_id` 数字字符串转换为整数 Literal；`month`、`date` 和其他表
 值保持不变。该步骤不放宽 Validator、不新增字段/JOIN，也不增加修复轮数。
 
+SQL-012 还只识别一种冗余派生表：外层单一聚合读取内层单表裸列投影，内层没有 JOIN、
+聚合、分组、排序、Limit、Distinct 或窗口，且最终物理列完全属于 Plan。此时将内层过滤
+原样提升、把外层引用还原为物理列并丢弃未使用投影；任何复杂形状都保持原 SQL 交回
+Validator 拒绝，不能借“修复”改变聚合层级。
+
 ## 6. 两类 SQL 路径
 
 ### 6.1 开放式问数

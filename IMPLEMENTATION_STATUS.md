@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-011 已对最后一次 LLM 修复
-增加 Plan 限定的 `dim_date` 数字 Literal 规范化；SQL-010 真实结果尚未再次复测。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-012 已对严格安全的单表指标
+派生查询执行 Plan 限定扁平化，解决 T03 必需物理列 Trace 丢失假设；尚未真实复测。
 
 ## Current Feature
 
-SQL-011 Calendar Literal Repair Normalization.
+SQL-012 Required Metric Subquery Flattening.
 
-## Feature Status (SQL-011 completed)
+## Feature Status (SQL-012 completed)
 
-Completed and validated. 仅在 Plan Calendar Table 为 `dim_date` 时，把修复 SQL 中规范的
-year/quarter/date_id 数字字符串改为整数；Month/Date、其他表、无效 SQL 均保持不变。
+Completed and validated. 仅扁平化无 Join/聚合/分组/排序/Limit/Distinct/窗口的单表裸列
+派生查询；过滤保持，未用投影删除，最终列必须完全属于含必需指标列的 Plan。
 
 ## Last Completed Feature
 
-SQL-011 Calendar Literal Repair Normalization.
+SQL-012 Required Metric Subquery Flattening.
 
 ## Next Feature
 
-SQL-012 Required Metric Repair Shape。只处理 T03 修复 SQL 引入派生表后 Validator 无法
-回溯必需指标列的单一假设，不处理 C05/J02 或执行真实复测。
+SQL-013 Plan Grouping and Calendar Join Repair。只处理 C05 修复 SQL 偏离冻结分组/日历
+Join 的单一假设，不处理 J02 或执行真实复测。
 
 ## Last Successful Validation
 
+- SQL-012 subquery repair contract: 13 passed；T03 形状通过原 Validator，复杂/越界形状
+  全部安全保持；SQL-010 与历史评测产物 changed: 0；
 - SQL-011 calendar repair contract: 4 passed；Plan/Alias/反向比较/IN 与安全不变路径覆盖；
   SQL-010 与历史评测产物 changed: 0；
 - EVAL-003 classification contract: 11 passed；额外表/列且结果正确仍有主分类；
@@ -256,8 +258,8 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-011 开始前，本地 `HEAD` 为 EVAL-003 commit `dcd1dc1`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-011 不执行远端推送或仓库可见性变更。
+SQL-012 开始前，本地 `HEAD` 为 SQL-011 commit `9892361`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-012 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
@@ -269,7 +271,7 @@ J02、C02、C05，另有 14 条 Trace 偏差和 10/15 Grain 契约偏差。诊�
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-011_calendar_literal_repair_normalization.md` and
-   `docs/reports/SQL-011_COMPLETION.md`.
-4. Create and freeze a SQL-012 Spec for the T03 derived-table repair-shape hypothesis only.
-5. Keep C05, J02 and any real-model rerun outside that repair Feature.
+3. Review `specs/SQL-012_required_metric_subquery_flattening.md` and
+   `docs/reports/SQL-012_COMPLETION.md`.
+4. Create and freeze a SQL-013 Spec for the C05 Plan grouping/calendar hypothesis only.
+5. Keep J02 and any real-model rerun outside that repair Feature.

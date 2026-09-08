@@ -1,5 +1,17 @@
-from app.nl2sql.repair import normalize_calendar_numeric_literals
+from pathlib import Path
+
+import pytest
+
+from app.metadata.catalog import load_catalog
+from app.nl2sql.policy import load_sql_policy
+from app.nl2sql.repair import (
+    flatten_redundant_metric_subquery,
+    normalize_calendar_numeric_literals,
+)
 from app.nl2sql.schema_linking import SchemaLinkingPlan
+from app.nl2sql.validator import SQLValidator
+
+ROOT = Path(__file__).parents[2]
 
 
 def _calendar_plan() -> SchemaLinkingPlan:
@@ -13,6 +25,19 @@ def _calendar_plan() -> SchemaLinkingPlan:
             "dim_date.date",
         ),
         calendar_table="dim_date",
+        join_relations=(),
+    )
+
+
+def _order_count_plan() -> SchemaLinkingPlan:
+    return SchemaLinkingPlan(
+        metric_ids=("order_count",),
+        tables=("dws_sales_region_daily",),
+        columns=(
+            "dws_sales_region_daily.order_count",
+            "dws_sales_region_daily.date_id",
+        ),
+        required_metric_columns=("dws_sales_region_daily.order_count",),
         join_relations=(),
     )
 
@@ -67,3 +92,90 @@ def test_leaves_sql_unchanged_without_eligible_plan_or_valid_parse() -> None:
     assert normalize_calendar_numeric_literals("SELECT 'unterminated", _calendar_plan()) == (
         "SELECT 'unterminated"
     )
+
+
+def test_flattens_redundant_required_metric_subquery_and_passes_validator() -> None:
+    sql = (
+        "SELECT SUM(t.order_count) AS total_orders "
+        "FROM (SELECT order_count, date_id, region_id "
+        "FROM dws_sales_region_daily "
+        "WHERE date_id >= 20180501 AND date_id < 20180601) t"
+    )
+
+    flattened = flatten_redundant_metric_subquery(sql, _order_count_plan())
+
+    assert "FROM dws_sales_region_daily" in flattened
+    assert "SUM(dws_sales_region_daily.order_count)" in flattened
+    assert "region_id" not in flattened
+    assert "date_id >= 20180501 AND date_id < 20180601" in flattened
+    validator = SQLValidator(
+        load_catalog(ROOT / "conf" / "meta_config.yaml"),
+        load_sql_policy(ROOT / "conf" / "sql_policy.yaml"),
+    )
+    validated = validator.validate(
+        flattened,
+        ("order_count",),
+        schema_linking_plan=_order_count_plan(),
+    )
+    assert set(validated.columns) == {
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id",
+    }
+
+
+def test_flattens_aliased_inner_projection_to_physical_column() -> None:
+    sql = (
+        "SELECT SUM(x.orders) AS total_orders "
+        "FROM (SELECT r.order_count AS orders, r.date_id "
+        "FROM dws_sales_region_daily r WHERE r.date_id >= 20180501) x"
+    )
+
+    flattened = flatten_redundant_metric_subquery(sql, _order_count_plan())
+
+    assert "SUM(r.order_count)" in flattened
+    assert "FROM dws_sales_region_daily AS r" in flattened
+    assert "WHERE r.date_id >= 20180501" in flattened
+
+
+@pytest.mark.parametrize(
+    "sql",
+    (
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT SUM(order_count) AS order_count FROM dws_sales_region_daily) t"
+        ),
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT order_count FROM dws_sales_region_daily GROUP BY order_count) t"
+        ),
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT DISTINCT order_count FROM dws_sales_region_daily) t"
+        ),
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT order_count FROM dws_sales_region_daily LIMIT 5) t"
+        ),
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT order_count, region_id FROM dws_sales_region_daily "
+            "WHERE region_id = 'SP') t"
+        ),
+        (
+            "SELECT SUM(t.order_count) FROM "
+            "(SELECT order_count FROM dws_sales_region_daily) t WHERE t.order_count > 0"
+        ),
+    ),
+)
+def test_leaves_unsafe_or_plan_divergent_subqueries_unchanged(sql: str) -> None:
+    assert flatten_redundant_metric_subquery(sql, _order_count_plan()) == sql
+
+
+def test_leaves_subquery_unchanged_without_required_metric_contract() -> None:
+    sql = (
+        "SELECT SUM(t.order_count) FROM "
+        "(SELECT order_count FROM dws_sales_region_daily) t"
+    )
+    plan = _order_count_plan().model_copy(update={"required_metric_columns": ()})
+
+    assert flatten_redundant_metric_subquery(sql, plan) == sql

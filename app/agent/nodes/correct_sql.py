@@ -9,7 +9,10 @@ from app.agent.context import DataAgentContext
 from app.agent.llm import llm
 from app.agent.state import DataAgentState
 from app.core.log import logger
-from app.nl2sql.repair import normalize_calendar_numeric_literals
+from app.nl2sql.repair import (
+    flatten_redundant_metric_subquery,
+    normalize_calendar_numeric_literals,
+)
 from app.prompt.prompt_loader import load_prompt
 
 
@@ -73,6 +76,8 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
         )
         # 最后一次修复输出在重回 Validator 前，仅做 Plan 允许的确定性日历数字类型归一。
         sql = normalize_calendar_numeric_literals(sql, schema_linking_plan)
+        # 单表指标修复若仅套了冗余投影子查询，则安全还原为可追踪的物理列查询。
+        sql = flatten_redundant_metric_subquery(sql, schema_linking_plan)
 
         logger.info(f"修正SQL成功：{sql}")
         write({"type": "progress", "step": "校正SQL", "status": "success"})
