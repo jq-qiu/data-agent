@@ -48,6 +48,7 @@
 - [SQL-019 Group-by Join-key Canonicalization](SQL-019_COMPLETION.md)
 - [SQL-020 Post-SQL-019 Real-model Rerun](SQL-020_COMPLETION.md)
 - [SQL-021 Daily DWS Calendar Scope](SQL-021_COMPLETION.md)
+- [SQL-022 DeepSeek-V3.2 Real-model Rerun](SQL-022_COMPLETION.md)
 
 ## 诊断分析与评测
 

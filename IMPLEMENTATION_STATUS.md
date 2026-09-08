@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-021 已让 Daily DWS Plan
-直接按 date_id 分组排序；真实复测待 SQL-022。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-022 使用 DeepSeek-V3.2
+完成复测：23/30、Gate true；与 V4-flash 的 26/30 存在能力差异。
 
 ## Current Feature
 
-SQL-021 Daily DWS Calendar Scope.
+SQL-022 Post-SQL-021 Real-model Rerun (DeepSeek-V3.2).
 
-## Feature Status (SQL-021 completed)
+## Feature Status (SQL-022 completed)
 
-Completed and validated. “每日/按日/按日期”且无既有分组时，Plan 直接使用候选表中最优
-date_id（DWS/aggregate）作为 group/order 列。
+Completed and validated. Compatible/Strict Execution 23/30，Metric Accuracy 26/30，
+Correction 4/10，Gate 3 true，Live/Replay 完全一致。
 
 ## Last Completed Feature
 
-SQL-021 Daily DWS Calendar Scope.
+SQL-022 Post-SQL-021 Real-model Rerun (DeepSeek-V3.2).
 
 ## Next Feature
 
-SQL-022 Post-SQL-021 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
-Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
+SQL-023 Model Choice Validation。当前配置 DeepSeek-V3.2 为 23/30，V4-flash 最近为
+26/30；需用户确认成本/质量取舍后再冻结后续 Feature。
 
 ## Last Successful Validation
 
+- SQL-022 V3.2 rerun: compatible/strict Execution 23/30；Metric Accuracy 26/30；
+  Correction 4/10；Gate true；Live/Replay identical；
 - SQL-021 daily DWS scope: schema-linking contract 20 passed；Daily Plan group/order =
   DWS date_id；SQL-020/historical artifacts changed: 0；
 - SQL-020 real-model rerun: compatible/strict Execution 26/30；Metric Accuracy 30/30；
@@ -278,20 +280,21 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-021 开始前，本地 `HEAD` 为 SQL-020 commit `5191813`。SQL-021 不执行远端推送
-或仓库可见性变更。
+SQL-022 开始前，本地 `HEAD` 为 SQL-021 commit `f2879f1`。本地 LLM 配置已切换为
+`deepseek-ai/DeepSeek-V3.2`；SQL-022 使用该配置完成评测。
 
 ## Known Blockers
 
-SQL-021 已本地让 Daily DWS 按 date_id 分组，但尚未真实复测；SQL-020 的 26/30 仍是
-最近实测。J02 差异已定位为 3 个 NULL category_name_en 在 name-only 与 id+name 分组间
-的 Golden/Plan 语义冲突；C05/N02 仍待处理。
+SQL-022 实测 V3.2 Execution 23/30（Metric 26/30），低于 V4-flash SQL-020 的 26/30
+（Metric 30/30）。V3.2 需要更多修复（10 次、成功 4 次），说明 SQL 生成能力更弱但成本
+是否更低需用户自行评估。J02/C05/N02/T05 及模型取舍仍待后续。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-021_daily_dws_calendar_scope.md` and
-   `docs/reports/SQL-021_COMPLETION.md`.
-4. Create and freeze a SQL-022 Spec for the post-SQL-021 Live/Replay rerun.
-5. Keep J02 semantic conflict and C05/N02 outside that evaluation Feature.
+3. Review `specs/SQL-022_v32_post_sql021_real_model_rerun.md` and
+   `docs/reports/SQL-022_COMPLETION.md`.
+4. Confirm V3.2/V4-flash model choice，再冻结后续单一修复 Feature。
+5. J02 语义冲突、C05/N02/T05 与模型取舍分开处理。
+6. Create and freeze a SQL-023 Spec once the model choice is confirmed.
