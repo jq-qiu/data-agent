@@ -8,7 +8,7 @@ import hashlib
 import json
 import subprocess
 import sys
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -29,11 +29,16 @@ from app.metadata.catalog import load_catalog
 from app.nl2sql.evaluation import (
     NL2SQLGoldenCase,
     NL2SQLRun,
+    RecordingRunner,
+    ReplayCacheIdentity,
+    ReplayRunner,
     evaluate_nl2sql_cases,
     evaluate_safety_probes,
     load_nl2sql_golden,
+    load_replay_cache,
     result_checksum,
     write_evaluation_artifacts,
+    write_replay_cache,
 )
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.validator import SQLValidator
@@ -46,6 +51,7 @@ ROOT = Path(__file__).parents[2]
 DEFAULT_GOLDEN = ROOT / "data" / "evaluation" / "nl2sql_golden_v1.json"
 DEFAULT_REPORT = ROOT / "data" / "reports" / "SQL-002_nl2sql_evaluation.json"
 DEFAULT_RUN_DIR = ROOT / "eval_runs" / "sql-002-baseline-v1"
+DEFAULT_REPLAY_CACHE = ROOT / ".tmp" / "nl2sql_replay_v1.json"
 CATALOG_PATH = ROOT / "conf" / "meta_config.yaml"
 POLICY_PATH = ROOT / "conf" / "sql_policy.yaml"
 PROMPT_PATHS = (
@@ -55,6 +61,7 @@ PROMPT_PATHS = (
     ROOT / "prompts" / "generate_sql.prompt",
     ROOT / "prompts" / "correct_sql.prompt",
 )
+EVALUATOR_VERSION = "sql-evaluator-v1"
 
 
 def _digest_paths(paths: tuple[Path, ...]) -> str:
@@ -192,24 +199,41 @@ async def run_evaluation(
     freeze_reference: bool,
     run_id: str = "sql-002-baseline-v1",
     skip_reference: bool = False,
+    mode: str = "live",
+    replay_cache: Path = DEFAULT_REPLAY_CACHE,
 ) -> dict[str, Any]:
     if freeze_reference and skip_reference:
         raise RuntimeError("skip_reference cannot be combined with freeze_reference")
+    if mode not in {"live", "replay"}:
+        raise ValueError("mode must be live or replay")
+    if mode == "replay" and freeze_reference:
+        raise RuntimeError("replay mode cannot freeze reference checksums")
     if app_config.db_dw.database != "data_agent_v1_dw":
         raise RuntimeError("SQL-002 may only query the isolated data_agent_v1_dw database")
     catalog = load_catalog(CATALOG_PATH)
     policy = load_sql_policy(POLICY_PATH)
     validator = SQLValidator(catalog, policy)
     dataset_version, cases = load_nl2sql_golden(golden_path)
+    dataset_sha256 = hashlib.sha256(golden_path.read_bytes()).hexdigest()
+    prompt_bundle_sha256 = _digest_paths(PROMPT_PATHS)
+    replay_identity = ReplayCacheIdentity(
+        dataset_sha256=dataset_sha256,
+        prompt_bundle_sha256=prompt_bundle_sha256,
+        metadata_version=catalog.version,
+        sql_policy_version=policy.version,
+        model_name=app_config.llm.model,
+        evaluator_version=EVALUATOR_VERSION,
+    )
 
-    dw_mysql_client_manager.init()
-    meta_mysql_client_manager.init()
-    embedding_client_manager.init()
-    qdrant_client_manager.init()
-    es_client_manager.init()
+    if mode == "live":
+        dw_mysql_client_manager.init()
+        meta_mysql_client_manager.init()
+        embedding_client_manager.init()
+        qdrant_client_manager.init()
+        es_client_manager.init()
     try:
         reference_runner = None
-        if not skip_reference:
+        if mode == "live" and not skip_reference:
             reference_runner = ReferenceRunner(validator)
             if freeze_reference:
                 await _freeze_reference_checksums(
@@ -222,11 +246,25 @@ async def run_evaluation(
         if any(case.expected_result_sha256 is None for case in cases):
             raise RuntimeError("reference checksums are not frozen; run with --freeze-reference")
 
+        recording_runner: RecordingRunner | None = None
+        candidate_runner: Callable[[NL2SQLGoldenCase], Awaitable[NL2SQLRun]]
+        if mode == "live":
+            recording_runner = RecordingRunner(LiveGraphRunner(validator))
+            candidate_runner = recording_runner
+        else:
+            replay_runs = load_replay_cache(
+                replay_cache,
+                replay_identity,
+                tuple(case.case_id for case in cases),
+            )
+            candidate_runner = ReplayRunner(replay_runs)
         evaluation = await evaluate_nl2sql_cases(
             cases,
-            LiveGraphRunner(validator),
+            candidate_runner,
             reference_runner,
         )
+        if recording_runner is not None:
+            write_replay_cache(replay_cache, replay_identity, recording_runner.runs)
         safety = evaluate_safety_probes(validator)
         failure_count = sum(evaluation["error_counts"].values())
         classified_failures = sum(
@@ -262,12 +300,14 @@ async def run_evaluation(
             "run_id": run_id,
             "generated_at_utc": datetime.now(UTC).isoformat(),
             "source_commit": _source_commit(),
-            "evaluator_version": "sql-evaluator-v1",
+            "evaluator_version": EVALUATOR_VERSION,
+            "evaluation_mode": mode,
             "dataset_version": dataset_version,
-            "dataset_sha256": hashlib.sha256(golden_path.read_bytes()).hexdigest(),
+            "dataset_sha256": dataset_sha256,
             "metadata_version": catalog.version,
             "sql_policy_version": policy.version,
-            "prompt_bundle_sha256": _digest_paths(PROMPT_PATHS),
+            "prompt_bundle_sha256": prompt_bundle_sha256,
+            "replay_cache_sha256": hashlib.sha256(replay_cache.read_bytes()).hexdigest(),
             "model": {
                 "name": app_config.llm.model,
                 "temperature": 0,
@@ -286,10 +326,11 @@ async def run_evaluation(
         write_evaluation_artifacts(result, report_path=report_path, run_dir=run_dir)
         return result
     finally:
-        await dw_mysql_client_manager.close()
-        await meta_mysql_client_manager.close()
-        await qdrant_client_manager.close()
-        await es_client_manager.close()
+        if mode == "live":
+            await dw_mysql_client_manager.close()
+            await meta_mysql_client_manager.close()
+            await qdrant_client_manager.close()
+            await es_client_manager.close()
 
 
 def main() -> None:
@@ -300,6 +341,8 @@ def main() -> None:
     parser.add_argument("--run-id", default="sql-002-baseline-v1")
     parser.add_argument("--freeze-reference", action="store_true")
     parser.add_argument("--skip-reference", action="store_true")
+    parser.add_argument("--mode", choices=("live", "replay"), default="live")
+    parser.add_argument("--replay-cache", type=Path, default=DEFAULT_REPLAY_CACHE)
     args = parser.parse_args()
     logger.remove()
     logger.add(sys.stderr, level="ERROR")
@@ -311,6 +354,8 @@ def main() -> None:
             freeze_reference=args.freeze_reference,
             run_id=args.run_id,
             skip_reference=args.skip_reference,
+            mode=args.mode,
+            replay_cache=args.replay_cache,
         )
     )
     print(

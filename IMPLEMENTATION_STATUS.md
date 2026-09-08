@@ -2,14 +2,14 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口。SQL-006 已完成指标公式与日历约束：
-Plan/Prompt/Validator 已锁定 DWS 注册口径和 dim_date 时间表达。
+MVP V1 的功能与工程链路已收口。SQL-007 已完成 NL2SQL Live/Replay 评测模式：
+Live 记录类型安全缓存，Replay 校验身份与完整性后离线复现。
 
 ## Current Feature
 
-SQL-006 Metric Formula and Calendar Enforcement.
+SQL-007 NL2SQL Live/Replay Evaluation.
 
-## Feature Status (SQL-006 completed)
+## Feature Status (SQL-007 completed)
 
 Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
 GitHub visibility remains unchanged until the separate action-time confirmation.
@@ -18,15 +18,17 @@ README 已覆盖项目定位、两条执行链、ODS→DWD→DWS、混合意图�
 
 ## Last Completed Feature
 
-SQL-006 Metric Formula and Calendar Enforcement.
+SQL-007 NL2SQL Live/Replay Evaluation.
 
 ## Next Feature
 
-建立 SQL-007 Live/Replay 评测或新一轮真实复测。
+执行 SQL-008 SQL-006 后的 30 条 Golden 真实模型复测，并用 Replay 验证结果一致。
 生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
 
 ## Last Successful Validation
 
+- SQL-007 full pytest regression: 352 passed；Ruff/mypy 0/0；
+- SQL-007 replay contract: 3 个专项覆盖数据库标量类型、身份/内容校验和 Live→Replay 一致性；
 - SQL-006 implementation complete, 349 pytest passed, Ruff/mypy clean.
 - SHOWCASE-001 full pytest regression: 338 passed；frontend 11 passed/build passed；
   Ruff/mypy 0/0；

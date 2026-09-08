@@ -98,6 +98,17 @@ Correction Success Rate
 
 Execution Accuracy 以规范化结果集为主，不要求 SQL 字符串完全一致。
 
+### 4.1 Live/Replay 运行模式
+
+NL2SQL 评测分为两种模式。Live 模式调用真实模型、检索服务和隔离 DW，并把每条
+`NL2SQLRun` 写入本地 Replay Cache；Replay 模式只读取该缓存和 Golden 中已冻结的
+结果校验和，不初始化外部客户端，也不重跑参考 SQL。
+
+Replay Cache 必须绑定 Golden Dataset、Prompt Bundle、Metadata、SQL Policy、模型和
+Evaluator 版本，记录内容完整性 SHA-256，并要求 Case ID 与当前 Golden 精确一致。
+Decimal、日期时间和 bytes 等数据库标量使用带类型编码保存，避免重放时改变结果校验和。
+默认缓存位于 Git 忽略的 `.tmp/`；不得提交生产查询结果、凭据或连接信息。
+
 ## 5. Diagnosis Golden Dataset
 
 首版固定 10 条：

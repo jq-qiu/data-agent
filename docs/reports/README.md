@@ -30,6 +30,7 @@
 - [SQL-004 Deterministic SchemaLinkingPlan](SQL-004_COMPLETION.md)
 - [SQL-005 SchemaLinkingPlan Rerun](SQL-005_COMPLETION.md)
 - [SQL-006 Metric and Calendar Enforcement](SQL-006_COMPLETION.md)
+- [SQL-007 Live/Replay Evaluation](SQL-007_COMPLETION.md)
 
 ## 诊断分析与评测
 

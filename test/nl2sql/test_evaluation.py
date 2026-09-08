@@ -1,5 +1,8 @@
+import json
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 
@@ -8,10 +11,15 @@ from app.nl2sql.evaluation import (
     BUCKETS,
     NL2SQLGoldenCase,
     NL2SQLRun,
+    RecordingRunner,
+    ReplayCacheIdentity,
+    ReplayRunner,
     evaluate_nl2sql_cases,
     evaluate_safety_probes,
     load_nl2sql_golden,
+    load_replay_cache,
     result_checksum,
+    write_replay_cache,
 )
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.validator import SQLValidator
@@ -109,3 +117,111 @@ async def test_evaluator_compares_results_and_reports_all_metrics() -> None:
     assert result["metrics"]["correction_success_rate"] is None
     assert result["bucket_metrics"]["aggregate"]["execution_accuracy"] == 1
     assert result["latency_seconds"]["max"] >= 0
+
+
+def _replay_identity() -> ReplayCacheIdentity:
+    return ReplayCacheIdentity(
+        dataset_sha256="dataset",
+        prompt_bundle_sha256="prompts",
+        metadata_version="metadata",
+        sql_policy_version="policy",
+        model_name="model",
+    )
+
+
+def test_replay_cache_round_trip_preserves_database_scalar_types() -> None:
+    rows = [
+        {
+            "decimal": Decimal("10.00"),
+            "date": date(2018, 5, 1),
+            "datetime": datetime(2018, 5, 1, 12, 30, tzinfo=UTC),
+            "time": time(12, 30),
+            "bytes": b"data",
+            "int": 2,
+            "float": 1.5,
+            "bool": True,
+            "null": None,
+            "text": "SP",
+        }
+    ]
+    run = NL2SQLRun(
+        generated_sql="SELECT 1",
+        validated_sql="SELECT 1 LIMIT 500",
+        rows=rows,
+        metric_ids=("gmv",),
+        validation_trace={"tables": ["dws_sales_region_daily"]},
+        latency_seconds=0.25,
+    )
+
+    (ROOT / ".tmp").mkdir(exist_ok=True)
+    with TemporaryDirectory(dir=ROOT / ".tmp") as directory:
+        cache_path = Path(directory) / "replay.json"
+        write_replay_cache(cache_path, _replay_identity(), {"case": run})
+        loaded = load_replay_cache(cache_path, _replay_identity(), ("case",))
+
+    assert loaded["case"].rows == rows
+    assert result_checksum(loaded["case"].rows or [], ordered=True) == result_checksum(
+        rows,
+        ordered=True,
+    )
+
+
+def test_replay_cache_rejects_tampering_and_stale_identity() -> None:
+    (ROOT / ".tmp").mkdir(exist_ok=True)
+    with TemporaryDirectory(dir=ROOT / ".tmp") as directory:
+        cache_path = Path(directory) / "replay.json"
+        write_replay_cache(cache_path, _replay_identity(), {"case": NL2SQLRun()})
+
+        identity_values = _replay_identity().__dict__
+        stale = ReplayCacheIdentity(**{**identity_values, "model_name": "other"})
+        with pytest.raises(ValueError, match="identity mismatch"):
+            load_replay_cache(cache_path, stale, ("case",))
+
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        payload["runs"]["case"]["generated_sql"] = "SELECT 2"
+        cache_path.write_text(json.dumps(payload), encoding="utf-8")
+        with pytest.raises(ValueError, match="checksum mismatch"):
+            load_replay_cache(cache_path, _replay_identity(), ("case",))
+
+
+@pytest.mark.asyncio
+async def test_recorded_run_replays_identical_evaluation() -> None:
+    rows = [{"gmv": Decimal("10.00")}]
+    case = NL2SQLGoldenCase(
+        case_id="replay",
+        bucket="aggregate",
+        question="GMV是多少",
+        expected_metric_ids=("gmv",),
+        expected_tables=("dws_sales_region_daily",),
+        expected_columns=("dws_sales_region_daily.gmv",),
+        expected_join_relations=(),
+        reference_sql="SELECT SUM(gmv) FROM dws_sales_region_daily",
+        expected_result_sha256=result_checksum(rows, ordered=False),
+        risk_tags=(),
+        result_ordered=False,
+    )
+
+    async def candidate(_: NL2SQLGoldenCase) -> NL2SQLRun:
+        return NL2SQLRun(
+            generated_sql=case.reference_sql,
+            validated_sql=f"{case.reference_sql} LIMIT 500",
+            rows=rows,
+            metric_ids=("gmv",),
+            validation_trace={
+                "tables": ["dws_sales_region_daily"],
+                "columns": ["dws_sales_region_daily.gmv"],
+                "join_relations": [],
+            },
+            latency_seconds=0.5,
+        )
+
+    recorder = RecordingRunner(candidate)
+    live_result = await evaluate_nl2sql_cases((case,), recorder)
+    (ROOT / ".tmp").mkdir(exist_ok=True)
+    with TemporaryDirectory(dir=ROOT / ".tmp") as directory:
+        cache_path = Path(directory) / "replay.json"
+        write_replay_cache(cache_path, _replay_identity(), recorder.runs)
+        cached = load_replay_cache(cache_path, _replay_identity(), (case.case_id,))
+    replay_result = await evaluate_nl2sql_cases((case,), ReplayRunner(cached))
+
+    assert replay_result == live_result

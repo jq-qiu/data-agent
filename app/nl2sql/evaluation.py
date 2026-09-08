@@ -25,6 +25,7 @@ ERROR_CATEGORIES = (
     "SQL Generation Error",
     "SQL Execution Error",
 )
+REPLAY_SCHEMA_VERSION = "nl2sql-replay-v1"
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,240 @@ class NL2SQLRun:
     latency_seconds: float = 0.0
     input_tokens: int | None = None
     output_tokens: int | None = None
+
+
+@dataclass(frozen=True)
+class ReplayCacheIdentity:
+    dataset_sha256: str
+    prompt_bundle_sha256: str
+    metadata_version: str
+    sql_policy_version: str
+    model_name: str
+    evaluator_version: str = "sql-evaluator-v1"
+
+
+def _encode_replay_cell(value: Any) -> dict[str, Any]:
+    if value is None:
+        return {"type": "null"}
+    if isinstance(value, bool):
+        return {"type": "bool", "value": value}
+    if isinstance(value, int):
+        return {"type": "int", "value": str(value)}
+    if isinstance(value, float):
+        return {"type": "float", "value": repr(value)}
+    if isinstance(value, Decimal):
+        return {"type": "decimal", "value": str(value)}
+    if isinstance(value, datetime):
+        return {"type": "datetime", "value": value.isoformat()}
+    if isinstance(value, date):
+        return {"type": "date", "value": value.isoformat()}
+    if isinstance(value, time):
+        return {"type": "time", "value": value.isoformat()}
+    if isinstance(value, bytes):
+        return {"type": "bytes", "value": value.hex()}
+    if isinstance(value, str):
+        return {"type": "text", "value": value}
+    raise TypeError(f"unsupported replay cell type: {type(value).__name__}")
+
+
+def _decode_replay_cell(payload: Mapping[str, Any]) -> Any:
+    cell_type = str(payload.get("type", ""))
+    value = payload.get("value")
+    if cell_type == "null":
+        return None
+    if cell_type == "bool" and isinstance(value, bool):
+        return value
+    if not isinstance(value, str):
+        raise TypeError(f"invalid replay cell payload for {cell_type or 'unknown'}")
+    if cell_type == "int":
+        return int(value)
+    if cell_type == "float":
+        return float(value)
+    if cell_type == "decimal":
+        return Decimal(value)
+    if cell_type == "datetime":
+        return datetime.fromisoformat(value)
+    if cell_type == "date":
+        return date.fromisoformat(value)
+    if cell_type == "time":
+        return time.fromisoformat(value)
+    if cell_type == "bytes":
+        return bytes.fromhex(value)
+    if cell_type == "text":
+        return value
+    raise ValueError(f"unsupported replay cell type: {cell_type or 'unknown'}")
+
+
+def _serialize_run(run: NL2SQLRun) -> dict[str, Any]:
+    rows = None
+    if run.rows is not None:
+        rows = [
+            {str(column): _encode_replay_cell(value) for column, value in row.items()}
+            for row in run.rows
+        ]
+    return {
+        "generated_sql": run.generated_sql,
+        "validated_sql": run.validated_sql,
+        "rows": rows,
+        "metric_ids": list(run.metric_ids),
+        "validation_trace": run.validation_trace,
+        "repair_attempts": run.repair_attempts,
+        "error": run.error,
+        "failure_stage": run.failure_stage,
+        "latency_seconds": run.latency_seconds,
+        "input_tokens": run.input_tokens,
+        "output_tokens": run.output_tokens,
+    }
+
+
+def _deserialize_run(payload: Mapping[str, Any]) -> NL2SQLRun:
+    raw_rows = payload.get("rows")
+    rows = None
+    if raw_rows is not None:
+        if not isinstance(raw_rows, list):
+            raise ValueError("replay rows must be a list or null")
+        rows = []
+        for raw_row in raw_rows:
+            if not isinstance(raw_row, Mapping):
+                raise TypeError("each replay row must be an object")
+            rows.append(
+                {
+                    str(column): _decode_replay_cell(cell)
+                    for column, cell in raw_row.items()
+                    if isinstance(cell, Mapping)
+                }
+            )
+            if len(rows[-1]) != len(raw_row):
+                raise ValueError("each replay cell must be a typed object")
+    trace = payload.get("validation_trace")
+    if trace is not None and not isinstance(trace, Mapping):
+        raise ValueError("replay validation_trace must be an object or null")
+    metric_ids = payload.get("metric_ids", [])
+    if not isinstance(metric_ids, list):
+        raise TypeError("replay metric_ids must be a list")
+    return NL2SQLRun(
+        generated_sql=str(payload.get("generated_sql", "")),
+        validated_sql=str(payload.get("validated_sql", "")),
+        rows=rows,
+        metric_ids=tuple(str(item) for item in metric_ids),
+        validation_trace=dict(trace) if trace is not None else None,
+        repair_attempts=int(payload.get("repair_attempts", 0)),
+        error=str(payload["error"]) if payload.get("error") is not None else None,
+        failure_stage=(
+            str(payload["failure_stage"])
+            if payload.get("failure_stage") is not None
+            else None
+        ),
+        latency_seconds=float(payload.get("latency_seconds", 0.0)),
+        input_tokens=(
+            int(payload["input_tokens"])
+            if payload.get("input_tokens") is not None
+            else None
+        ),
+        output_tokens=(
+            int(payload["output_tokens"])
+            if payload.get("output_tokens") is not None
+            else None
+        ),
+    )
+
+
+def _canonical_json(payload: Mapping[str, Any]) -> bytes:
+    return json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+
+def write_replay_cache(
+    path: Path,
+    identity: ReplayCacheIdentity,
+    runs: Mapping[str, NL2SQLRun],
+) -> None:
+    body = {
+        "schema_version": REPLAY_SCHEMA_VERSION,
+        "identity": asdict(identity),
+        "runs": {
+            case_id: _serialize_run(run)
+            for case_id, run in sorted(runs.items())
+        },
+    }
+    payload = {
+        **body,
+        "content_sha256": hashlib.sha256(_canonical_json(body)).hexdigest(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+
+
+def load_replay_cache(
+    path: Path,
+    expected_identity: ReplayCacheIdentity,
+    expected_case_ids: Sequence[str],
+) -> dict[str, NL2SQLRun]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise TypeError("replay cache root must be an object")
+    content_sha256 = payload.pop("content_sha256", None)
+    actual_sha256 = hashlib.sha256(_canonical_json(payload)).hexdigest()
+    if content_sha256 != actual_sha256:
+        raise ValueError("replay cache content checksum mismatch")
+    if payload.get("schema_version") != REPLAY_SCHEMA_VERSION:
+        raise ValueError("unsupported replay cache schema version")
+    if payload.get("identity") != asdict(expected_identity):
+        raise ValueError("replay cache identity mismatch")
+    raw_runs = payload.get("runs")
+    if not isinstance(raw_runs, Mapping):
+        raise TypeError("replay cache runs must be an object")
+    if set(raw_runs) != set(expected_case_ids):
+        raise ValueError("replay cache case IDs do not match the Golden Dataset")
+    runs: dict[str, NL2SQLRun] = {}
+    for case_id, run in raw_runs.items():
+        if not isinstance(run, Mapping):
+            raise TypeError(f"replay run must be an object: {case_id}")
+        runs[str(case_id)] = _deserialize_run(run)
+    return runs
+
+
+class RecordingRunner:
+    def __init__(
+        self,
+        candidate: Callable[[NL2SQLGoldenCase], Awaitable[NL2SQLRun]],
+    ) -> None:
+        self._candidate = candidate
+        self.runs: dict[str, NL2SQLRun] = {}
+
+    async def __call__(self, case: NL2SQLGoldenCase) -> NL2SQLRun:
+        if case.case_id in self.runs:
+            raise ValueError(f"duplicate replay case ID: {case.case_id}")
+        try:
+            run = await self._candidate(case)
+        except Exception as error:  # noqa: BLE001 - replay the recorded failure deterministically
+            run = NL2SQLRun(
+                error=f"{type(error).__name__}: {error}",
+                failure_stage="execution",
+            )
+        self.runs[case.case_id] = run
+        return run
+
+
+class ReplayRunner:
+    def __init__(self, runs: Mapping[str, NL2SQLRun]) -> None:
+        self._runs = dict(runs)
+
+    async def __call__(self, case: NL2SQLGoldenCase) -> NL2SQLRun:
+        try:
+            run = self._runs[case.case_id]
+        except KeyError as error:
+            raise ValueError(f"missing replay case ID: {case.case_id}") from error
+        return _deserialize_run(_serialize_run(run))
 
 
 def load_nl2sql_golden(path: Path) -> tuple[str, tuple[NL2SQLGoldenCase, ...]]:
