@@ -246,3 +246,55 @@ def test_structured_repair_constraints_do_not_infer_without_plan() -> None:
     assert constraints == (
         "SchemaLinkingPlan unavailable; do not infer missing schema constraints."
     )
+
+
+def test_sql015_t03_shape_is_normalized_flattened_and_validated() -> None:
+    sql = (
+        "SELECT SUM(order_count) AS 整体订单数 FROM "
+        "(SELECT order_count, date_id, region_id FROM dws_sales_region_daily "
+        "WHERE date_id >= '2018-05-01' AND date_id < '2018-06-01') t"
+    )
+    normalized = normalize_calendar_numeric_literals(sql, _order_count_plan())
+    flattened = flatten_redundant_metric_subquery(normalized, _order_count_plan())
+
+    assert "date_id >= 20180501 AND date_id < 20180601" in flattened
+    assert "SUM(dws_sales_region_daily.order_count)" in flattened
+    assert "region_id" not in flattened
+    validator = SQLValidator(
+        load_catalog(ROOT / "conf" / "meta_config.yaml"),
+        load_sql_policy(ROOT / "conf" / "sql_policy.yaml"),
+    )
+    validated = validator.validate(
+        flattened,
+        ("order_count",),
+        schema_linking_plan=_order_count_plan(),
+    )
+    assert set(validated.columns) == {
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id",
+    }
+
+
+def test_normalizes_iso_date_id_literals_only_for_dim_date() -> None:
+    sql = (
+        "SELECT d.month FROM dim_date d "
+        "WHERE d.date_id = '2018-05-01' AND d.month = '2018-05'"
+    )
+    normalized = normalize_calendar_numeric_literals(sql, _calendar_plan())
+
+    assert "d.date_id = 20180501" in normalized
+    assert "d.month = '2018-05'" in normalized
+    unrelated = "SELECT order_id FROM fact_order WHERE date_id = '2018-05-01'"
+    assert normalize_calendar_numeric_literals(unrelated, _calendar_plan()) == unrelated
+
+
+def test_flattens_unqualified_derived_column_references() -> None:
+    sql = (
+        "SELECT SUM(order_count) AS total_orders "
+        "FROM (SELECT order_count, date_id FROM dws_sales_region_daily) t"
+    )
+
+    flattened = flatten_redundant_metric_subquery(sql, _order_count_plan())
+
+    assert "SUM(dws_sales_region_daily.order_count)" in flattened
+    assert "FROM dws_sales_region_daily" in flattened

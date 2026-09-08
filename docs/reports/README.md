@@ -41,6 +41,7 @@
 - [SQL-012 Required Metric Subquery Flattening](SQL-012_COMPLETION.md)
 - [SQL-013 Structured Plan Repair Constraints](SQL-013_COMPLETION.md)
 - [SQL-014 Post-repair Real-model Rerun](SQL-014_COMPLETION.md)
+- [SQL-015 Unqualified Derived-column and Date ID Repair](SQL-015_COMPLETION.md)
 
 ## 诊断分析与评测
 

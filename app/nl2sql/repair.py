@@ -18,6 +18,7 @@ _NUMERIC_CALENDAR_PATTERNS = {
     "date_id": re.compile(r"\d{8}"),
 }
 _COMPARISONS = (exp.EQ, exp.NEQ, exp.GT, exp.GTE, exp.LT, exp.LTE)
+_DATE_ID_ISO_PATTERN = re.compile(r"\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])")
 
 
 def _coerce_plan(
@@ -41,7 +42,11 @@ def normalize_calendar_numeric_literals(
 ) -> str:
     """Convert quoted numeric dim_date literals without changing query semantics."""
     plan = _coerce_plan(schema_linking_plan)
-    if plan is None or plan.calendar_table != "dim_date":
+    if plan is None:
+        return sql
+    if plan.calendar_table != "dim_date" and not any(
+        column.endswith(".date_id") for column in plan.columns
+    ):
         return sql
     try:
         statement = sqlglot.parse_one(sql, read="mysql")
@@ -59,15 +64,18 @@ def normalize_calendar_numeric_literals(
             return None
         if column.table:
             table_name = aliases.get(column.table, column.table)
-            return column.name if table_name == "dim_date" else None
-        if "dim_date" not in aliases.values():
+            if table_name == "dim_date":
+                return column.name
+            if column.name == "date_id" and f"{table_name}.date_id" in plan.columns:
+                return column.name
             return None
-        matches = [
-            item
-            for item in plan.columns
-            if item == f"dim_date.{column.name}"
+        candidates = [
+            table
+            for table in aliases.values()
+            if f"{table}.{column.name}" in plan.columns
+            and (column.name == "date_id" or table == "dim_date")
         ]
-        return column.name if len(matches) == 1 else None
+        return column.name if len(candidates) == 1 else None
 
     def replace_literal(column: exp.Expression, literal: exp.Expression) -> None:
         nonlocal changed
@@ -77,9 +85,12 @@ def normalize_calendar_numeric_literals(
         if column_name is None or not literal.is_string:
             return
         value = str(literal.this)
-        if _NUMERIC_CALENDAR_PATTERNS[column_name].fullmatch(value) is None:
+        numeric_value = value
+        if column_name == "date_id" and _DATE_ID_ISO_PATTERN.fullmatch(value):
+            numeric_value = value.replace("-", "")
+        if _NUMERIC_CALENDAR_PATTERNS[column_name].fullmatch(numeric_value) is None:
             return
-        literal.replace(exp.Literal.number(value))
+        literal.replace(exp.Literal.number(numeric_value))
         changed = True
 
     for expression in tuple(statement.walk()):
@@ -157,9 +168,13 @@ def flatten_redundant_metric_subquery(
     replacements: list[tuple[exp.Column, exp.Column]] = []
     used_columns: set[str] = set()
     for column in outer_columns:
-        if column.table != subquery_alias or column.name not in projection_map:
+        if column.table and column.table != subquery_alias:
             return sql
-        source = projection_map[column.name]
+        if column.table == subquery_alias or column.name in projection_map:
+            output_name = column.name
+        else:
+            return sql
+        source = projection_map[output_name]
         column_id = f"{source_table.name}.{source.name}"
         if column_id not in plan.columns:
             return sql

@@ -161,7 +161,8 @@ Validator 拒绝，不能借“修复”改变聚合层级。
 SQL-013 不根据 Plan 自动创造 SQL，而是把当前 Validator Error 与允许表、必需指标列、
 Calendar Table、Join 等式、精确 GROUP BY/ORDER BY 和固定过滤格式化为独立短约束，再
 注入同一次 LLM 修复。GROUP BY 偏差会额外要求每组一行并禁止条件聚合透视；修复结果
-仍经过 SQL-011/012 的窄规范化和原 Validator。
+仍经过 SQL-011/012 的窄规范化和原 Validator。SQL-015 再接受无表名前缀的派生列引用，
+并把 Plan 内物理 `date_id` 的 ISO 日期字符串归一为仓库整数格式，仍不改变聚合层级。
 
 ## 6. 两类 SQL 路径
 

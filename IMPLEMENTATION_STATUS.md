@@ -2,30 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-014 已在 Evaluator v3 与
-SQL-011~013 修复链上完成真实 Live/Replay：Gate 3 通过，Execution 25/30。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-015 已补齐 T03 的无前缀
+派生列扁平化与 Plan 内 ISO `date_id` 归一；真实复测待 SQL-016。
 
 ## Current Feature
 
-SQL-014 Post-repair Real-model Rerun.
+SQL-015 Unqualified Derived-column and Date ID Repair.
 
-## Feature Status (SQL-014 completed)
+## Feature Status (SQL-015 completed)
 
-Completed and validated. Live/Replay 完全一致，30 条严格参考摘要齐全，Safety 12/12，
-所有多标签失败都有主分类，Gate 3 passed。Compatible/Strict Execution 25/30；C02 转为
-通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为模型指标/结果漂移。
+Completed and validated. 安全扁平化现接受无表名前缀的派生列引用；Plan 内任意物理
+`date_id` 的 ISO 字符串按仓库 `YYYYMMDD` 整数归一。T03 实际形状经原 Validator 通过。
 
 ## Last Completed Feature
 
-SQL-014 Post-repair Real-model Rerun.
+SQL-015 Unqualified Derived-column and Date ID Repair.
 
 ## Next Feature
 
-SQL-015 Unqualified Derived-column Repair。修复 SQL-012 只接受 `t.order_count`、不接受
-无表名前缀 `order_count` 的缺口，目标 SQL-014 T03。
+SQL-016 Post-SQL-015 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
+Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
 
 ## Last Successful Validation
 
+- SQL-015 unqualified derived/date-id repair: SQL repair contract 18 passed；T03 exact
+  shape passes original Validator and Plan；SQL-014/historical artifacts changed: 0；
 - SQL-014 real-model rerun: compatible/strict Execution 25/30；Gate 3 true；A02 infra
   lost connection；C02 fixed vs SQL-010；T03/J02/C05 remain；N04 new metric drift；
 - SQL-014 Live/Replay: evaluation, safety, gates, dataset, runtime, prompt, model,
@@ -265,21 +266,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-014 开始前，本地 `HEAD` 为 SQL-013 commit `5f68273`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-014 不执行远端推送或仓库可见性变更。
+SQL-015 开始前，本地 `HEAD` 为 SQL-014 commit `64a76d1`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-015 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-014 实测兼容/严格 Execution 为 25/30，Gate 3 通过；A02 为 MySQL 连接丢失环境失败，
-结果失败 T03/J02/C05 仍是 SQL-011~013 未完全覆盖的 Runtime 缺陷，N04 为模型指标漂移，
-另有 13 条 Trace 偏差和 10/15 Grain 契约偏差。SQL-010 的 26/30 仍是历史一次运行，
-不得作为当前 25/30 的替代。诊断 Semantic Grounder 的真实召回与真实 LLM Planner 未评测。
+SQL-015 已本地修复 T03 的派生列与 date_id 归一缺口，但尚未真实复测；SQL-014 的
+25/30 仍是最近实测。C05 条件聚合、J02 Group 偏差、N04 指标漂移仍待处理，A02 为
+MySQL 连接环境失败。诊断 Semantic Grounder 的真实召回与真实 LLM Planner 未评测。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-014_post_repair_real_model_rerun.md` and
-   `docs/reports/SQL-014_COMPLETION.md`.
-4. Create and freeze a SQL-015 Spec for T03 unqualified derived-column flattening only.
-5. Keep C05/J02 and future reruns outside that Runtime repair Feature.
+3. Review `specs/SQL-015_unqualified_derived_dateid_repair.md` and
+   `docs/reports/SQL-015_COMPLETION.md`.
+4. Create and freeze a SQL-016 Spec for the post-SQL-015 Live/Replay rerun.
+5. Keep C05/J02 and future reruns outside that evaluation Feature.

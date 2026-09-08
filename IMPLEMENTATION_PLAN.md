@@ -205,7 +205,8 @@ EVAL-003 Primary Failure Classification Completeness
 | SQL-012 | 限制必需指标列修复引入派生表导致 Trace 丢失 | 已完成；安全单表形状扁平化，未真实复测 |
 | SQL-013 | 约束修复 SQL 的分组与 Calendar Join 符合 Plan | 已完成；结构化错误导向约束，未真实复测 |
 | SQL-014 | 在 EVAL v3 与 SQL-011~013 后重新执行真实 Live/Replay | 已完成；25/30 且 Gate 3 通过 |
-| SQL-015 | 支持无表名前缀外层引用的安全派生表扁平化 | 下一项；针对 SQL-014 T03 单一假设 |
+| SQL-015 | 支持无表名前缀外层引用并归一 ISO date_id | 已完成；T03 形状本地通过，未真实复测 |
+| SQL-016 | 在 SQL-015 修复后重新执行真实 Live/Replay | 下一项；评测 Feature，不现场修 Runtime |
 
 SQL-010 的历史 Gate false 保持不变；EVAL-003 已保证后续同类偏差会完整分类。之后若
 处理真实失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。
