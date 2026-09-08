@@ -31,6 +31,7 @@
 - [SQL-005 SchemaLinkingPlan Rerun](SQL-005_COMPLETION.md)
 - [SQL-006 Metric and Calendar Enforcement](SQL-006_COMPLETION.md)
 - [SQL-007 Live/Replay Evaluation](SQL-007_COMPLETION.md)
+- [SQL-008 Metric/Calendar Real-Model Rerun](SQL-008_COMPLETION.md)
 
 ## 诊断分析与评测
 

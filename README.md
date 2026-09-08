@@ -235,15 +235,15 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 19/30 | SQL-005 SchemaLinkingPlan 真实模型复测；JOIN 0/5 → 3/5 |
+| NL2SQL Execution Accuracy | 22/30 | SQL-008 Metric/Calendar 真实模型复测；Time、TopN 均为 5/5 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
 SQL-004 新增的 SchemaLinkingPlan 在 SQL 生成前冻结指标、表、列与 JOIN 路径。
-SQL-005 使用同一 30 条 Golden 完成真实模型复测：Execution Accuracy 从 SQL-002
-首次基线 16/30 提升到 19/30，JOIN bucket 从 0/5 提升到 3/5；SQL-002 历史报告
-保持不可变。NL2SQL 评测器支持 `--mode live|replay`：Live 将 30 条候选运行记录到
-Git 忽略的类型安全缓存，Replay 校验版本与内容摘要后离线复现同一评测结果。
+SQL-008 使用同一 30 条 Golden 在 SQL-006 后完成真实模型复测：Execution Accuracy
+从 SQL-002 的 16/30、SQL-005 的 19/30 提升到 22/30；Time 与 TopN 均达到 5/5，
+Comparison 仍为 2/5。历史报告保持不可变。评测器支持 `--mode live|replay`：Live
+将候选运行记录到 Git 忽略的类型安全缓存，Replay 校验身份与摘要后离线复现结果。
 
 ## 技术栈
 
