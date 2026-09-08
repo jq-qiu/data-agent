@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-019 已补全已登记 Join 列
-并规范等价 Join 键 GROUP BY；真实复测待 SQL-020。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-020 已刷新真实最优：
+26/30，N03 转通过，无回退。
 
 ## Current Feature
 
-SQL-019 Group-by Join-key Canonicalization.
+SQL-020 Post-SQL-019 Real-model Rerun.
 
-## Feature Status (SQL-019 completed)
+## Feature Status (SQL-020 completed)
 
-Completed and validated. Builder 把 registered Join 两端列补入 plan.columns；修复器将
-GROUP BY 中等价 Join 键规范成唯一 Plan 分组/显示列。
+Completed and validated. Compatible/Strict Execution 26/30，Metric Accuracy 30/30，
+Validator Acceptance 30/30，Grain 9/15，Trace 20/30，Gate 3 true，Live/Replay 完全一致。
 
 ## Last Completed Feature
 
-SQL-019 Group-by Join-key Canonicalization.
+SQL-020 Post-SQL-019 Real-model Rerun.
 
 ## Next Feature
 
-SQL-020 Post-SQL-019 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
-Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
+SQL-021 Daily DWS Calendar Scope。让“每日/date_id”查询直接使用 DWS，避免模型
+引入 dim_date 并按 dim_date.date 分组；目标 SQL-020 T05。
 
 ## Last Successful Validation
 
+- SQL-020 real-model rerun: compatible/strict Execution 26/30；Metric Accuracy 30/30；
+  Validator Acceptance 30/30；Grain 9/15；Trace 20/30；N03 fixed，no regression；
 - SQL-019 join-key canonicalization: schema/repair contract 39 passed；registered Join
   columns always in plan.columns；equivalent GROUP BY key canonicalized；
 - SQL-018 real-model rerun: compatible/strict Execution 25/30；Grain 7/15；Trace 18/30；
@@ -274,20 +276,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-019 开始前，本地 `HEAD` 为 SQL-018 commit `de9c289`，并已推送至 `origin/main`。
-SQL-019 不执行远端推送或仓库可见性变更。
+SQL-020 开始前，本地 `HEAD` 为 SQL-019 commit `84db3d8`。SQL-020 不执行远端推送
+或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-019 已本地补全 Join 列并规范化 J02 等价 Group 键，但尚未真实复测；SQL-018 的
-25/30 仍是最近实测。C05 Pivot、N03 缺失 Join/Filter、T05 日历过度 Join 与 TopN 漂移
-仍待处理。
+SQL-020 实测兼容/严格 Execution 为 26/30，Gate true；Grain 9/15、Trace 20/30、
+Validator Acceptance 30/30。N03 转通过，J02 已通过 Validator 但仍有结果值差异，
+C05/T05/N02 保持失败。J02 的数值差异需单独诊断后才能立项。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-019_group_join_key_canonicalization.md` and
-   `docs/reports/SQL-019_COMPLETION.md`.
-4. Create and freeze a SQL-020 Spec for the post-SQL-019 Live/Replay rerun.
-5. Keep C05/N03/T05 and future reruns outside that evaluation Feature.
+3. Review `specs/SQL-020_post_sql019_real_model_rerun.md` and
+   `docs/reports/SQL-020_COMPLETION.md`.
+4. Diagnose J02 result-value difference，然后冻结对应单一修复 Spec。
+5. Create and freeze a SQL-021 Spec for Daily DWS calendar scope only.

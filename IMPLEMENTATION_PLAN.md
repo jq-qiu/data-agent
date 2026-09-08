@@ -210,7 +210,8 @@ EVAL-003 Primary Failure Classification Completeness
 | SQL-017 | 按整体/Region Scope 约束 DWS 必需列，不强制 Region ID | 已完成；required 只含公式列，未真实复测 |
 | SQL-018 | 在 SQL-017 后重新执行真实 Live/Replay | 已完成；25/30，T03/A02/N04 转通过 |
 | SQL-019 | 将等价 Join 键 Group By 规范为 Plan 分组列 | 已完成；未真实复测 |
-| SQL-020 | 在 SQL-019 后重新执行真实 Live/Replay | 下一项；评测 Feature，不现场修 Runtime |
+| SQL-020 | 在 SQL-019 后重新执行真实 Live/Replay | 已完成；26/30，N03 转通过 |
+| SQL-021 | Daily DWS 查询不引入 Calendar Join | 下一项；针对 T05 单一失败假设 |
 
 SQL-010 的历史 Gate false 保持不变；EVAL-003 已保证后续同类偏差会完整分类。之后若
 处理真实失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。

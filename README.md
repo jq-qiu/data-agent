@@ -235,7 +235,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 25/30 | SQL-018 真实模型复测；Grain 7/15，Gate 3 通过 |
+| NL2SQL Execution Accuracy | 26/30 | SQL-020 真实模型复测；Metric/Validator 30/30，Grain 9/15 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
@@ -260,10 +260,10 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
-SQL-010 的 26/30、SQL-014 与 SQL-018 的 25/30 均为单次真实运行，模型存在显著
-非确定性。SQL-017 收窄整体 DWS required 列后，SQL-018 中 T03/A02/N04 转通过。
-SQL-019 再补全 registered Join 列并把等价 Join 键 GROUP BY 规范成 Plan 分组列；
-尚未执行新的真实复测。
+SQL-010 的 26/30、SQL-014/018 的 25/30 均为单次真实运行。SQL-019 补全 registered
+Join 列并规范化等价 Group 键后，SQL-020 刷新为 26/30（Metric 与 Validator Acceptance
+30/30，Grain 9/15），N03 转通过且无回退。J02 仍为 Trace 全对但结果值差异，C05/T05/
+N02 待后续修复。
 
 ## 技术栈
 
