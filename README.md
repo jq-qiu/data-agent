@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 343 passed | 当前仓库行为回归 |
+| Python 全量回归 | 344 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -234,14 +234,15 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Numeric Consistency | 10/10 | 拆解、贡献和指标链完成数学对账 |
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
-| SchemaLinkingPlan | 5/5 | 确定性 Builder/Validator 单元测试，未做真实模型复测 |
-| NL2SQL Execution Accuracy | 16/30 | 首次真实基线；JOIN、时间与对比仍是主要改进方向 |
+| SchemaLinkingPlan | 6/6 | 确定性 Builder/Validator 单元测试 |
+| NL2SQL Execution Accuracy | 19/30 | SQL-005 SchemaLinkingPlan 真实模型复测；JOIN 0/5 → 3/5 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
-SQL-004 新增的 SchemaLinkingPlan 在 SQL 生成前冻结指标、表、列与 JOIN 路径，
-目标是降低 JOIN/维度误选；它尚未对 SQL-002 的 30 条真实基线做外部模型复测，
-因此 16/30 的历史数字保持不变。
+SQL-004 新增的 SchemaLinkingPlan 在 SQL 生成前冻结指标、表、列与 JOIN 路径。
+SQL-005 使用同一 30 条 Golden 完成真实模型复测：Execution Accuracy 从 SQL-002
+首次基线 16/30 提升到 19/30，JOIN bucket 从 0/5 提升到 3/5；SQL-002 历史报告
+保持不可变。
 
 ## 技术栈
 

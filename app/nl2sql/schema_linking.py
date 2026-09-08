@@ -137,6 +137,25 @@ _GROUP_CUES = (
     "top",
     "bottom",
 )
+_AGGREGATE_TERMS = (
+    "统计",
+    "平均",
+    "合计",
+    "汇总",
+    "数量",
+    "总数",
+    "计数",
+    "分布",
+    "记录",
+    "最高",
+    "最低",
+    "最多",
+    "最少",
+    "avg",
+    "sum",
+    "count",
+    "rank",
+)
 
 
 def _normalize(value: str) -> str:
@@ -285,6 +304,11 @@ class SchemaLinkingPlanBuilder:
                     plan_tables,
                     "dim_region",
                     dimension_paths,
+                    start_table=self._semantic_start_table(
+                        query,
+                        plan_tables,
+                        "dim_region",
+                    ),
                 )
                 if "dim_region" not in plan_tables:
                     raise SchemaLinkingPlanError(
@@ -309,6 +333,11 @@ class SchemaLinkingPlanBuilder:
                     plan_tables,
                     "dim_category",
                     dimension_paths,
+                    start_table=self._semantic_start_table(
+                        query,
+                        plan_tables,
+                        "dim_category",
+                    ),
                 )
                 if "dim_category" not in plan_tables:
                     raise SchemaLinkingPlanError(
@@ -364,7 +393,19 @@ class SchemaLinkingPlanBuilder:
         connected = self._connect_plan_tables(table_names, join_list)
         if connected is None:
             # 失败关闭：宁可让本次请求明确失败，也不让模型补出未登记 JOIN。
-            raise SchemaLinkingPlanError("schema_linking_tables_not_connected")
+            raise SchemaLinkingPlanError(
+                "schema_linking_tables_not_connected:"
+                + ",".join(sorted(table_names))
+                + ":edges="
+                + ",".join(
+                    sorted(
+                        f"{join.left_table}->{join.right_table}"
+                        for join in join_list
+                        if join.left_table in table_names
+                        and join.right_table in table_names
+                    )
+                )
+            )
 
         order_by = self._infer_order(query, group_columns)
         filters = self._metric_filters(metric_ids)
@@ -415,6 +456,7 @@ class SchemaLinkingPlanBuilder:
         plan_tables: dict[str, Mapping[str, Any]],
         dimension_table: str,
         dimension_paths: list[SchemaLinkingJoin],
+        start_table: str | None = None,
     ) -> None:
         if dimension_table in plan_tables:
             return
@@ -423,7 +465,7 @@ class SchemaLinkingPlanBuilder:
             raise SchemaLinkingPlanError(
                 f"dimension_table_missing_from_catalog:{dimension_table}"
             )
-        start = self._best_path_start(plan_tables)
+        start = start_table or self._best_path_start(plan_tables)
         path = await self._path_provider.relationship_path(start, dimension_table)
         if not path:
             return
@@ -437,11 +479,11 @@ class SchemaLinkingPlanBuilder:
                         f"path_table_missing_from_catalog:{table_name}"
                     )
                 if table_name not in plan_tables:
-                    plan_tables[table_name] = self._table_state_from_catalog(
+                    plan_tables[table_name] = self.table_state_from_catalog(
                         definition
                     )
         if dimension_table not in plan_tables:
-            plan_tables[dimension_table] = self._table_state_from_catalog(
+            plan_tables[dimension_table] = self.table_state_from_catalog(
                 dimension_definition
             )
 
@@ -454,6 +496,27 @@ class SchemaLinkingPlanBuilder:
             if table in plan_tables:
                 return table
         return next(iter(sorted(plan_tables)))
+
+    @staticmethod
+    def _semantic_start_table(
+        query: str,
+        plan_tables: Mapping[str, Mapping[str, Any]],
+        dimension_table: str,
+    ) -> str | None:
+        if dimension_table == "dim_region":
+            prefers_customer = _contains_any(
+                query,
+                ("客户", "买家", "customer", "州", "地区"),
+            ) and not _contains_any(query, ("卖家", "商家", "seller"))
+            if prefers_customer and "dim_customer" in plan_tables:
+                return "dim_customer"
+            if not prefers_customer and "dim_seller" in plan_tables:
+                return "dim_seller"
+            if "dim_customer" in plan_tables:
+                return "dim_customer"
+        if dimension_table == "dim_category" and "dim_product" in plan_tables:
+            return "dim_product"
+        return None
 
     def _connect_plan_tables(
         self,
@@ -473,7 +536,9 @@ class SchemaLinkingPlanBuilder:
             if item.left_table in table_set and item.right_table in table_set
         ]
         all_joins = {
-            join.relation_id: join for join in (*extra_joins, *catalog_joins)
+            join.relation_id: join
+            for join in (*extra_joins, *catalog_joins)
+            if join.left_table in table_set and join.right_table in table_set
         }
         neighbors: dict[str, list[SchemaLinkingJoin]] = {}
         for join in all_joins.values():
@@ -494,7 +559,7 @@ class SchemaLinkingPlanBuilder:
                     if join.left_table == current
                     else join.left_table
                 )
-                if neighbor in visited:
+                if neighbor not in table_set or neighbor in visited:
                     continue
                 visited.add(neighbor)
                 selected.append(join)
@@ -541,7 +606,9 @@ class SchemaLinkingPlanBuilder:
         query: str,
         has_metric: bool,
     ) -> dict[str, bool]:
-        grouped = has_metric and _contains_any(query, _GROUP_CUES)
+        grouped = (
+            has_metric or _contains_any(query, _AGGREGATE_TERMS)
+        ) and _contains_any(query, _GROUP_CUES)
         return {
             "region": grouped and _contains_any(query, _REGION_TERMS),
             "category": grouped and _contains_any(query, _CATEGORY_TERMS),
@@ -549,7 +616,7 @@ class SchemaLinkingPlanBuilder:
         }
 
     @staticmethod
-    def _table_state_from_catalog(definition: Any) -> dict[str, Any]:
+    def table_state_from_catalog(definition: Any) -> dict[str, Any]:
         return {
             "name": definition.table_name,
             "role": definition.role,

@@ -19,6 +19,7 @@ from loguru import logger
 from app.agent.context import DataAgentContext
 from app.agent.graph import graph
 from app.agent.state import DataAgentState
+from app.api.dependencies import _SerializedMetaMySQLRepository
 from app.clients.embedding_client_manager import embedding_client_manager
 from app.clients.es_client_manager import es_client_manager
 from app.clients.mysql_client_manager import dw_mysql_client_manager, meta_mysql_client_manager
@@ -38,7 +39,6 @@ from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.validator import SQLValidator
 from app.repositories.es.value_es_repository import ValueESRepository
 from app.repositories.mysql.dw.dw_mysql_repository import DWMySQLRepository
-from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
 from app.repositories.qdrant.column_qdrant_repository import ColumnQdrantRepository
 from app.repositories.qdrant.metric_qdrant_repository import MetricQdrantRepository
 
@@ -93,7 +93,7 @@ class LiveGraphRunner:
             dw_mysql_client_manager.session_factory() as dw_session,
         ):
             context = DataAgentContext(
-                meta_mysql_repository=MetaMySQLRepository(meta_session),
+                meta_mysql_repository=_SerializedMetaMySQLRepository(meta_session),
                 dw_mysql_repository=DWMySQLRepository(dw_session),
                 embedding_client=embedding_client_manager.client,
                 column_qdrant_repository=ColumnQdrantRepository(qdrant_client_manager.client),
@@ -190,7 +190,11 @@ async def run_evaluation(
     run_dir: Path,
     *,
     freeze_reference: bool,
+    run_id: str = "sql-002-baseline-v1",
+    skip_reference: bool = False,
 ) -> dict[str, Any]:
+    if freeze_reference and skip_reference:
+        raise RuntimeError("skip_reference cannot be combined with freeze_reference")
     if app_config.db_dw.database != "data_agent_v1_dw":
         raise RuntimeError("SQL-002 may only query the isolated data_agent_v1_dw database")
     catalog = load_catalog(CATALOG_PATH)
@@ -204,15 +208,17 @@ async def run_evaluation(
     qdrant_client_manager.init()
     es_client_manager.init()
     try:
-        reference_runner = ReferenceRunner(validator)
-        if freeze_reference:
-            await _freeze_reference_checksums(
-                golden_path,
-                dataset_version,
-                cases,
-                reference_runner,
-            )
-            dataset_version, cases = load_nl2sql_golden(golden_path)
+        reference_runner = None
+        if not skip_reference:
+            reference_runner = ReferenceRunner(validator)
+            if freeze_reference:
+                await _freeze_reference_checksums(
+                    golden_path,
+                    dataset_version,
+                    cases,
+                    reference_runner,
+                )
+                dataset_version, cases = load_nl2sql_golden(golden_path)
         if any(case.expected_result_sha256 is None for case in cases):
             raise RuntimeError("reference checksums are not frozen; run with --freeze-reference")
 
@@ -253,7 +259,7 @@ async def run_evaluation(
             "all_failures_classified": classified_failures == failure_count,
         }
         result = {
-            "run_id": "sql-002-baseline-v1",
+            "run_id": run_id,
             "generated_at_utc": datetime.now(UTC).isoformat(),
             "source_commit": _source_commit(),
             "evaluator_version": "sql-evaluator-v1",
@@ -291,7 +297,9 @@ def main() -> None:
     parser.add_argument("--golden", type=Path, default=DEFAULT_GOLDEN)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--run-dir", type=Path, default=DEFAULT_RUN_DIR)
+    parser.add_argument("--run-id", default="sql-002-baseline-v1")
     parser.add_argument("--freeze-reference", action="store_true")
+    parser.add_argument("--skip-reference", action="store_true")
     args = parser.parse_args()
     logger.remove()
     logger.add(sys.stderr, level="ERROR")
@@ -301,6 +309,8 @@ def main() -> None:
             args.report,
             args.run_dir,
             freeze_reference=args.freeze_reference,
+            run_id=args.run_id,
+            skip_reference=args.skip_reference,
         )
     )
     print(

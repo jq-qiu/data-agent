@@ -1,0 +1,1856 @@
+{
+  "run_id": "sql-005-schema-linking-v1",
+  "generated_at_utc": "2026-09-08T03:41:54.569299+00:00",
+  "source_commit": "3b5f0751b8337dc17896816d8fdd27baf444ef3e",
+  "evaluator_version": "sql-evaluator-v1",
+  "dataset_version": "nl2sql-golden-v1",
+  "dataset_sha256": "c7d067d7048aaed82457aa13f7f2ffb5f38a7a55d7b56b672a2a9a70a1a00025",
+  "metadata_version": "metadata-v1",
+  "sql_policy_version": "sql-policy-v1.1",
+  "prompt_bundle_sha256": "0b09298ffa46da5145985e08e87936da500dde47c113237e00023f9a10bceee2",
+  "model": {
+    "name": "deepseek-ai/DeepSeek-V4-flash",
+    "temperature": 0,
+    "timeout_seconds": 120.0,
+    "max_retries": 3,
+    "token_usage_available": false,
+    "cost_usd": null,
+    "cost_note": "unavailable because the current graph does not expose token usage"
+  },
+  "database": "data_agent_v1_dw",
+  "evaluation": {
+    "case_count": 30,
+    "bucket_counts": {
+      "aggregate": 5,
+      "comparison": 5,
+      "join": 5,
+      "simple": 5,
+      "time": 5,
+      "topn": 5
+    },
+    "reference_checksums_verified": 30,
+    "metrics": {
+      "sql_validity_rate": 0.9666666666666667,
+      "sql_executability": 0.9666666666666667,
+      "execution_accuracy": 0.6333333333333333,
+      "metric_accuracy": 0.9,
+      "table_precision": 0.7944444444444444,
+      "table_recall": 0.8166666666666667,
+      "column_precision": 0.7547222222222222,
+      "column_recall": 0.7569047619047619,
+      "join_accuracy": 0.7333333333333333,
+      "grain_safety_rate": 0.9666666666666667,
+      "correction_success_rate": 0.5,
+      "correction_attempted_count": 2,
+      "correction_succeeded_count": 1
+    },
+    "error_counts": {
+      "Metric Recognition Error": 3,
+      "SQL Generation Error": 4,
+      "Schema Linking Error": 11
+    },
+    "bucket_metrics": {
+      "simple": {
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.6,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      "aggregate": {
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.8,
+        "metric_accuracy": 0.8,
+        "table_precision": 0.6,
+        "table_recall": 0.6,
+        "column_precision": 0.4,
+        "column_recall": 0.4,
+        "join_accuracy": 0.8,
+        "grain_safety_rate": 1.0
+      },
+      "time": {
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.6,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.4666666666666667,
+        "table_recall": 0.7,
+        "column_precision": 0.475,
+        "column_recall": 0.72,
+        "join_accuracy": 0.4,
+        "grain_safety_rate": 1.0
+      },
+      "join": {
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.6,
+        "metric_accuracy": 0.8,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 0.9214285714285714,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      "topn": {
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.8,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.9,
+        "table_recall": 1.0,
+        "column_precision": 0.9199999999999999,
+        "column_recall": 0.9,
+        "join_accuracy": 0.8,
+        "grain_safety_rate": 1.0
+      },
+      "comparison": {
+        "sql_validity_rate": 0.8,
+        "sql_executability": 0.8,
+        "execution_accuracy": 0.4,
+        "metric_accuracy": 0.8,
+        "table_precision": 0.8,
+        "table_recall": 0.6,
+        "column_precision": 0.7333333333333333,
+        "column_recall": 0.6,
+        "join_accuracy": 0.4,
+        "grain_safety_rate": 0.8
+      }
+    },
+    "latency_seconds": {
+      "mean": 31.385051166666663,
+      "median": 30.8977955,
+      "max": 67.243498
+    },
+    "cases": [
+      {
+        "case_id": "S01",
+        "bucket": "simple",
+        "question": "列出所有巴西州代码和州名称，按州代码排序",
+        "risk_tags": [
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT state_code AS 州代码, display_name AS 州名称 FROM dim_region ORDER BY state_code;",
+        "validated_sql": "SELECT state_code AS 州代码, display_name AS 州名称 FROM dim_region ORDER BY state_code LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "dim_region"
+        ],
+        "actual_tables": [
+          "dim_region"
+        ],
+        "expected_columns": [
+          "dim_region.state_code",
+          "dim_region.display_name"
+        ],
+        "actual_columns": [
+          "dim_region.display_name",
+          "dim_region.state_code"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "5439a6ad8baf4f062787cadb51c891cb99bf2b4e8e93cd05a445be7849485d6f",
+        "candidate_result_sha256": "5439a6ad8baf4f062787cadb51c891cb99bf2b4e8e93cd05a445be7849485d6f",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 26.944674,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "S02",
+        "bucket": "simple",
+        "question": "列出前10个商品品类ID和英文名称，按品类ID排序",
+        "risk_tags": [
+          "category_semantics"
+        ],
+        "generated_sql": "SELECT category_id AS 品类ID, category_name_en AS 英文品类 FROM dim_category ORDER BY category_id LIMIT 10",
+        "validated_sql": "SELECT category_id AS 品类ID, category_name_en AS 英文品类 FROM dim_category ORDER BY category_id LIMIT 10",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "dim_category"
+        ],
+        "actual_tables": [
+          "dim_category"
+        ],
+        "expected_columns": [
+          "dim_category.category_id",
+          "dim_category.category_name_en"
+        ],
+        "actual_columns": [
+          "dim_category.category_id",
+          "dim_category.category_name_en"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "768c73049bcc5f8eba35c2103b643cae1b50207cbcad8e17434b112f43f0b50e",
+        "candidate_result_sha256": "768c73049bcc5f8eba35c2103b643cae1b50207cbcad8e17434b112f43f0b50e",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 21.222325,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "S03",
+        "bucket": "simple",
+        "question": "Olist订单有哪些订单状态",
+        "risk_tags": [
+          "canonical_value"
+        ],
+        "generated_sql": "SELECT DISTINCT status AS 订单状态 FROM fact_order",
+        "validated_sql": "SELECT DISTINCT status AS 订单状态 FROM fact_order LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_order"
+        ],
+        "actual_tables": [
+          "fact_order"
+        ],
+        "expected_columns": [
+          "fact_order.status"
+        ],
+        "actual_columns": [
+          "fact_order.status"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "3bd676cda15c0bc3c22e810d87f79d98727dc29c45d877e430a2dbbfde35775f",
+        "candidate_result_sha256": "19ecf8b33f189ee1b9d8c53f69844c702ecf834589f441abf53a6addcf46ef58",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 19.005479,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "SQL Generation Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "S04",
+        "bucket": "simple",
+        "question": "支付记录中有哪些付款方式",
+        "risk_tags": [
+          "canonical_value"
+        ],
+        "generated_sql": "SELECT DISTINCT payment_type AS 付款方式 FROM fact_payment;",
+        "validated_sql": "SELECT DISTINCT payment_type AS 付款方式 FROM fact_payment LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_payment"
+        ],
+        "actual_tables": [
+          "fact_payment"
+        ],
+        "expected_columns": [
+          "fact_payment.payment_type"
+        ],
+        "actual_columns": [
+          "fact_payment.payment_type"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "9a6fda08fb8f4ecbb06f7c5edcc5fbbbc82c87b1fb754acfd7f86ad0e54af65e",
+        "candidate_result_sha256": "d56fa3ba0c22cee12932a8283e3077b087866c48fdbce00282c50e641effc28d",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 17.404083,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "SQL Generation Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "S05",
+        "bucket": "simple",
+        "question": "按商品ID排序列出前5个商品的ID和重量",
+        "risk_tags": [
+          "explicit_columns"
+        ],
+        "generated_sql": "SELECT product_id AS 商品ID, weight_g AS 重量 FROM dim_product ORDER BY product_id ASC LIMIT 5;",
+        "validated_sql": "SELECT product_id AS 商品ID, weight_g AS 重量 FROM dim_product ORDER BY product_id ASC LIMIT 5",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "dim_product"
+        ],
+        "actual_tables": [
+          "dim_product"
+        ],
+        "expected_columns": [
+          "dim_product.product_id",
+          "dim_product.weight_g"
+        ],
+        "actual_columns": [
+          "dim_product.product_id",
+          "dim_product.weight_g"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "497c8d8b6d6d2f4569fbde2a891ca822aba861d6df632385fbb0d9d690bc1460",
+        "candidate_result_sha256": "497c8d8b6d6d2f4569fbde2a891ca822aba861d6df632385fbb0d9d690bc1460",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 22.936724,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "A01",
+        "bucket": "aggregate",
+        "question": "全部有效订单的GMV是多少",
+        "risk_tags": [
+          "metric_formula",
+          "exclude_freight"
+        ],
+        "generated_sql": "SELECT SUM(fact_order_item.price) AS '成交总额（GMV）' FROM fact_order_item JOIN fact_order ON fact_order_item.order_id = fact_order.order_id WHERE fact_order.status NOT IN ('canceled', 'unavailable');",
+        "validated_sql": "SELECT SUM(fact_order_item.price) AS `成交总额（GMV）` FROM fact_order_item JOIN fact_order ON fact_order_item.order_id = fact_order.order_id WHERE NOT fact_order.status IN ('canceled', 'unavailable') LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "fact_order",
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv"
+        ],
+        "actual_columns": [
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order_item.order_id",
+          "fact_order_item.price"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [
+          "order_item_to_order"
+        ],
+        "reference_result_sha256": "6b4dd0438c3a22b0f2e8f7e15f0a637206d64fbd0ba9d4db05b475b5e2a7f1bc",
+        "candidate_result_sha256": "6b4dd0438c3a22b0f2e8f7e15f0a637206d64fbd0ba9d4db05b475b5e2a7f1bc",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 33.823813,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.0,
+        "table_recall": 0.0,
+        "column_precision": 0.0,
+        "column_recall": 0.0,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "A02",
+        "bucket": "aggregate",
+        "question": "全部有效订单的整体订单量是多少",
+        "risk_tags": [
+          "overall_order_grain"
+        ],
+        "generated_sql": "SELECT COUNT(order_id) AS 整体订单量 FROM fact_order;",
+        "validated_sql": "SELECT COUNT(order_id) AS 整体订单量 FROM fact_order LIMIT 500",
+        "expected_metric_ids": [
+          "order_count"
+        ],
+        "actual_metric_ids": [
+          "order_count"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "fact_order"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.order_count"
+        ],
+        "actual_columns": [
+          "fact_order.order_id"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "d26d5fc4655976a806ef570c5e52308f3f180cfd998eda7c47b61fb843a7fe90",
+        "candidate_result_sha256": "73b09bb7df33d8dec9419a9696851d58cc37b0491e0b0e24faafdef7f7257735",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 30.988929,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.0,
+        "table_recall": 0.0,
+        "column_precision": 0.0,
+        "column_recall": 0.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "A03",
+        "bucket": "aggregate",
+        "question": "所有评价的平均评分是多少",
+        "risk_tags": [
+          "aggregate"
+        ],
+        "generated_sql": "SELECT AVG(score) AS 平均评分 FROM fact_review",
+        "validated_sql": "SELECT AVG(score) AS 平均评分 FROM fact_review LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_review"
+        ],
+        "actual_tables": [
+          "fact_review"
+        ],
+        "expected_columns": [
+          "fact_review.score"
+        ],
+        "actual_columns": [
+          "fact_review.score"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "20772fa6bacef4567a50a26f492227098c57bedbd29da3bfc86ee5d365fc4f15",
+        "candidate_result_sha256": "20772fa6bacef4567a50a26f492227098c57bedbd29da3bfc86ee5d365fc4f15",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 20.27636,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "A04",
+        "bucket": "aggregate",
+        "question": "支付明细一共有多少条记录",
+        "risk_tags": [
+          "payment_grain"
+        ],
+        "generated_sql": "SELECT COUNT(*) AS 支付记录总数 FROM fact_payment",
+        "validated_sql": "SELECT COUNT(*) AS 支付记录总数 FROM fact_payment LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_payment"
+        ],
+        "actual_tables": [
+          "fact_payment"
+        ],
+        "expected_columns": [
+          "fact_payment.order_id"
+        ],
+        "actual_columns": [],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "ccce0dcf48846f05d7401684cfd1b7ab5f834c7c8c85388d545ff7649679210e",
+        "candidate_result_sha256": "ccce0dcf48846f05d7401684cfd1b7ab5f834c7c8c85388d545ff7649679210e",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 23.956532,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 0.0,
+        "column_recall": 0.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "A05",
+        "bucket": "aggregate",
+        "question": "订单商品明细一共有多少件",
+        "risk_tags": [
+          "order_item_grain"
+        ],
+        "generated_sql": "SELECT COUNT(fact_order_item.order_id) AS 商品项数量 FROM fact_order_item;",
+        "validated_sql": "SELECT COUNT(fact_order_item.order_id) AS 商品项数量 FROM fact_order_item LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [
+          "item_count"
+        ],
+        "expected_tables": [
+          "fact_order_item"
+        ],
+        "actual_tables": [
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "fact_order_item.order_id"
+        ],
+        "actual_columns": [
+          "fact_order_item.order_id"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "c65149df80e4f8aadac699767445dc519c0084bee7e5fe8b790029802f2453cc",
+        "candidate_result_sha256": "c65149df80e4f8aadac699767445dc519c0084bee7e5fe8b790029802f2453cc",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 21.713734,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Metric Recognition Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 0.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "T01",
+        "bucket": "time",
+        "question": "2018年5月GMV是多少",
+        "risk_tags": [
+          "time",
+          "metric_formula"
+        ],
+        "generated_sql": "SELECT SUM(gmv) AS 成交总额 FROM dws_sales_region_daily WHERE date_id BETWEEN 20180501 AND 20180531",
+        "validated_sql": "SELECT SUM(gmv) AS 成交总额 FROM dws_sales_region_daily WHERE date_id BETWEEN 20180501 AND 20180531 LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.date_id"
+        ],
+        "actual_columns": [
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "bacf2ad0f1bb0e290562cdf0711c6a002e224591783709e73e53b9b3cfb679d3",
+        "candidate_result_sha256": "bacf2ad0f1bb0e290562cdf0711c6a002e224591783709e73e53b9b3cfb679d3",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 34.141118,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "T02",
+        "bucket": "time",
+        "question": "按月统计2018年的GMV趋势",
+        "risk_tags": [
+          "time",
+          "join",
+          "trend"
+        ],
+        "generated_sql": "SELECT dim_date.month AS 月份, SUM(fact_order_item.price) AS GMV FROM fact_order_item JOIN fact_order ON fact_order_item.order_id = fact_order.order_id JOIN dim_date ON fact_order.date_id = dim_date.date_id WHERE fact_order.status NOT IN ('canceled', 'unavailable') AND dim_date.year = 2018 GROUP BY dim_date.month ORDER BY dim_date.month;",
+        "validated_sql": "SELECT dim_date.month AS 月份, SUM(fact_order_item.price) AS GMV FROM fact_order_item JOIN fact_order ON fact_order_item.order_id = fact_order.order_id JOIN dim_date ON fact_order.date_id = dim_date.date_id WHERE NOT fact_order.status IN ('canceled', 'unavailable') AND dim_date.year = 2018 GROUP BY dim_date.month ORDER BY dim_date.month LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily",
+          "dim_date"
+        ],
+        "actual_tables": [
+          "dim_date",
+          "fact_order",
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "dim_date.month",
+          "dim_date.year"
+        ],
+        "actual_columns": [
+          "dim_date.date_id",
+          "dim_date.month",
+          "dim_date.year",
+          "fact_order.date_id",
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order_item.order_id",
+          "fact_order_item.price"
+        ],
+        "expected_join_relations": [
+          "region_daily_to_date"
+        ],
+        "actual_join_relations": [
+          "order_item_to_order",
+          "order_to_date"
+        ],
+        "reference_result_sha256": "81a098d0da817a8c6ca6889614679e91f88c7da158edb69bc3aaebbb84630f75",
+        "candidate_result_sha256": "81a098d0da817a8c6ca6889614679e91f88c7da158edb69bc3aaebbb84630f75",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 33.62584,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.3333333333333333,
+        "table_recall": 0.5,
+        "column_precision": 0.375,
+        "column_recall": 0.6,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "T03",
+        "bucket": "time",
+        "question": "2018年5月整体订单数是多少",
+        "risk_tags": [
+          "time",
+          "overall_order_grain"
+        ],
+        "generated_sql": "SELECT COUNT(order_id) AS 整体订单数 FROM fact_order WHERE purchase_date >= '2018-05-01' AND purchase_date < '2018-06-01'",
+        "validated_sql": "SELECT COUNT(order_id) AS 整体订单数 FROM fact_order WHERE purchase_date >= '2018-05-01' AND purchase_date < '2018-06-01' LIMIT 500",
+        "expected_metric_ids": [
+          "order_count"
+        ],
+        "actual_metric_ids": [
+          "order_count"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "fact_order"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id"
+        ],
+        "actual_columns": [
+          "fact_order.order_id",
+          "fact_order.purchase_date"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "81ae56aecaca676a0a62480a487791dbe954dbba389fcb7981a8a32e29be7dd6",
+        "candidate_result_sha256": "3d77080449b62d180c13a86d8f81fe6d21df87499edc43435279a10954594168",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 40.691596,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.0,
+        "table_recall": 0.0,
+        "column_precision": 0.0,
+        "column_recall": 0.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "T04",
+        "bucket": "time",
+        "question": "2018年第二季度的AOV是多少",
+        "risk_tags": [
+          "time",
+          "ratio_recompute",
+          "overall_order_grain"
+        ],
+        "generated_sql": "SELECT SUM(dws_sales_region_daily.gmv) / NULLIF(SUM(dws_sales_region_daily.order_count), 0) AS \"平均订单金额\" FROM dws_sales_region_daily JOIN dim_date ON dws_sales_region_daily.date_id = dim_date.date_id WHERE dim_date.year = 2018 AND dim_date.quarter = 2",
+        "validated_sql": "SELECT SUM(dws_sales_region_daily.gmv) / NULLIF(SUM(dws_sales_region_daily.order_count), 0) AS `平均订单金额` FROM dws_sales_region_daily JOIN dim_date ON dws_sales_region_daily.date_id = dim_date.date_id WHERE dim_date.year = 2018 AND dim_date.quarter = 2 LIMIT 500",
+        "expected_metric_ids": [
+          "aov"
+        ],
+        "actual_metric_ids": [
+          "aov"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "dim_date",
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id"
+        ],
+        "actual_columns": [
+          "dim_date.date_id",
+          "dim_date.quarter",
+          "dim_date.year",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.order_count"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [
+          "region_daily_to_date"
+        ],
+        "reference_result_sha256": "cf93901b4c71cf18a3406ddc9b0d0531cb2b92463e626c6ec82e58566d06c3d7",
+        "candidate_result_sha256": "cf93901b4c71cf18a3406ddc9b0d0531cb2b92463e626c6ec82e58566d06c3d7",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 19.155813,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.5,
+        "table_recall": 1.0,
+        "column_precision": 0.5,
+        "column_recall": 1.0,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "T05",
+        "bucket": "time",
+        "question": "列出2018年5月每日GMV，按日期排序",
+        "risk_tags": [
+          "time",
+          "trend"
+        ],
+        "generated_sql": "SELECT d.date AS 日期, SUM(r.gmv) AS 每日GMV FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE d.date BETWEEN '2018-05-01' AND '2018-05-31' GROUP BY d.date ORDER BY d.date ASC",
+        "validated_sql": "SELECT d.date AS 日期, SUM(r.gmv) AS 每日GMV FROM dws_sales_region_daily AS r JOIN dim_date AS d ON r.date_id = d.date_id WHERE d.date BETWEEN '2018-05-01' AND '2018-05-31' GROUP BY d.date ORDER BY d.date ASC LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "dim_date",
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv"
+        ],
+        "actual_columns": [
+          "dim_date.date",
+          "dim_date.date_id",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [
+          "region_daily_to_date"
+        ],
+        "reference_result_sha256": "3a10a6379c6adf23ff4a9213798759c94011cdf52d248ab4817b503a381eee4b",
+        "candidate_result_sha256": "ab121d3e0dc94745ccb29dc0c5f0a879a54cc5a8d33428e48369fbe24d78ee8e",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 33.202255,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.5,
+        "table_recall": 1.0,
+        "column_precision": 0.5,
+        "column_recall": 1.0,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "J01",
+        "bucket": "join",
+        "question": "按客户所在巴西州统计有效订单GMV",
+        "risk_tags": [
+          "join",
+          "one_to_many_join",
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT dim_region.state_code AS 州代码, SUM(fact_order_item.price) AS 成交总额 FROM fact_order_item INNER JOIN fact_order ON fact_order_item.order_id = fact_order.order_id INNER JOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id INNER JOIN dim_region ON dim_customer.state = dim_region.state_code WHERE fact_order.status NOT IN ('canceled', 'unavailable') GROUP BY dim_region.state_code ORDER BY dim_region.state_code ASC",
+        "validated_sql": "SELECT dim_region.state_code AS 州代码, SUM(fact_order_item.price) AS 成交总额 FROM fact_order_item INNER JOIN fact_order ON fact_order_item.order_id = fact_order.order_id INNER JOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id INNER JOIN dim_region ON dim_customer.state = dim_region.state_code WHERE NOT fact_order.status IN ('canceled', 'unavailable') GROUP BY dim_region.state_code ORDER BY dim_region.state_code ASC LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "fact_order_item",
+          "fact_order",
+          "dim_customer",
+          "dim_region"
+        ],
+        "actual_tables": [
+          "dim_customer",
+          "dim_region",
+          "fact_order",
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "fact_order.customer_id",
+          "fact_order.status",
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code"
+        ],
+        "actual_columns": [
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code",
+          "fact_order.customer_id",
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order_item.order_id",
+          "fact_order_item.price"
+        ],
+        "expected_join_relations": [
+          "order_item_to_order",
+          "order_to_customer",
+          "customer_to_region"
+        ],
+        "actual_join_relations": [
+          "customer_to_region",
+          "order_item_to_order",
+          "order_to_customer"
+        ],
+        "reference_result_sha256": "f74f35c0bd514eb9a43ca541b3e3ddc233eab9c21747dfd9755ac18ebf3cbcbd",
+        "candidate_result_sha256": "f74f35c0bd514eb9a43ca541b3e3ddc233eab9c21747dfd9755ac18ebf3cbcbd",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 29.70161,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "J02",
+        "bucket": "join",
+        "question": "按商品英文品类统计有效订单GMV",
+        "risk_tags": [
+          "join",
+          "one_to_many_join",
+          "category_semantics"
+        ],
+        "generated_sql": "SELECT \n  dc.category_name_en AS 英文品类,\n  SUM(foi.price) AS 成交总额\nFROM fact_order_item foi\nINNER JOIN fact_order fo ON foi.order_id = fo.order_id\nINNER JOIN dim_product dp ON foi.product_id = dp.product_id\nINNER JOIN dim_category dc ON dp.category_id = dc.category_id\nWHERE fo.status NOT IN ('canceled', 'unavailable')\nGROUP BY dc.category_id, dc.category_name_en\nORDER BY dc.category_id ASC;",
+        "validated_sql": "SELECT dc.category_name_en AS 英文品类, SUM(foi.price) AS 成交总额 FROM fact_order_item AS foi INNER JOIN fact_order AS fo ON foi.order_id = fo.order_id INNER JOIN dim_product AS dp ON foi.product_id = dp.product_id INNER JOIN dim_category AS dc ON dp.category_id = dc.category_id WHERE NOT fo.status IN ('canceled', 'unavailable') GROUP BY dc.category_id, dc.category_name_en ORDER BY dc.category_id ASC LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "fact_order_item",
+          "fact_order",
+          "dim_product",
+          "dim_category"
+        ],
+        "actual_tables": [
+          "dim_category",
+          "dim_product",
+          "fact_order",
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order_item.product_id",
+          "fact_order.order_id",
+          "fact_order.status",
+          "dim_product.product_id",
+          "dim_product.category_id",
+          "dim_category.category_id",
+          "dim_category.category_name_en"
+        ],
+        "actual_columns": [
+          "dim_category.category_id",
+          "dim_category.category_name_en",
+          "dim_product.category_id",
+          "dim_product.product_id",
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order_item.order_id",
+          "fact_order_item.price",
+          "fact_order_item.product_id"
+        ],
+        "expected_join_relations": [
+          "order_item_to_order",
+          "order_item_to_product",
+          "product_to_category"
+        ],
+        "actual_join_relations": [
+          "order_item_to_order",
+          "order_item_to_product",
+          "product_to_category"
+        ],
+        "reference_result_sha256": "0e3fa0aef1a716439781fc3e26d83e6a6bb3e88cb919e4010aa5ceb3882b13a7",
+        "candidate_result_sha256": "52374170e4bd1a9ad0bfa55afc632ffb772ab1358537de7c7d8dae3a68bbc60a",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 33.741918,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "SQL Generation Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "J03",
+        "bucket": "join",
+        "question": "按付款方式统计有效订单的支付明细记录数",
+        "risk_tags": [
+          "join",
+          "payment_grain"
+        ],
+        "generated_sql": "SELECT fact_payment.payment_type AS 付款方式, COUNT(*) AS 支付明细记录数 FROM fact_payment INNER JOIN fact_order ON fact_payment.order_id = fact_order.order_id GROUP BY fact_payment.payment_type",
+        "validated_sql": "SELECT fact_payment.payment_type AS 付款方式, COUNT(*) AS 支付明细记录数 FROM fact_payment INNER JOIN fact_order ON fact_payment.order_id = fact_order.order_id GROUP BY fact_payment.payment_type LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [
+          "order_count"
+        ],
+        "expected_tables": [
+          "fact_payment",
+          "fact_order"
+        ],
+        "actual_tables": [
+          "fact_order",
+          "fact_payment"
+        ],
+        "expected_columns": [
+          "fact_payment.payment_type",
+          "fact_payment.order_id",
+          "fact_order.order_id",
+          "fact_order.status"
+        ],
+        "actual_columns": [
+          "fact_order.order_id",
+          "fact_payment.order_id",
+          "fact_payment.payment_type"
+        ],
+        "expected_join_relations": [
+          "payment_to_order"
+        ],
+        "actual_join_relations": [
+          "payment_to_order"
+        ],
+        "reference_result_sha256": "07fb24f130e195aedc7616c66ad6c9c57e54f2b3a6ae69341750eba67fd06784",
+        "candidate_result_sha256": "3b828f65487658c974607c819badc65d00a581a67a46348f85892d5c526ea528",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 55.346561,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Metric Recognition Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 0.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 0.75,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "J04",
+        "bucket": "join",
+        "question": "按客户所在巴西州统计平均配送延迟天数",
+        "risk_tags": [
+          "join",
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT dim_region.state_code AS 州代码, AVG(fact_delivery.delay_days) AS 平均配送延迟天数 FROM fact_delivery INNER JOIN fact_order ON fact_delivery.order_id = fact_order.order_id INNER JOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id INNER JOIN dim_region ON dim_customer.state = dim_region.state_code GROUP BY dim_region.state_code ORDER BY dim_region.state_code ASC",
+        "validated_sql": "SELECT dim_region.state_code AS 州代码, AVG(fact_delivery.delay_days) AS 平均配送延迟天数 FROM fact_delivery INNER JOIN fact_order ON fact_delivery.order_id = fact_order.order_id INNER JOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id INNER JOIN dim_region ON dim_customer.state = dim_region.state_code GROUP BY dim_region.state_code ORDER BY dim_region.state_code ASC LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_delivery",
+          "fact_order",
+          "dim_customer",
+          "dim_region"
+        ],
+        "actual_tables": [
+          "dim_customer",
+          "dim_region",
+          "fact_delivery",
+          "fact_order"
+        ],
+        "expected_columns": [
+          "fact_delivery.delay_days",
+          "fact_delivery.order_id",
+          "fact_order.order_id",
+          "fact_order.customer_id",
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code"
+        ],
+        "actual_columns": [
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code",
+          "fact_delivery.delay_days",
+          "fact_delivery.order_id",
+          "fact_order.customer_id",
+          "fact_order.order_id"
+        ],
+        "expected_join_relations": [
+          "delivery_to_order",
+          "order_to_customer",
+          "customer_to_region"
+        ],
+        "actual_join_relations": [
+          "customer_to_region",
+          "delivery_to_order",
+          "order_to_customer"
+        ],
+        "reference_result_sha256": "ccd5a3b34c16a1e8133c5cf62587fd6fec7dbd679f743c1126edeffe9b053746",
+        "candidate_result_sha256": "ccd5a3b34c16a1e8133c5cf62587fd6fec7dbd679f743c1126edeffe9b053746",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 34.750925,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "J05",
+        "bucket": "join",
+        "question": "按客户所在巴西州统计评价记录数",
+        "risk_tags": [
+          "join",
+          "review_grain",
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT dim_region.state_code AS 州代码, COUNT(*) AS 评价记录数\nFROM fact_review\nJOIN fact_order ON fact_review.order_id = fact_order.order_id\nJOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id\nJOIN dim_region ON dim_customer.state = dim_region.state_code\nGROUP BY dim_region.state_code\nORDER BY dim_region.state_code ASC;",
+        "validated_sql": "SELECT dim_region.state_code AS 州代码, COUNT(*) AS 评价记录数 FROM fact_review JOIN fact_order ON fact_review.order_id = fact_order.order_id JOIN dim_customer ON fact_order.customer_id = dim_customer.customer_id JOIN dim_region ON dim_customer.state = dim_region.state_code GROUP BY dim_region.state_code ORDER BY dim_region.state_code ASC LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_review",
+          "fact_order",
+          "dim_customer",
+          "dim_region"
+        ],
+        "actual_tables": [
+          "dim_customer",
+          "dim_region",
+          "fact_order",
+          "fact_review"
+        ],
+        "expected_columns": [
+          "fact_review.review_id",
+          "fact_review.order_id",
+          "fact_order.order_id",
+          "fact_order.customer_id",
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code"
+        ],
+        "actual_columns": [
+          "dim_customer.customer_id",
+          "dim_customer.state",
+          "dim_region.state_code",
+          "fact_order.customer_id",
+          "fact_order.order_id",
+          "fact_review.order_id"
+        ],
+        "expected_join_relations": [
+          "review_to_order",
+          "order_to_customer",
+          "customer_to_region"
+        ],
+        "actual_join_relations": [
+          "customer_to_region",
+          "order_to_customer",
+          "review_to_order"
+        ],
+        "reference_result_sha256": "578460da2598a549c7064e53d489fa29eaeb4dfcb36622ffd247ee9cfa8849bb",
+        "candidate_result_sha256": "578460da2598a549c7064e53d489fa29eaeb4dfcb36622ffd247ee9cfa8849bb",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 38.751947,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 0.8571428571428571,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "N01",
+        "bucket": "topn",
+        "question": "GMV最高的5个客户州是哪些",
+        "risk_tags": [
+          "topn",
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT 客户州代码, 成交总额 FROM (SELECT region_id AS 客户州代码, SUM(gmv) AS 成交总额, ROW_NUMBER() OVER (ORDER BY SUM(gmv) DESC, region_id ASC) AS rn FROM dws_sales_region_daily GROUP BY region_id) AS top_region WHERE rn <= 5",
+        "validated_sql": "SELECT 客户州代码, 成交总额 FROM (SELECT region_id AS 客户州代码, SUM(gmv) AS 成交总额, ROW_NUMBER() OVER (ORDER BY SUM(gmv) DESC, region_id ASC) AS rn FROM dws_sales_region_daily GROUP BY region_id) AS top_region WHERE rn <= 5 LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily"
+        ],
+        "actual_tables": [
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.region_id",
+          "dws_sales_region_daily.gmv"
+        ],
+        "actual_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.region_id"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "e0a9a3bf3ea1ea5a6c029f14da82f0ad5bfc3449706a27f7430dcb3206fa4617",
+        "candidate_result_sha256": "e0a9a3bf3ea1ea5a6c029f14da82f0ad5bfc3449706a27f7430dcb3206fa4617",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 30.806662,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "N02",
+        "bucket": "topn",
+        "question": "2018年5月GMV最高的5个商品品类是什么",
+        "risk_tags": [
+          "topn",
+          "time",
+          "category_grain"
+        ],
+        "generated_sql": "SELECT category_id AS 商品品类, SUM(gmv) AS 品类成交额 FROM dws_sales_category_daily WHERE date_id >= 20180501 AND date_id < 20180601 GROUP BY category_id ORDER BY 品类成交额 DESC, category_id ASC LIMIT 5",
+        "validated_sql": "SELECT category_id AS 商品品类, SUM(gmv) AS 品类成交额 FROM dws_sales_category_daily WHERE date_id >= 20180501 AND date_id < 20180601 GROUP BY category_id ORDER BY 品类成交额 DESC, category_id ASC LIMIT 5",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_category_daily"
+        ],
+        "actual_tables": [
+          "dws_sales_category_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_category_daily.category_id",
+          "dws_sales_category_daily.gmv",
+          "dws_sales_category_daily.date_id"
+        ],
+        "actual_columns": [
+          "dws_sales_category_daily.category_id",
+          "dws_sales_category_daily.date_id",
+          "dws_sales_category_daily.gmv"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "06e56d216290a4eeb2d59cf5fcd202c6539cbda5d0a7225cb54e950d4d4c805a",
+        "candidate_result_sha256": "06e56d216290a4eeb2d59cf5fcd202c6539cbda5d0a7225cb54e950d4d4c805a",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 46.374763,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "N03",
+        "bucket": "topn",
+        "question": "有效订单GMV最高的5个卖家是谁",
+        "risk_tags": [
+          "topn",
+          "one_to_many_join",
+          "metric_formula"
+        ],
+        "generated_sql": "SELECT 卖家ID, 成交总额 FROM (SELECT f.seller_id AS 卖家ID, SUM(f.price) AS 成交总额, ROW_NUMBER() OVER (ORDER BY SUM(f.price) DESC, f.seller_id ASC) AS rn FROM fact_order_item f JOIN fact_order o ON f.order_id = o.order_id WHERE o.status NOT IN ('canceled', 'unavailable') GROUP BY f.seller_id) t WHERE rn <= 5",
+        "validated_sql": "SELECT 卖家ID, 成交总额 FROM (SELECT f.seller_id AS 卖家ID, SUM(f.price) AS 成交总额, ROW_NUMBER() OVER (ORDER BY SUM(f.price) DESC, f.seller_id ASC) AS rn FROM fact_order_item AS f JOIN fact_order AS o ON f.order_id = o.order_id WHERE NOT o.status IN ('canceled', 'unavailable') GROUP BY f.seller_id) AS t WHERE rn <= 5 LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "fact_order_item",
+          "fact_order"
+        ],
+        "actual_tables": [
+          "fact_order",
+          "fact_order_item"
+        ],
+        "expected_columns": [
+          "fact_order_item.seller_id",
+          "fact_order_item.price",
+          "fact_order_item.order_id",
+          "fact_order.order_id",
+          "fact_order.status"
+        ],
+        "actual_columns": [
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order_item.order_id",
+          "fact_order_item.price",
+          "fact_order_item.seller_id"
+        ],
+        "expected_join_relations": [
+          "order_item_to_order"
+        ],
+        "actual_join_relations": [
+          "order_item_to_order"
+        ],
+        "reference_result_sha256": "d78eb0820d181d4414ee92a5241ca7778dcfc1403857736eba082955a4c46cfb",
+        "candidate_result_sha256": "d78eb0820d181d4414ee92a5241ca7778dcfc1403857736eba082955a4c46cfb",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 34.164172,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "N04",
+        "bucket": "topn",
+        "question": "2018年5月商品项数最多的5个品类是什么",
+        "risk_tags": [
+          "topn",
+          "time",
+          "category_grain"
+        ],
+        "generated_sql": "SELECT category_name_en AS 英文品类, total_item_count AS 商品项数总计 FROM (SELECT dc.category_name_en, SUM(dsd.item_count) AS total_item_count, ROW_NUMBER() OVER (ORDER BY SUM(dsd.item_count) DESC, dsd.category_id ASC) AS rn FROM dws_sales_category_daily dsd JOIN dim_category dc ON dsd.category_id = dc.category_id WHERE dsd.date_id BETWEEN 20180501 AND 20180531 GROUP BY dsd.category_id, dc.category_name_en) t WHERE rn <= 5 ORDER BY rn",
+        "validated_sql": "SELECT category_name_en AS 英文品类, total_item_count AS 商品项数总计 FROM (SELECT dc.category_name_en, SUM(dsd.item_count) AS total_item_count, ROW_NUMBER() OVER (ORDER BY SUM(dsd.item_count) DESC, dsd.category_id ASC) AS rn FROM dws_sales_category_daily AS dsd JOIN dim_category AS dc ON dsd.category_id = dc.category_id WHERE dsd.date_id BETWEEN 20180501 AND 20180531 GROUP BY dsd.category_id, dc.category_name_en) AS t WHERE rn <= 5 ORDER BY rn LIMIT 500",
+        "expected_metric_ids": [
+          "item_count"
+        ],
+        "actual_metric_ids": [
+          "item_count"
+        ],
+        "expected_tables": [
+          "dws_sales_category_daily"
+        ],
+        "actual_tables": [
+          "dim_category",
+          "dws_sales_category_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_category_daily.category_id",
+          "dws_sales_category_daily.item_count",
+          "dws_sales_category_daily.date_id"
+        ],
+        "actual_columns": [
+          "dim_category.category_id",
+          "dim_category.category_name_en",
+          "dws_sales_category_daily.category_id",
+          "dws_sales_category_daily.date_id",
+          "dws_sales_category_daily.item_count"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [
+          "category_daily_to_category"
+        ],
+        "reference_result_sha256": "2b82b0d2957a0c598cb33fa9e57e3ff36b577a9cb2f67d8b57bde697093656d4",
+        "candidate_result_sha256": "10779edf11fbea2501c8a0008dbf7adf5e1f2d537732881cdf5190e396ec9e4f",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 22.190627,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.5,
+        "table_recall": 1.0,
+        "column_precision": 0.6,
+        "column_recall": 1.0,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "N05",
+        "bucket": "topn",
+        "question": "支付明细记录数最多的3种付款方式是什么",
+        "risk_tags": [
+          "topn",
+          "payment_grain"
+        ],
+        "generated_sql": "SELECT payment_type AS 付款方式, COUNT(*) AS 支付记录数 FROM fact_payment GROUP BY payment_type ORDER BY 支付记录数 DESC, payment_type ASC LIMIT 3",
+        "validated_sql": "SELECT payment_type AS 付款方式, COUNT(*) AS 支付记录数 FROM fact_payment GROUP BY payment_type ORDER BY 支付记录数 DESC, payment_type ASC LIMIT 3",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [],
+        "expected_tables": [
+          "fact_payment"
+        ],
+        "actual_tables": [
+          "fact_payment"
+        ],
+        "expected_columns": [
+          "fact_payment.payment_type",
+          "fact_payment.order_id"
+        ],
+        "actual_columns": [
+          "fact_payment.payment_type"
+        ],
+        "expected_join_relations": [],
+        "actual_join_relations": [],
+        "reference_result_sha256": "63f5b0d215591d2156403228e5face55cf21ea9a0981962efb15d08f4d43d57b",
+        "candidate_result_sha256": "63f5b0d215591d2156403228e5face55cf21ea9a0981962efb15d08f4d43d57b",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 19.144142,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 0.5,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "C01",
+        "bucket": "comparison",
+        "question": "对比2018年4月和5月的GMV",
+        "risk_tags": [
+          "comparison",
+          "time",
+          "join"
+        ],
+        "generated_sql": "SELECT CONCAT(LEFT(CAST(date_id AS CHAR),4), '-', RIGHT(LEFT(CAST(date_id AS CHAR),6),2)) AS 月份, SUM(gmv) AS 成交总额 FROM dws_sales_region_daily WHERE date_id BETWEEN 20180401 AND 20180531 GROUP BY CONCAT(LEFT(CAST(date_id AS CHAR),4), '-', RIGHT(LEFT(CAST(date_id AS CHAR),6),2)) ORDER BY 月份;",
+        "validated_sql": "",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily",
+          "dim_date"
+        ],
+        "actual_tables": [],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "dim_date.month"
+        ],
+        "actual_columns": [],
+        "expected_join_relations": [
+          "region_daily_to_date"
+        ],
+        "actual_join_relations": [],
+        "reference_result_sha256": "cd4aa051fb5040f1d07df682a0215b36ced33c0c1f037b1110fe3cc5c2c5c6a7",
+        "candidate_result_sha256": null,
+        "reference_checksum_verified": true,
+        "repair_attempts": 1,
+        "latency_seconds": 67.243498,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": "function is not allowlisted: left",
+        "error_category": "SQL Generation Error",
+        "sql_validity_rate": 0.0,
+        "sql_executability": 0.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 0.0,
+        "table_recall": 0.0,
+        "column_precision": 0.0,
+        "column_recall": 0.0,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 0.0
+      },
+      {
+        "case_id": "C02",
+        "bucket": "comparison",
+        "question": "对比2018年4月和5月的整体订单数",
+        "risk_tags": [
+          "comparison",
+          "time",
+          "overall_order_grain"
+        ],
+        "generated_sql": "SELECT dim_date.month AS 月份, SUM(dws_sales_region_daily.order_count) AS 整体订单数 FROM dws_sales_region_daily JOIN dim_date ON dws_sales_region_daily.date_id = dim_date.date_id WHERE dim_date.month IN ('2018-04','2018-05') GROUP BY dim_date.month ORDER BY dim_date.month",
+        "validated_sql": "SELECT dim_date.month AS 月份, SUM(dws_sales_region_daily.order_count) AS 整体订单数 FROM dws_sales_region_daily JOIN dim_date ON dws_sales_region_daily.date_id = dim_date.date_id WHERE dim_date.month IN ('2018-04', '2018-05') GROUP BY dim_date.month ORDER BY dim_date.month LIMIT 500",
+        "expected_metric_ids": [
+          "order_count"
+        ],
+        "actual_metric_ids": [
+          "order_count"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily",
+          "dim_date"
+        ],
+        "actual_tables": [
+          "dim_date",
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "dim_date.month"
+        ],
+        "actual_columns": [
+          "dim_date.date_id",
+          "dim_date.month",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.order_count"
+        ],
+        "expected_join_relations": [
+          "region_daily_to_date"
+        ],
+        "actual_join_relations": [
+          "region_daily_to_date"
+        ],
+        "reference_result_sha256": "1946f24f838a029407832d7de4044774df638b9f7ad5a49157822626748e4d0f",
+        "candidate_result_sha256": "1946f24f838a029407832d7de4044774df638b9f7ad5a49157822626748e4d0f",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 25.167323,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "C03",
+        "bucket": "comparison",
+        "question": "对比圣保罗州2018年4月和5月的GMV",
+        "risk_tags": [
+          "comparison",
+          "time",
+          "value_grounding",
+          "brazil_region_semantics"
+        ],
+        "generated_sql": "SELECT d.month AS 月份, SUM(r.gmv) AS 成交总额 FROM dws_sales_region_daily r JOIN dim_date d ON r.date_id = d.date_id WHERE r.region_id = 'SP' AND d.month IN ('2018-04', '2018-05') GROUP BY d.month ORDER BY d.month",
+        "validated_sql": "SELECT d.month AS 月份, SUM(r.gmv) AS 成交总额 FROM dws_sales_region_daily AS r JOIN dim_date AS d ON r.date_id = d.date_id WHERE r.region_id = 'SP' AND d.month IN ('2018-04', '2018-05') GROUP BY d.month ORDER BY d.month LIMIT 500",
+        "expected_metric_ids": [
+          "gmv"
+        ],
+        "actual_metric_ids": [
+          "gmv"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily",
+          "dim_date"
+        ],
+        "actual_tables": [
+          "dim_date",
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.region_id",
+          "dim_date.date_id",
+          "dim_date.month"
+        ],
+        "actual_columns": [
+          "dim_date.date_id",
+          "dim_date.month",
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.region_id"
+        ],
+        "expected_join_relations": [
+          "region_daily_to_date"
+        ],
+        "actual_join_relations": [
+          "region_daily_to_date"
+        ],
+        "reference_result_sha256": "5fb8bc72a51243c031cd11f9f2eb46936ad0f5f3fb811f31eb9522b774b7acc6",
+        "candidate_result_sha256": "5fb8bc72a51243c031cd11f9f2eb46936ad0f5f3fb811f31eb9522b774b7acc6",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 26.049004,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": null,
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 1.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 1.0,
+        "column_precision": 1.0,
+        "column_recall": 1.0,
+        "join_accuracy": 1.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "C04",
+        "bucket": "comparison",
+        "question": "对比2018年4月和5月的AOV",
+        "risk_tags": [
+          "comparison",
+          "time",
+          "ratio_recompute",
+          "overall_order_grain"
+        ],
+        "generated_sql": "SELECT date_id DIV 100 AS 月份, SUM(gmv) / NULLIF(SUM(order_count), 0) AS 平均订单金额 FROM dws_sales_region_daily WHERE date_id BETWEEN 20180401 AND 20180531 GROUP BY date_id DIV 100 ORDER BY 月份;",
+        "validated_sql": "SELECT CAST(date_id / 100 AS SIGNED) AS 月份, SUM(gmv) / NULLIF(SUM(order_count), 0) AS 平均订单金额 FROM dws_sales_region_daily WHERE date_id BETWEEN 20180401 AND 20180531 GROUP BY CAST(date_id / 100 AS SIGNED) ORDER BY 月份 LIMIT 500",
+        "expected_metric_ids": [
+          "aov"
+        ],
+        "actual_metric_ids": [
+          "aov"
+        ],
+        "expected_tables": [
+          "dws_sales_region_daily",
+          "dim_date"
+        ],
+        "actual_tables": [
+          "dws_sales_region_daily"
+        ],
+        "expected_columns": [
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.order_count",
+          "dws_sales_region_daily.date_id",
+          "dim_date.date_id",
+          "dim_date.month"
+        ],
+        "actual_columns": [
+          "dws_sales_region_daily.date_id",
+          "dws_sales_region_daily.gmv",
+          "dws_sales_region_daily.order_count"
+        ],
+        "expected_join_relations": [
+          "region_daily_to_date"
+        ],
+        "actual_join_relations": [],
+        "reference_result_sha256": "afb9f5a1df6ccd12a20939dd6aa9f4b51ae4f78ed7f62cb0a8764d222b795c2a",
+        "candidate_result_sha256": "c81a1432ba9366124faad6fbd9b78cee3e6feaa4ce2df2318f9fe85c39ffe864",
+        "reference_checksum_verified": true,
+        "repair_attempts": 1,
+        "latency_seconds": 46.544532,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Schema Linking Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 1.0,
+        "table_precision": 1.0,
+        "table_recall": 0.5,
+        "column_precision": 1.0,
+        "column_recall": 0.6,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      },
+      {
+        "case_id": "C05",
+        "bucket": "comparison",
+        "question": "对比2018年4月和5月已送达与已取消订单的数量",
+        "risk_tags": [
+          "comparison",
+          "time",
+          "canonical_value",
+          "join"
+        ],
+        "generated_sql": "SELECT MONTH(purchase_date) AS 月份, status AS 订单状态, COUNT(DISTINCT order_id) AS 订单数量 FROM fact_order WHERE purchase_date >= '2018-04-01' AND purchase_date < '2018-06-01' AND status IN ('delivered', 'canceled') GROUP BY MONTH(purchase_date), status ORDER BY 月份, 订单状态",
+        "validated_sql": "SELECT MONTH(purchase_date) AS 月份, status AS 订单状态, COUNT(DISTINCT order_id) AS 订单数量 FROM fact_order WHERE purchase_date >= '2018-04-01' AND purchase_date < '2018-06-01' AND status IN ('delivered', 'canceled') GROUP BY MONTH(purchase_date), status ORDER BY 月份, 订单状态 LIMIT 500",
+        "expected_metric_ids": [],
+        "actual_metric_ids": [
+          "order_count"
+        ],
+        "expected_tables": [
+          "fact_order",
+          "dim_date"
+        ],
+        "actual_tables": [
+          "fact_order"
+        ],
+        "expected_columns": [
+          "fact_order.order_id",
+          "fact_order.status",
+          "fact_order.date_id",
+          "dim_date.date_id",
+          "dim_date.month"
+        ],
+        "actual_columns": [
+          "fact_order.order_id",
+          "fact_order.purchase_date",
+          "fact_order.status"
+        ],
+        "expected_join_relations": [
+          "order_to_date"
+        ],
+        "actual_join_relations": [],
+        "reference_result_sha256": "12618b0f6e7790e780738b74d763353dab70a0d6f9c549799e8e790b06fe1b38",
+        "candidate_result_sha256": "e1a951fbdccbfcdfd81721d618eadb7cfdc9fb82ea96245de136ecf4f55b3216",
+        "reference_checksum_verified": true,
+        "repair_attempts": 0,
+        "latency_seconds": 32.484576,
+        "input_tokens": null,
+        "output_tokens": null,
+        "error": null,
+        "error_category": "Metric Recognition Error",
+        "sql_validity_rate": 1.0,
+        "sql_executability": 1.0,
+        "execution_accuracy": 0.0,
+        "metric_accuracy": 0.0,
+        "table_precision": 1.0,
+        "table_recall": 0.5,
+        "column_precision": 0.6666666666666666,
+        "column_recall": 0.4,
+        "join_accuracy": 0.0,
+        "grain_safety_rate": 1.0
+      }
+    ]
+  },
+  "safety_probes": {
+    "probe_count": 12,
+    "rejected_count": 12,
+    "dangerous_sql_allowed_count": 0,
+    "allowed_probe_ids": []
+  },
+  "gate_checks": {
+    "all_30_cases_recorded": true,
+    "six_buckets_have_five_cases": true,
+    "all_reference_checksums_verified": true,
+    "all_required_metrics_reported": true,
+    "dangerous_sql_allowed_count_is_zero": true,
+    "all_failures_classified": true
+  },
+  "gate_3_passed": true
+}

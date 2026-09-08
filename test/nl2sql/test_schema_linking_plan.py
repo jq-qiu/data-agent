@@ -93,20 +93,6 @@ async def test_region_question_completes_dim_region_join_path(
 ) -> None:
     path = (
         SchemaLinkingJoin(
-            relation_id="order_item_to_order",
-            left_table="fact_order_item",
-            left_column="order_id",
-            right_table="fact_order",
-            right_column="order_id",
-        ),
-        SchemaLinkingJoin(
-            relation_id="order_to_customer",
-            left_table="fact_order",
-            left_column="customer_id",
-            right_table="dim_customer",
-            right_column="customer_id",
-        ),
-        SchemaLinkingJoin(
             relation_id="customer_to_region",
             left_table="dim_customer",
             left_column="state",
@@ -136,23 +122,15 @@ async def test_region_question_completes_dim_region_join_path(
         metric_infos=[_metric("gmv")],
         join_relations=[
             {
-                "relation_id": "order_item_to_order",
-                "left_table": "fact_order_item",
-                "left_column": "order_id",
-                "right_table": "fact_order",
-                "right_column": "order_id",
-                "cardinality": "many_to_one",
-                "grain_warning": "",
-            },
-            {
-                "relation_id": "order_to_customer",
-                "left_table": "fact_order",
-                "left_column": "customer_id",
-                "right_table": "dim_customer",
-                "right_column": "customer_id",
-                "cardinality": "many_to_one",
-                "grain_warning": "",
-            },
+                "relation_id": relation.relation_id,
+                "left_table": relation.left_table,
+                "left_column": relation.left_column,
+                "right_table": relation.right_table,
+                "right_column": relation.right_column,
+                "cardinality": relation.cardinality,
+                "grain_warning": relation.grain_warning,
+            }
+            for relation in catalog.relationships
         ],
     )
 
@@ -161,7 +139,7 @@ async def test_region_question_completes_dim_region_join_path(
     assert {"order_item_to_order", "order_to_customer", "customer_to_region"}.issubset(
         {join.relation_id for join in plan.join_relations}
     )
-    assert provider.calls == [("fact_order_item", "dim_region")]
+    assert provider.calls == [("dim_customer", "dim_region")]
 
 
 @pytest.mark.asyncio
@@ -234,3 +212,44 @@ async def test_region_filter_without_group_cue_does_not_force_grouping(
 
     assert plan.group_by_columns == ()
     assert plan.metric_ids == ("gmv",)
+
+
+@pytest.mark.asyncio
+async def test_aggregate_dimension_groups_without_registered_metric(
+    catalog,
+) -> None:
+    path = (
+        SchemaLinkingJoin(
+            relation_id="customer_to_region",
+            left_table="dim_customer",
+            left_column="state",
+            right_table="dim_region",
+            right_column="state_code",
+        ),
+    )
+    provider = StubPathProvider(path)
+    builder = SchemaLinkingPlanBuilder(catalog, provider)
+    plan = await builder.build(
+        query="按客户所在巴西州统计平均配送延迟天数",
+        table_infos=[
+            _table("fact_delivery", ("order_id", "delay_days")),
+            _table("fact_order", ("order_id", "customer_id", "status")),
+            _table("dim_customer", ("customer_id", "state"), role="dimension"),
+        ],
+        metric_infos=[],
+        join_relations=[
+            {
+                "relation_id": relation.relation_id,
+                "left_table": relation.left_table,
+                "left_column": relation.left_column,
+                "right_table": relation.right_table,
+                "right_column": relation.right_column,
+                "cardinality": relation.cardinality,
+                "grain_warning": relation.grain_warning,
+            }
+            for relation in catalog.relationships
+        ],
+    )
+
+    assert "dim_region.state_code" in plan.group_by_columns
+    assert plan.metric_ids == ()

@@ -2,15 +2,15 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口。SQL-004 Deterministic SchemaLinkingPlan
-已完成并经用户批准：在 SQL 生成前冻结指标、表、列与 JOIN 路径，不改变
-SQL-002 历史评测基线；真实模型复测属于后续 SQL-005。
+MVP V1 的功能与工程链路已收口。SQL-005 已使用 SQL-004 SchemaLinkingPlan
+链路完成 30 条真实模型复测：Execution Accuracy 16/30 → 19/30，
+JOIN bucket 0/5 → 3/5；SQL-002 历史报告保持不可变。
 
 ## Current Feature
 
-SQL-004 Deterministic SchemaLinkingPlan.
+SQL-005 NL2SQL SchemaLinkingPlan Rerun.
 
-## Feature Status (SQL-004 completed, user approved)
+## Feature Status (SQL-005 completed, user approved)
 
 Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
 GitHub visibility remains unchanged until the separate action-time confirmation.
@@ -23,17 +23,17 @@ COMMENT-001 Chinese Code Explanation.
 
 ## Next Feature
 
-以 SQL-005 重跑 30 条真实模型基线，验证 SchemaLinkingPlan 对 JOIN/维度的改进。
+继续基于 SQL-005 失败样本修正 SQL 文本/时间表达与 Schema 严格匹配。
 生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
 
 ## Last Successful Validation
 
-- SQL-004 implementation complete, user approved, 343 pytest passed, Ruff/mypy clean.
+- SQL-005 implementation complete, user approved, 344 pytest passed, Ruff/mypy clean.
 - SHOWCASE-001 full pytest regression: 338 passed；frontend 11 passed/build passed；
   Ruff/mypy 0/0；
-- SQL-004 full pytest regression: 343 passed；Ruff/mypy 0/0；
-- SQL-004 SchemaLinkingPlan: 5 个单测覆盖地区路径补全、DWS 品类优先、未知列校验、断连失败关闭和地区过滤不误分组；
-- SQL-004 真实模型复测：未执行；SQL-002 历史 16/30 保持不可变；
+- SQL-005 full pytest regression: 344 passed；Ruff/mypy 0/0；
+- SQL-005 SchemaLinkingPlan 单元测试: 6 passed（含聚合无指标分组、全 Registry 连通回归）；
+- SQL-005 真实模型复测: Execution Accuracy 19/30；JOIN 0/5 → 3/5；SQL-002 历史 16/30 保持不可变；
 - SHOWCASE-001 documentation contract: 23 passed；当前事实源 Markdown 断链 0；
   33/34 历史报告保持原 Git blob，INTERVIEW-001 报告仅移除不公开资料说明；
 - INTERVIEW-001 deliverables: 2 documents created and linked from README；

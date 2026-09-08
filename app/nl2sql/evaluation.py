@@ -240,7 +240,11 @@ def evaluate_safety_probes(validator: SQLValidator) -> dict[str, Any]:
 async def evaluate_nl2sql_cases(
     cases: Sequence[NL2SQLGoldenCase],
     run_candidate: Callable[[NL2SQLGoldenCase], Awaitable[NL2SQLRun]],
-    run_reference: Callable[[NL2SQLGoldenCase], Awaitable[list[dict[str, Any]]]],
+    run_reference: Callable[
+        [NL2SQLGoldenCase],
+        Awaitable[list[dict[str, Any]]],
+    ]
+    | None = None,
 ) -> dict[str, Any]:
     case_results: list[dict[str, Any]] = []
     aggregate: dict[str, list[float]] = {
@@ -260,10 +264,19 @@ async def evaluate_nl2sql_cases(
     reference_verified = 0
 
     for case in cases:
-        reference_rows = await run_reference(case)
-        reference_sha = result_checksum(reference_rows, ordered=case.result_ordered)
-        reference_matches = reference_sha == case.expected_result_sha256
-        reference_verified += int(reference_matches)
+        if run_reference is None:
+            # SQL-005 模式：参考 SQL 已冻结为 Golden checksum，不再重跑参考 SQL。
+            reference_sha = case.expected_result_sha256
+            reference_matches = reference_sha is not None
+            reference_verified += int(reference_matches)
+        else:
+            reference_rows = await run_reference(case)
+            reference_sha = result_checksum(
+                reference_rows,
+                ordered=case.result_ordered,
+            )
+            reference_matches = reference_sha == case.expected_result_sha256
+            reference_verified += int(reference_matches)
         started_at = perf_counter()
         try:
             run = await run_candidate(case)
@@ -417,7 +430,7 @@ def write_evaluation_artifacts(
 
     failures = [item for item in case_rows if item["error_category"]]
     lines = [
-        "# SQL-002 Error Analysis",
+        f"# {result['run_id']} Error Analysis",
         "",
         f"Failed cases: {len(failures)}/{len(case_rows)}",
         "",
