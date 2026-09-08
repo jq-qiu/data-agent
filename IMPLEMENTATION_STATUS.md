@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-020 已刷新真实最优：
-26/30，N03 转通过，无回退。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-021 已让 Daily DWS Plan
+直接按 date_id 分组排序；真实复测待 SQL-022。
 
 ## Current Feature
 
-SQL-020 Post-SQL-019 Real-model Rerun.
+SQL-021 Daily DWS Calendar Scope.
 
-## Feature Status (SQL-020 completed)
+## Feature Status (SQL-021 completed)
 
-Completed and validated. Compatible/Strict Execution 26/30，Metric Accuracy 30/30，
-Validator Acceptance 30/30，Grain 9/15，Trace 20/30，Gate 3 true，Live/Replay 完全一致。
+Completed and validated. “每日/按日/按日期”且无既有分组时，Plan 直接使用候选表中最优
+date_id（DWS/aggregate）作为 group/order 列。
 
 ## Last Completed Feature
 
-SQL-020 Post-SQL-019 Real-model Rerun.
+SQL-021 Daily DWS Calendar Scope.
 
 ## Next Feature
 
-SQL-021 Daily DWS Calendar Scope。让“每日/date_id”查询直接使用 DWS，避免模型
-引入 dim_date 并按 dim_date.date 分组；目标 SQL-020 T05。
+SQL-022 Post-SQL-021 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
+Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
 
 ## Last Successful Validation
 
+- SQL-021 daily DWS scope: schema-linking contract 20 passed；Daily Plan group/order =
+  DWS date_id；SQL-020/historical artifacts changed: 0；
 - SQL-020 real-model rerun: compatible/strict Execution 26/30；Metric Accuracy 30/30；
   Validator Acceptance 30/30；Grain 9/15；Trace 20/30；N03 fixed，no regression；
 - SQL-019 join-key canonicalization: schema/repair contract 39 passed；registered Join
@@ -276,20 +278,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-020 开始前，本地 `HEAD` 为 SQL-019 commit `84db3d8`。SQL-020 不执行远端推送
+SQL-021 开始前，本地 `HEAD` 为 SQL-020 commit `5191813`。SQL-021 不执行远端推送
 或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-020 实测兼容/严格 Execution 为 26/30，Gate true；Grain 9/15、Trace 20/30、
-Validator Acceptance 30/30。N03 转通过，J02 已通过 Validator 但仍有结果值差异，
-C05/T05/N02 保持失败。J02 的数值差异需单独诊断后才能立项。
+SQL-021 已本地让 Daily DWS 按 date_id 分组，但尚未真实复测；SQL-020 的 26/30 仍是
+最近实测。J02 差异已定位为 3 个 NULL category_name_en 在 name-only 与 id+name 分组间
+的 Golden/Plan 语义冲突；C05/N02 仍待处理。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-020_post_sql019_real_model_rerun.md` and
-   `docs/reports/SQL-020_COMPLETION.md`.
-4. Diagnose J02 result-value difference，然后冻结对应单一修复 Spec。
-5. Create and freeze a SQL-021 Spec for Daily DWS calendar scope only.
+3. Review `specs/SQL-021_daily_dws_calendar_scope.md` and
+   `docs/reports/SQL-021_COMPLETION.md`.
+4. Create and freeze a SQL-022 Spec for the post-SQL-021 Live/Replay rerun.
+5. Keep J02 semantic conflict and C05/N02 outside that evaluation Feature.

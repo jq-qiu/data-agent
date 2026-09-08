@@ -425,6 +425,12 @@ class SchemaLinkingPlanBuilder:
         ):
             group_columns.append("fact_order.status")
 
+        # Daily/date-level DWS 查询直接按物理 date_id 分组，避免引入 dim_date.date。
+        if _contains_any(query, _CALENDAR_DATE_GROUP_TERMS) and not group_columns:
+            daily_date_id = self._direct_dimension_column(plan_tables, "date_id")
+            if daily_date_id is not None:
+                group_columns.append(daily_date_id)
+
         mentioned_dimensions = self._mentioned_dimension_columns(
             query,
             plan_tables,

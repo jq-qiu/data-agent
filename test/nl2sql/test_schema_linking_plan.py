@@ -498,3 +498,27 @@ async def test_registered_join_columns_are_added_to_plan_columns(catalog) -> Non
     assert "dim_product.category_id" in plan.columns
     assert "dim_product.product_id" in plan.columns
     assert "dim_category.category_id" in plan.columns
+
+
+
+@pytest.mark.asyncio
+async def test_daily_dws_groups_and_orders_by_physical_date_id(catalog) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="列出2018年5月每日GMV，按日期排序",
+        table_infos=[
+            _table(
+                "dws_sales_region_daily",
+                ("date_id", "region_id", "gmv"),
+                role="aggregate",
+            ),
+            _table("dim_date", ("date_id", "date", "month"), role="dimension"),
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=_relationships(catalog),
+    )
+
+    assert plan.group_by_columns == ("dws_sales_region_daily.date_id",)
+    assert tuple(item.column for item in plan.order_by) == (
+        "dws_sales_region_daily.date_id",
+    )

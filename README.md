@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 397 passed | 当前仓库行为回归 |
+| Python 全量回归 | 398 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -260,10 +260,10 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
-SQL-010 的 26/30、SQL-014/018 的 25/30 均为单次真实运行。SQL-019 补全 registered
-Join 列并规范化等价 Group 键后，SQL-020 刷新为 26/30（Metric 与 Validator Acceptance
-30/30，Grain 9/15），N03 转通过且无回退。J02 仍为 Trace 全对但结果值差异，C05/T05/
-N02 待后续修复。
+SQL-010 的 26/30、SQL-014/018 的 25/30 均为单次真实运行。SQL-019/020 后 SQL-020
+刷新为 26/30（Metric 与 Validator Acceptance 30/30，Grain 9/15）。SQL-021 再让 Daily
+DWS 查询按物理 date_id 分组排序；尚未执行新的真实复测。J02 差异已定位为 NULL
+category_name_en 的 Golden/Plan 分组语义冲突。
 
 ## 技术栈
 

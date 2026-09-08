@@ -141,8 +141,8 @@ JOIN 关系必须来自 Relationship Registry，不能让 LLM 根据字段名自
 
 `SchemaLinkingPlan` 同时冻结 `required_metric_columns`、`calendar_table`、规范分组列、
 显示列、排序和固定过滤。SQL-017 起 DWS-only `required_metric_columns` 只含公式必需列。
-SQL-019 起 registered Join 左右列无条件进入 plan.columns，且修复器把 GROUP BY 中等价
-Join 键确定性地规范成 Plan 分组列。开放式问数的 Validator 必须再次核对 SQL 没有使用方案外
+SQL-019 起 registered Join 左右列无条件进入 plan.columns。SQL-021 起“每日/按日/
+按日期”查询在候选表含 date_id 时直接按物理 date_id 分组排序，不默认引入 dim_date.date。开放式问数的 Validator 必须再次核对 SQL 没有使用方案外
 表、列或 JOIN，并要求 GROUP BY、ORDER BY 和固定过滤与方案一致；生成节点和执行节点
 都使用同一 Plan 复验，不能在修复后绕过。
 

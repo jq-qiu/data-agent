@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "SQL-020 Post-SQL-019 Real-model Rerun" in _markdown_section(
+    assert "SQL-021 Daily DWS Calendar Scope" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "SQL-020 Post-SQL-019 Real-model Rerun" in _markdown_section(
+    assert "SQL-021 Daily DWS Calendar Scope" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "SQL-021 Daily DWS Calendar Scope" in _markdown_section(
+    assert "SQL-022 Post-SQL-021 Real-model Rerun" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "SQL-021 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-022 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 

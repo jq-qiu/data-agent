@@ -47,6 +47,7 @@
 - [SQL-018 Post-SQL-017 Real-model Rerun](SQL-018_COMPLETION.md)
 - [SQL-019 Group-by Join-key Canonicalization](SQL-019_COMPLETION.md)
 - [SQL-020 Post-SQL-019 Real-model Rerun](SQL-020_COMPLETION.md)
+- [SQL-021 Daily DWS Calendar Scope](SQL-021_COMPLETION.md)
 
 ## 诊断分析与评测
 
