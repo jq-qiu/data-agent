@@ -196,7 +196,7 @@ SQL-010 Post-SQL-009 Real-model Rerun
 | Feature | 目标 | 状态边界 |
 |---|---|---|
 | DOC-002 | 同步当前状态、能力边界和恢复指引 | 当前文档一致性 Feature |
-| EVAL-002 | 修复结果列语义、Grain、Correction 和 Replay 身份等评测可信度问题 | 计划，未开始；不得更新运行时准确率 |
+| EVAL-002 | 修复结果列语义、Grain、Correction 和 Replay 身份等评测可信度问题 | 已完成；未运行真实模型，不更新运行时准确率 |
 | SQL-010 | 在可信评测器上执行 SQL-009 后 Live/Replay 真实复测 | 计划，未开始；不得预先声明提升 |
 
 SQL-010 完成前不根据 SQL-008 的旧失败继续叠加 Runtime 规则。真实复测后若仍有失败，

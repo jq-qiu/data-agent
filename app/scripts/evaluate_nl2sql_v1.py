@@ -8,7 +8,7 @@ import hashlib
 import json
 import subprocess
 import sys
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from time import perf_counter
@@ -61,14 +61,25 @@ PROMPT_PATHS = (
     ROOT / "prompts" / "generate_sql.prompt",
     ROOT / "prompts" / "correct_sql.prompt",
 )
-EVALUATOR_VERSION = "sql-evaluator-v1"
+EVALUATOR_VERSION = "sql-evaluator-v2"
 
 
-def _digest_paths(paths: tuple[Path, ...]) -> str:
+def _runtime_paths() -> tuple[Path, ...]:
+    paths = {
+        *ROOT.joinpath("app").rglob("*.py"),
+        CATALOG_PATH,
+        POLICY_PATH,
+    }
+    return tuple(sorted(paths, key=lambda path: path.relative_to(ROOT).as_posix()))
+
+
+def _digest_paths(paths: Sequence[Path]) -> str:
     digest = hashlib.sha256()
     for path in paths:
-        digest.update(path.name.encode("utf-8"))
+        digest.update(path.relative_to(ROOT).as_posix().encode("utf-8"))
+        digest.update(b"\0")
         digest.update(path.read_bytes())
+        digest.update(b"\0")
     return digest.hexdigest()
 
 
@@ -80,6 +91,17 @@ def _source_commit() -> str:
         capture_output=True,
         text=True,
     ).stdout.strip()
+
+
+def _source_dirty() -> bool:
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return bool(status.strip())
 
 
 class LiveGraphRunner:
@@ -214,16 +236,10 @@ async def run_evaluation(
     policy = load_sql_policy(POLICY_PATH)
     validator = SQLValidator(catalog, policy)
     dataset_version, cases = load_nl2sql_golden(golden_path)
-    dataset_sha256 = hashlib.sha256(golden_path.read_bytes()).hexdigest()
     prompt_bundle_sha256 = _digest_paths(PROMPT_PATHS)
-    replay_identity = ReplayCacheIdentity(
-        dataset_sha256=dataset_sha256,
-        prompt_bundle_sha256=prompt_bundle_sha256,
-        metadata_version=catalog.version,
-        sql_policy_version=policy.version,
-        model_name=app_config.llm.model,
-        evaluator_version=EVALUATOR_VERSION,
-    )
+    runtime_bundle_sha256 = _digest_paths(_runtime_paths())
+    source_commit = _source_commit()
+    source_dirty = _source_dirty()
 
     if mode == "live":
         dw_mysql_client_manager.init()
@@ -245,28 +261,55 @@ async def run_evaluation(
                 dataset_version, cases = load_nl2sql_golden(golden_path)
         if any(case.expected_result_sha256 is None for case in cases):
             raise RuntimeError("reference checksums are not frozen; run with --freeze-reference")
+        dataset_sha256 = hashlib.sha256(golden_path.read_bytes()).hexdigest()
+        replay_identity = ReplayCacheIdentity(
+            dataset_sha256=dataset_sha256,
+            prompt_bundle_sha256=prompt_bundle_sha256,
+            runtime_bundle_sha256=runtime_bundle_sha256,
+            metadata_version=catalog.version,
+            sql_policy_version=policy.version,
+            model_name=app_config.llm.model,
+            source_commit=source_commit,
+            source_dirty=source_dirty,
+            evaluator_version=EVALUATOR_VERSION,
+        )
 
         recording_runner: RecordingRunner | None = None
         candidate_runner: Callable[[NL2SQLGoldenCase], Awaitable[NL2SQLRun]]
+        replay_strict_references: Mapping[str, str] | None = None
         if mode == "live":
             recording_runner = RecordingRunner(LiveGraphRunner(validator))
             candidate_runner = recording_runner
         else:
-            replay_runs = load_replay_cache(
+            replay_payload = load_replay_cache(
                 replay_cache,
                 replay_identity,
                 tuple(case.case_id for case in cases),
             )
-            candidate_runner = ReplayRunner(replay_runs)
+            candidate_runner = ReplayRunner(replay_payload.runs)
+            replay_strict_references = replay_payload.strict_reference_sha256
         evaluation = await evaluate_nl2sql_cases(
             cases,
             candidate_runner,
             reference_runner,
+            replay_strict_references,
         )
         if recording_runner is not None:
-            write_replay_cache(replay_cache, replay_identity, recording_runner.runs)
+            strict_references = {
+                item["case_id"]: item["strict_reference_result_sha256"]
+                for item in evaluation["cases"]
+                if item["strict_reference_result_sha256"] is not None
+            }
+            write_replay_cache(
+                replay_cache,
+                replay_identity,
+                recording_runner.runs,
+                strict_references,
+            )
         safety = evaluate_safety_probes(validator)
-        failure_count = sum(evaluation["error_counts"].values())
+        failure_count = sum(
+            1 for item in evaluation["cases"] if item["failure_labels"]
+        )
         classified_failures = sum(
             1 for item in evaluation["cases"] if item["error_category"] is not None
         )
@@ -277,12 +320,16 @@ async def run_evaluation(
                 for bucket in ("simple", "aggregate", "time", "join", "topn", "comparison")
             ),
             "all_reference_checksums_verified": evaluation["reference_checksums_verified"] == 30,
+            "all_strict_reference_checksums_available": (
+                evaluation["metrics"]["strict_reference_available_count"] == 30
+            ),
             "all_required_metrics_reported": all(
                 name in evaluation["metrics"]
                 for name in (
                     "sql_validity_rate",
                     "sql_executability",
                     "execution_accuracy",
+                    "strict_execution_accuracy",
                     "metric_accuracy",
                     "table_precision",
                     "table_recall",
@@ -290,8 +337,15 @@ async def run_evaluation(
                     "column_recall",
                     "join_accuracy",
                     "grain_safety_rate",
+                    "validator_acceptance_rate",
+                    "trace_conformance_rate",
+                    "grain_contract_accuracy",
                     "correction_success_rate",
+                    "strict_correction_success_rate",
                 )
+            ),
+            "grain_contract_cases_present": (
+                evaluation["metrics"]["grain_contract_case_count"] > 0
             ),
             "dangerous_sql_allowed_count_is_zero": safety["dangerous_sql_allowed_count"] == 0,
             "all_failures_classified": classified_failures == failure_count,
@@ -299,7 +353,8 @@ async def run_evaluation(
         result = {
             "run_id": run_id,
             "generated_at_utc": datetime.now(UTC).isoformat(),
-            "source_commit": _source_commit(),
+            "source_commit": source_commit,
+            "source_dirty": source_dirty,
             "evaluator_version": EVALUATOR_VERSION,
             "evaluation_mode": mode,
             "dataset_version": dataset_version,
@@ -307,6 +362,7 @@ async def run_evaluation(
             "metadata_version": catalog.version,
             "sql_policy_version": policy.version,
             "prompt_bundle_sha256": prompt_bundle_sha256,
+            "runtime_bundle_sha256": runtime_bundle_sha256,
             "replay_cache_sha256": hashlib.sha256(replay_cache.read_bytes()).hexdigest(),
             "model": {
                 "name": app_config.llm.model,

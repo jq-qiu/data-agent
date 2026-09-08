@@ -19,6 +19,7 @@ from app.nl2sql.evaluation import (
     load_nl2sql_golden,
     load_replay_cache,
     result_checksum,
+    strict_result_checksum,
     write_replay_cache,
 )
 from app.nl2sql.policy import load_sql_policy
@@ -56,6 +57,10 @@ def test_result_checksum_ignores_alias_column_order_and_decimal_representation()
     right = [{"成交总额": 10, "月份": "2018-05"}]
 
     assert result_checksum(left, ordered=False) == result_checksum(right, ordered=False)
+    assert strict_result_checksum(left, ordered=False) != strict_result_checksum(
+        right,
+        ordered=False,
+    )
 
 
 def test_result_checksum_preserves_topn_row_order() -> None:
@@ -112,8 +117,13 @@ async def test_evaluator_compares_results_and_reports_all_metrics() -> None:
     assert result["reference_checksums_verified"] == 1
     assert result["error_counts"] == {}
     assert result["metrics"]["execution_accuracy"] == 1
+    assert result["metrics"]["strict_execution_accuracy"] == 1
     assert result["metrics"]["table_recall"] == 1
     assert result["metrics"]["column_precision"] == 1
+    assert result["metrics"]["validator_acceptance_rate"] == 1
+    assert result["metrics"]["trace_conformance_rate"] == 1
+    assert result["metrics"]["grain_contract_accuracy"] is None
+    assert result["metrics"]["grain_contract_case_count"] == 0
     assert result["metrics"]["correction_success_rate"] is None
     assert result["bucket_metrics"]["aggregate"]["execution_accuracy"] == 1
     assert result["latency_seconds"]["max"] >= 0
@@ -123,9 +133,12 @@ def _replay_identity() -> ReplayCacheIdentity:
     return ReplayCacheIdentity(
         dataset_sha256="dataset",
         prompt_bundle_sha256="prompts",
+        runtime_bundle_sha256="runtime",
         metadata_version="metadata",
         sql_policy_version="policy",
         model_name="model",
+        source_commit="commit",
+        source_dirty=False,
     )
 
 
@@ -156,11 +169,17 @@ def test_replay_cache_round_trip_preserves_database_scalar_types() -> None:
     (ROOT / ".tmp").mkdir(exist_ok=True)
     with TemporaryDirectory(dir=ROOT / ".tmp") as directory:
         cache_path = Path(directory) / "replay.json"
-        write_replay_cache(cache_path, _replay_identity(), {"case": run})
+        write_replay_cache(
+            cache_path,
+            _replay_identity(),
+            {"case": run},
+            {"case": "strict-reference"},
+        )
         loaded = load_replay_cache(cache_path, _replay_identity(), ("case",))
 
-    assert loaded["case"].rows == rows
-    assert result_checksum(loaded["case"].rows or [], ordered=True) == result_checksum(
+    assert loaded.runs["case"].rows == rows
+    assert loaded.strict_reference_sha256 == {"case": "strict-reference"}
+    assert result_checksum(loaded.runs["case"].rows or [], ordered=True) == result_checksum(
         rows,
         ordered=True,
     )
@@ -173,7 +192,9 @@ def test_replay_cache_rejects_tampering_and_stale_identity() -> None:
         write_replay_cache(cache_path, _replay_identity(), {"case": NL2SQLRun()})
 
         identity_values = _replay_identity().__dict__
-        stale = ReplayCacheIdentity(**{**identity_values, "model_name": "other"})
+        stale = ReplayCacheIdentity(
+            **{**identity_values, "runtime_bundle_sha256": "changed"}
+        )
         with pytest.raises(ValueError, match="identity mismatch"):
             load_replay_cache(cache_path, stale, ("case",))
 
@@ -216,12 +237,114 @@ async def test_recorded_run_replays_identical_evaluation() -> None:
         )
 
     recorder = RecordingRunner(candidate)
-    live_result = await evaluate_nl2sql_cases((case,), recorder)
+
+    async def reference(_: NL2SQLGoldenCase) -> list[dict]:
+        return rows
+
+    live_result = await evaluate_nl2sql_cases((case,), recorder, reference)
+    strict_references = {
+        item["case_id"]: item["strict_reference_result_sha256"]
+        for item in live_result["cases"]
+    }
     (ROOT / ".tmp").mkdir(exist_ok=True)
     with TemporaryDirectory(dir=ROOT / ".tmp") as directory:
         cache_path = Path(directory) / "replay.json"
-        write_replay_cache(cache_path, _replay_identity(), recorder.runs)
+        write_replay_cache(
+            cache_path,
+            _replay_identity(),
+            recorder.runs,
+            strict_references,
+        )
         cached = load_replay_cache(cache_path, _replay_identity(), (case.case_id,))
-    replay_result = await evaluate_nl2sql_cases((case,), ReplayRunner(cached))
+    replay_result = await evaluate_nl2sql_cases(
+        (case,),
+        ReplayRunner(cached.runs),
+        strict_reference_sha256=cached.strict_reference_sha256,
+    )
 
     assert replay_result == live_result
+
+
+@pytest.mark.asyncio
+async def test_missing_strict_reference_is_reported_as_unavailable() -> None:
+    rows = [{"month": "2018-05", "gmv": Decimal("10.00")}]
+    case = NL2SQLGoldenCase(
+        case_id="no-strict-reference",
+        bucket="aggregate",
+        question="GMV是多少",
+        expected_metric_ids=("gmv",),
+        expected_tables=("dws_sales_region_daily",),
+        expected_columns=("dws_sales_region_daily.gmv",),
+        expected_join_relations=(),
+        reference_sql="SELECT SUM(gmv) FROM dws_sales_region_daily",
+        expected_result_sha256=result_checksum(rows, ordered=False),
+        risk_tags=(),
+        result_ordered=False,
+    )
+
+    async def candidate(_: NL2SQLGoldenCase) -> NL2SQLRun:
+        return NL2SQLRun(
+            validated_sql="SELECT 1 LIMIT 500",
+            rows=rows,
+            metric_ids=("gmv",),
+            validation_trace={
+                "tables": ["dws_sales_region_daily"],
+                "columns": ["dws_sales_region_daily.gmv"],
+                "join_relations": [],
+            },
+        )
+
+    result = await evaluate_nl2sql_cases((case,), candidate)
+
+    assert result["metrics"]["execution_accuracy"] == 1
+    assert result["metrics"]["strict_execution_accuracy"] is None
+    assert result["metrics"]["strict_reference_available_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_correction_requires_correct_result_and_reports_multiple_failures() -> None:
+    reference_rows = [{"order_count": 10}]
+    case = NL2SQLGoldenCase(
+        case_id="correction",
+        bucket="aggregate",
+        question="整体订单量是多少",
+        expected_metric_ids=("order_count",),
+        expected_tables=("dws_sales_region_daily",),
+        expected_columns=("dws_sales_region_daily.order_count",),
+        expected_join_relations=(),
+        reference_sql="SELECT SUM(order_count) FROM dws_sales_region_daily",
+        expected_result_sha256=result_checksum(reference_rows, ordered=False),
+        risk_tags=("overall_order_grain",),
+        result_ordered=False,
+    )
+
+    async def reference(_: NL2SQLGoldenCase) -> list[dict]:
+        return reference_rows
+
+    async def candidate(_: NL2SQLGoldenCase) -> NL2SQLRun:
+        return NL2SQLRun(
+            validated_sql="SELECT COUNT(*) FROM fact_order_item LIMIT 500",
+            rows=[{"order_count": 12}],
+            metric_ids=("order_count",),
+            validation_trace={
+                "tables": ["fact_order_item"],
+                "columns": ["fact_order_item.order_id"],
+                "join_relations": [],
+            },
+            repair_attempts=1,
+        )
+
+    result = await evaluate_nl2sql_cases((case,), candidate, reference)
+    evaluated_case = result["cases"][0]
+
+    assert result["metrics"]["correction_success_rate"] == 0
+    assert result["metrics"]["strict_correction_success_rate"] == 0
+    assert result["metrics"]["validator_acceptance_rate"] == 1
+    assert result["metrics"]["grain_contract_accuracy"] == 0
+    assert evaluated_case["grain_safety_rate"] == 0
+    assert set(evaluated_case["failure_labels"]) >= {
+        "Schema Linking Error",
+        "Result Value Mismatch",
+        "Result Shape Mismatch",
+        "Grain Contract Error",
+    }

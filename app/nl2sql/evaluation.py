@@ -25,7 +25,15 @@ ERROR_CATEGORIES = (
     "SQL Generation Error",
     "SQL Execution Error",
 )
-REPLAY_SCHEMA_VERSION = "nl2sql-replay-v1"
+REPLAY_SCHEMA_VERSION = "nl2sql-replay-v2"
+GRAIN_RISK_TAGS = {
+    "category_grain",
+    "order_item_grain",
+    "overall_order_grain",
+    "payment_grain",
+    "review_grain",
+    "one_to_many_join",
+}
 
 
 @dataclass(frozen=True)
@@ -62,10 +70,19 @@ class NL2SQLRun:
 class ReplayCacheIdentity:
     dataset_sha256: str
     prompt_bundle_sha256: str
+    runtime_bundle_sha256: str
     metadata_version: str
     sql_policy_version: str
     model_name: str
-    evaluator_version: str = "sql-evaluator-v1"
+    source_commit: str
+    source_dirty: bool
+    evaluator_version: str = "sql-evaluator-v2"
+
+
+@dataclass(frozen=True)
+class ReplayCache:
+    runs: dict[str, NL2SQLRun]
+    strict_reference_sha256: dict[str, str]
 
 
 def _encode_replay_cell(value: Any) -> dict[str, Any]:
@@ -207,6 +224,7 @@ def write_replay_cache(
     path: Path,
     identity: ReplayCacheIdentity,
     runs: Mapping[str, NL2SQLRun],
+    strict_reference_sha256: Mapping[str, str] | None = None,
 ) -> None:
     body = {
         "schema_version": REPLAY_SCHEMA_VERSION,
@@ -215,6 +233,7 @@ def write_replay_cache(
             case_id: _serialize_run(run)
             for case_id, run in sorted(runs.items())
         },
+        "strict_reference_sha256": dict(sorted((strict_reference_sha256 or {}).items())),
     }
     payload = {
         **body,
@@ -233,7 +252,7 @@ def load_replay_cache(
     path: Path,
     expected_identity: ReplayCacheIdentity,
     expected_case_ids: Sequence[str],
-) -> dict[str, NL2SQLRun]:
+) -> ReplayCache:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise TypeError("replay cache root must be an object")
@@ -250,12 +269,21 @@ def load_replay_cache(
         raise TypeError("replay cache runs must be an object")
     if set(raw_runs) != set(expected_case_ids):
         raise ValueError("replay cache case IDs do not match the Golden Dataset")
+    raw_strict_references = payload.get("strict_reference_sha256")
+    if not isinstance(raw_strict_references, Mapping):
+        raise TypeError("replay cache strict references must be an object")
+    if not set(raw_strict_references).issubset(expected_case_ids):
+        raise ValueError("replay cache strict reference IDs do not match the Golden Dataset")
     runs: dict[str, NL2SQLRun] = {}
     for case_id, run in raw_runs.items():
         if not isinstance(run, Mapping):
             raise TypeError(f"replay run must be an object: {case_id}")
         runs[str(case_id)] = _deserialize_run(run)
-    return runs
+    strict_references = {
+        str(case_id): str(checksum)
+        for case_id, checksum in raw_strict_references.items()
+    }
+    return ReplayCache(runs=runs, strict_reference_sha256=strict_references)
 
 
 class RecordingRunner:
@@ -373,6 +401,34 @@ def result_checksum(rows: Sequence[Mapping[str, Any]], *, ordered: bool) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def normalize_strict_result_rows(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    ordered: bool,
+) -> list[list[tuple[str, str | None]]]:
+    """Normalize values while retaining SELECT projection position and column count."""
+    normalized = [
+        [_normalize_scalar(value) for value in row.values()]
+        for row in rows
+    ]
+    if not ordered:
+        normalized.sort(key=lambda item: json.dumps(item, ensure_ascii=False))
+    return normalized
+
+
+def strict_result_checksum(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    ordered: bool,
+) -> str:
+    payload = json.dumps(
+        normalize_strict_result_rows(rows, ordered=ordered),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def _set_scores(expected: set[str], actual: set[str]) -> tuple[float, float]:
     precision = len(expected & actual) / len(actual) if actual else float(not expected)
     recall = len(expected & actual) / len(expected) if expected else float(not actual)
@@ -383,11 +439,13 @@ def classify_failure(
     case: NL2SQLGoldenCase,
     run: NL2SQLRun,
     *,
+    valid: bool = True,
     metric_match: bool,
     table_recall: float,
     column_recall: float,
     join_match: bool,
     result_match: bool,
+    strict_result_match: bool | None = None,
 ) -> str | None:
     if run.error:
         if run.failure_stage == "execution":
@@ -395,13 +453,48 @@ def classify_failure(
         if run.failure_stage == "retrieval":
             return "Metadata Retrieval Error"
         return "SQL Generation Error"
+    if not valid:
+        return "SQL Generation Error"
     if not metric_match:
         return "Metric Recognition Error"
     if table_recall < 1 or column_recall < 1 or not join_match:
         return "Schema Linking Error"
-    if not result_match:
+    if not result_match or strict_result_match is False:
         return "SQL Generation Error"
     return None
+
+
+def _failure_labels(
+    run: NL2SQLRun,
+    *,
+    metric_match: bool,
+    table_match: bool,
+    column_match: bool,
+    join_match: bool,
+    executable: bool,
+    result_match: bool,
+    strict_result_match: bool | None,
+    grain_contract_match: bool | None,
+) -> list[str]:
+    labels: list[str] = []
+    if run.error:
+        if run.failure_stage == "execution":
+            labels.append("SQL Execution Error")
+        elif run.failure_stage == "retrieval":
+            labels.append("Metadata Retrieval Error")
+        else:
+            labels.append("SQL Generation Error")
+    if not metric_match:
+        labels.append("Metric Recognition Error")
+    if not table_match or not column_match or not join_match:
+        labels.append("Schema Linking Error")
+    if executable and not result_match:
+        labels.append("Result Value Mismatch")
+    if executable and strict_result_match is False:
+        labels.append("Result Shape Mismatch")
+    if grain_contract_match is False:
+        labels.append("Grain Contract Error")
+    return list(dict.fromkeys(labels))
 
 
 def summarize_case_results(case_results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -409,6 +502,7 @@ def summarize_case_results(case_results: Sequence[Mapping[str, Any]]) -> dict[st
         "sql_validity_rate",
         "sql_executability",
         "execution_accuracy",
+        "strict_execution_accuracy",
         "metric_accuracy",
         "table_precision",
         "table_recall",
@@ -416,16 +510,24 @@ def summarize_case_results(case_results: Sequence[Mapping[str, Any]]) -> dict[st
         "column_recall",
         "join_accuracy",
         "grain_safety_rate",
+        "validator_acceptance_rate",
+        "trace_conformance_rate",
+        "grain_contract_accuracy",
     )
-    by_bucket: dict[str, dict[str, float]] = {}
+    by_bucket: dict[str, dict[str, float | None]] = {}
     for bucket in BUCKETS:
         bucket_rows = [item for item in case_results if item["bucket"] == bucket]
         if not bucket_rows:
             continue
-        by_bucket[bucket] = {
-            name: sum(float(item[name]) for item in bucket_rows) / len(bucket_rows)
-            for name in metric_names
-        }
+        bucket_metrics: dict[str, float | None] = {}
+        for name in metric_names:
+            values = [
+                float(item[name])
+                for item in bucket_rows
+                if item[name] is not None
+            ]
+            bucket_metrics[name] = sum(values) / len(values) if values else None
+        by_bucket[bucket] = bucket_metrics
     latencies = [float(item["latency_seconds"]) for item in case_results]
     return {
         "bucket_metrics": by_bucket,
@@ -480,12 +582,14 @@ async def evaluate_nl2sql_cases(
         Awaitable[list[dict[str, Any]]],
     ]
     | None = None,
+    strict_reference_sha256: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     case_results: list[dict[str, Any]] = []
     aggregate: dict[str, list[float]] = {
         "sql_validity_rate": [],
         "sql_executability": [],
         "execution_accuracy": [],
+        "strict_execution_accuracy": [],
         "metric_accuracy": [],
         "table_precision": [],
         "table_recall": [],
@@ -493,16 +597,23 @@ async def evaluate_nl2sql_cases(
         "column_recall": [],
         "join_accuracy": [],
         "grain_safety_rate": [],
+        "validator_acceptance_rate": [],
+        "trace_conformance_rate": [],
+        "grain_contract_accuracy": [],
     }
     correction_attempted = 0
     correction_succeeded = 0
+    strict_correction_attempted = 0
+    strict_correction_succeeded = 0
     reference_verified = 0
+    strict_reference_available = 0
 
     for case in cases:
         if run_reference is None:
-            # SQL-005 模式：参考 SQL 已冻结为 Golden checksum，不再重跑参考 SQL。
+            # Compatibility mode uses the frozen Golden checksum without reference SQL.
             reference_sha = case.expected_result_sha256
             reference_matches = reference_sha is not None
+            strict_reference_sha = (strict_reference_sha256 or {}).get(case.case_id)
             reference_verified += int(reference_matches)
         else:
             reference_rows = await run_reference(case)
@@ -510,8 +621,13 @@ async def evaluate_nl2sql_cases(
                 reference_rows,
                 ordered=case.result_ordered,
             )
+            strict_reference_sha = strict_result_checksum(
+                reference_rows,
+                ordered=case.result_ordered,
+            )
             reference_matches = reference_sha == case.expected_result_sha256
             reference_verified += int(reference_matches)
+        strict_reference_available += int(strict_reference_sha is not None)
         started_at = perf_counter()
         try:
             run = await run_candidate(case)
@@ -533,6 +649,8 @@ async def evaluate_nl2sql_cases(
         table_precision, table_recall = _set_scores(expected_tables, actual_tables)
         column_precision, column_recall = _set_scores(expected_columns, actual_columns)
         metric_match = set(run.metric_ids) == set(case.expected_metric_ids)
+        table_match = actual_tables == expected_tables
+        column_match = actual_columns == expected_columns
         join_match = actual_joins == expected_joins
         valid = bool(run.validated_sql and trace and not run.error)
         executable = run.rows is not None and not run.error
@@ -540,34 +658,92 @@ async def evaluate_nl2sql_cases(
             result_checksum(run.rows, ordered=case.result_ordered) if run.rows is not None else None
         )
         result_match = bool(reference_matches and candidate_sha == reference_sha)
-        grain_safe = valid
+        candidate_strict_sha = (
+            strict_result_checksum(run.rows, ordered=case.result_ordered)
+            if run.rows is not None
+            else None
+        )
+        strict_result_match = (
+            bool(
+                reference_matches
+                and candidate_strict_sha == strict_reference_sha
+            )
+            if strict_reference_sha is not None
+            else None
+        )
+        trace_conformance = bool(
+            valid
+            and metric_match
+            and table_match
+            and column_match
+            and join_match
+        )
+        grain_contract_applicable = bool(GRAIN_RISK_TAGS.intersection(case.risk_tags))
+        grain_contract_match = (
+            trace_conformance if grain_contract_applicable else None
+        )
         if run.repair_attempts:
             correction_attempted += 1
-            correction_succeeded += int(valid and executable)
+            correction_succeeded += int(valid and executable and result_match)
+            if strict_result_match is not None:
+                strict_correction_attempted += 1
+                strict_correction_succeeded += int(
+                    valid and executable and strict_result_match
+                )
         error_category = classify_failure(
             case,
             run,
+            valid=valid,
             metric_match=metric_match,
             table_recall=table_recall,
             column_recall=column_recall,
             join_match=join_match,
             result_match=result_match,
+            strict_result_match=strict_result_match,
+        )
+        failure_labels = _failure_labels(
+            run,
+            metric_match=metric_match,
+            table_match=table_match,
+            column_match=column_match,
+            join_match=join_match,
+            executable=executable,
+            result_match=result_match,
+            strict_result_match=strict_result_match,
+            grain_contract_match=grain_contract_match,
         )
 
-        values = {
+        values: dict[str, float | None] = {
             "sql_validity_rate": float(valid),
             "sql_executability": float(executable),
             "execution_accuracy": float(result_match),
+            "strict_execution_accuracy": (
+                float(strict_result_match)
+                if strict_result_match is not None
+                else None
+            ),
             "metric_accuracy": float(metric_match),
             "table_precision": table_precision,
             "table_recall": table_recall,
             "column_precision": column_precision,
             "column_recall": column_recall,
             "join_accuracy": float(join_match),
-            "grain_safety_rate": float(grain_safe),
+            "grain_safety_rate": (
+                float(grain_contract_match)
+                if grain_contract_match is not None
+                else None
+            ),
+            "validator_acceptance_rate": float(valid),
+            "trace_conformance_rate": float(trace_conformance),
+            "grain_contract_accuracy": (
+                float(grain_contract_match)
+                if grain_contract_match is not None
+                else None
+            ),
         }
         for name, value in values.items():
-            aggregate[name].append(value)
+            if value is not None:
+                aggregate[name].append(value)
 
         case_results.append(
             {
@@ -587,35 +763,68 @@ async def evaluate_nl2sql_cases(
                 "actual_join_relations": sorted(actual_joins),
                 "reference_result_sha256": reference_sha,
                 "candidate_result_sha256": candidate_sha,
+                "strict_reference_result_sha256": strict_reference_sha,
+                "strict_candidate_result_sha256": candidate_strict_sha,
                 "reference_checksum_verified": reference_matches,
+                "strict_reference_available": strict_reference_sha is not None,
+                "grain_contract_applicable": grain_contract_applicable,
                 "repair_attempts": run.repair_attempts,
                 "latency_seconds": round(run.latency_seconds, 6),
                 "input_tokens": run.input_tokens,
                 "output_tokens": run.output_tokens,
                 "error": run.error,
                 "error_category": error_category,
+                "failure_labels": failure_labels,
                 **values,
             }
         )
 
     metrics: dict[str, Any] = {
-        name: sum(values) / len(values) for name, values in aggregate.items()
+        name: sum(values) / len(values) if values else None
+        for name, values in aggregate.items()
     }
     metrics["correction_success_rate"] = (
         correction_succeeded / correction_attempted if correction_attempted else None
     )
     metrics["correction_attempted_count"] = correction_attempted
     metrics["correction_succeeded_count"] = correction_succeeded
+    metrics["strict_correction_success_rate"] = (
+        strict_correction_succeeded / strict_correction_attempted
+        if strict_correction_attempted
+        else None
+    )
+    metrics["strict_correction_attempted_count"] = strict_correction_attempted
+    metrics["strict_correction_succeeded_count"] = strict_correction_succeeded
+    metrics["strict_reference_available_count"] = strict_reference_available
+    metrics["grain_contract_case_count"] = len(aggregate["grain_contract_accuracy"])
     summaries = summarize_case_results(case_results)
     return {
         "case_count": len(cases),
         "bucket_counts": dict(sorted(Counter(case.bucket for case in cases).items())),
         "reference_checksums_verified": reference_verified,
+        "compatible_result_mismatch_count": sum(
+            item["execution_accuracy"] == 0 for item in case_results
+        ),
+        "strict_result_mismatch_count": sum(
+            item["strict_execution_accuracy"] == 0 for item in case_results
+        ),
+        "trace_deviation_count": sum(
+            item["trace_conformance_rate"] == 0 for item in case_results
+        ),
         "metrics": metrics,
         "error_counts": dict(
             sorted(
                 Counter(
                     item["error_category"] for item in case_results if item["error_category"]
+                ).items()
+            )
+        ),
+        "failure_label_counts": dict(
+            sorted(
+                Counter(
+                    label
+                    for item in case_results
+                    for label in item["failure_labels"]
                 ).items()
             )
         ),
@@ -644,6 +853,7 @@ def write_evaluation_artifacts(
         "sql_validity_rate",
         "sql_executability",
         "execution_accuracy",
+        "strict_execution_accuracy",
         "metric_accuracy",
         "table_precision",
         "table_recall",
@@ -651,9 +861,14 @@ def write_evaluation_artifacts(
         "column_recall",
         "join_accuracy",
         "grain_safety_rate",
+        "validator_acceptance_rate",
+        "trace_conformance_rate",
+        "grain_contract_accuracy",
+        "grain_contract_applicable",
         "repair_attempts",
         "latency_seconds",
         "error_category",
+        "failure_labels",
         "error",
         "generated_sql",
         "validated_sql",
@@ -663,11 +878,20 @@ def write_evaluation_artifacts(
         writer.writeheader()
         writer.writerows(case_rows)
 
-    failures = [item for item in case_rows if item["error_category"]]
+    failures = [item for item in case_rows if item["failure_labels"]]
     lines = [
         f"# {result['run_id']} Error Analysis",
         "",
         f"Failed cases: {len(failures)}/{len(case_rows)}",
+        (
+            "Compatible result mismatches: "
+            f"{result['evaluation']['compatible_result_mismatch_count']}"
+        ),
+        (
+            "Strict result mismatches: "
+            f"{result['evaluation']['strict_result_mismatch_count']}"
+        ),
+        f"Trace deviations: {result['evaluation']['trace_deviation_count']}",
         "",
     ]
     if not failures:
@@ -681,7 +905,11 @@ def write_evaluation_artifacts(
                     f"- Bucket: {item['bucket']}",
                     f"- Question: {item['question']}",
                     f"- Error: {item['error'] or 'result or structure mismatch'}",
-                    f"- Execution match: {bool(item['execution_accuracy'])}",
+                    f"- Failure labels: {', '.join(item['failure_labels'])}",
+                    f"- Compatible execution match: {bool(item['execution_accuracy'])}",
+                    f"- Strict execution match: {item['strict_execution_accuracy']}",
+                    f"- Trace conformance: {bool(item['trace_conformance_rate'])}",
+                    f"- Grain contract: {item['grain_contract_accuracy']}",
                     "",
                 )
             )

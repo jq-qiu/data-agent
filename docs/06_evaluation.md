@@ -96,18 +96,35 @@ Grain Safety Rate
 Correction Success Rate
 ```
 
-Execution Accuracy 以规范化结果集为主，不要求 SQL 字符串完全一致。
+`execution_accuracy` 保留历史可比口径：逐行比较规范化后的值集合，不要求 SQL 字符串、
+Alias 或投影顺序完全一致。该口径可能掩盖列值交换，因此 EVAL-002 起同时报告
+`strict_execution_accuracy`：忽略 Alias 名称，但保留参考 SQL 的投影位置和列数；非排序
+结果只忽略行顺序。历史 SQL-002/005/008 的分数不按新口径追溯改写。
+
+结构与结果不得再混为同一个“失败”概念：
+
+- `trace_conformance_rate` 要求 Metric、表、列和 JOIN Trace 全部精确符合 Golden；
+- `validator_acceptance_rate` 只表示 SQL 通过 Validator；
+- `grain_contract_accuracy` 只对带 `*_grain` 或 `one_to_many_join` 风险标签的 Case
+  计分，要求有效 SQL 及完整 Trace 契约符合；`grain_safety_rate` 使用同一独立口径；
+- `correction_success_rate` 要求修复后有效、可执行且兼容结果正确，不能仅以“能执行”
+  作为成功；严格参考摘要可用时另报 `strict_correction_success_rate`；
+- `failure_labels` 可同时记录结果、Trace、Grain 等多个问题，`error_category` 仅保留为
+  单主分类兼容字段。错误报告分别统计兼容结果不匹配、严格结果不匹配和 Trace 偏差。
 
 ### 4.1 Live/Replay 运行模式
 
 NL2SQL 评测分为两种模式。Live 模式调用真实模型、检索服务和隔离 DW，并把每条
-`NL2SQLRun` 写入本地 Replay Cache；Replay 模式只读取该缓存和 Golden 中已冻结的
-结果校验和，不初始化外部客户端，也不重跑参考 SQL。
+`NL2SQLRun` 与严格参考结果摘要写入本地 Replay Cache；Replay 模式只读取该缓存和
+Golden 中已冻结的兼容结果校验和，不初始化外部客户端，也不重跑参考 SQL。可信 Live
+运行不得使用 `--skip-reference`，否则严格结果口径明确为 unavailable 且 Gate 不通过。
 
 Replay Cache 必须绑定 Golden Dataset、Prompt Bundle、Metadata、SQL Policy、模型和
-Evaluator 版本，记录内容完整性 SHA-256，并要求 Case ID 与当前 Golden 精确一致。
-Decimal、日期时间和 bytes 等数据库标量使用带类型编码保存，避免重放时改变结果校验和。
-默认缓存位于 Git 忽略的 `.tmp/`；不得提交生产查询结果、凭据或连接信息。
+Evaluator 版本，并额外绑定当前提交、工作树 Dirty 状态和实际运行时代码/配置内容摘要。
+任一身份字段变化都拒绝复用旧缓存。缓存记录内容完整性 SHA-256，并要求 Case ID 与当前
+Golden 精确一致。Decimal、日期时间和 bytes 等数据库标量使用带类型编码保存，且保留
+结果列插入顺序，避免重放时改变严格结果校验和。默认缓存位于 Git 忽略的 `.tmp/`；不得
+提交生产查询结果、凭据或连接信息。
 
 ## 5. Diagnosis Golden Dataset
 

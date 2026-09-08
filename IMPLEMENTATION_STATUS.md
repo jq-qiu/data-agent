@@ -2,29 +2,32 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。DOC-002 已同步 SQL-009 后的
-Feature 状态、Semantic Grounding/Planner 能力边界和恢复指引；未修改运行时代码。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。EVAL-002 已修复 NL2SQL 严格
+结果、Trace/Grain、Correction 和 Replay 身份评测契约；未运行真实模型复测。
 
 ## Current Feature
 
-DOC-002 Status and Capability Truth Sync.
+EVAL-002 NL2SQL Evaluation Integrity.
 
-## Feature Status (DOC-002 completed)
+## Feature Status (EVAL-002 completed)
 
-Completed and validated. Current/last/next Feature、生产语义绑定、未接生产的 LLM Planner
-以及 SQL-009 后的可靠性路线已在事实源中对齐；历史评测结果保持不变。
+Completed and validated. 历史 Execution Accuracy 保留兼容口径，同时新增投影位置敏感
+结果、独立 Trace/Grain、结果正确性约束下的 Correction 与运行时代码绑定 Replay；
+历史评测结果保持不变。
 
 ## Last Completed Feature
 
-DOC-002 Status and Capability Truth Sync.
+EVAL-002 NL2SQL Evaluation Integrity.
 
 ## Next Feature
 
-EVAL-002 NL2SQL Evaluation Integrity，计划但未开始。它只修复评测可信度，不更新
-SQL-009 运行时准确率；完成后再以独立 SQL-010 执行真实模型 Live/Replay 复测。
+SQL-010 Post-SQL-009 Real-model Rerun，计划但未开始。它将在 EVAL-002 可信评测器上
+执行真实模型 Live/Replay 复测；在完成前仍不得更新 SQL-008 的 22/30。
 
 ## Last Successful Validation
 
+- EVAL-002 evaluator contract: 10 passed；full pytest regression: 373 passed；
+  Ruff/mypy 0/0；historical evaluation artifacts changed: 0；
 - DOC-002 documentation contract: 25 passed；full pytest regression: 371 passed；
   Ruff/mypy 0/0；runtime files and historical evaluation artifacts changed: 0；
 - SQL-009 full pytest regression: 369 passed；Ruff/mypy 0/0；
@@ -248,8 +251,8 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-DOC-002 开始前，本地 `HEAD`、`origin/main` 和远端 `main` 均为 SQL-009 commit
-`5b29094`。DOC-002 只创建本地完成提交，不执行远端推送或仓库可见性变更。
+EVAL-002 开始前，本地 `HEAD` 为 DOC-002 commit `9e83bd5`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。EVAL-002 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
@@ -261,7 +264,7 @@ SQL-008 的 22/30。诊断 Semantic Grounder 的真实 Qdrant/Elasticsearch 召�
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/DOC-002_status_capability_truth_sync.md` and
-   `docs/reports/DOC-002_COMPLETION.md`.
-4. If authorized to continue, create and freeze an EVAL-002 Spec before changing the evaluator.
-5. Do not run SQL-010 or claim a post-SQL-009 accuracy change until EVAL-002 completes.
+3. Review `specs/EVAL-002_nl2sql_evaluation_integrity.md` and
+   `docs/reports/EVAL-002_COMPLETION.md`.
+4. If authorized to continue, create and freeze a SQL-010 Spec before running external services.
+5. Use Live mode without `--skip-reference`, then verify the same evaluation subject in Replay.

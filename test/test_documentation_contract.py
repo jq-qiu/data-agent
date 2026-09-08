@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "DOC-002 Status and Capability Truth Sync" in _markdown_section(
+    assert "EVAL-002 NL2SQL Evaluation Integrity" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "DOC-002 Status and Capability Truth Sync" in _markdown_section(
+    assert "EVAL-002 NL2SQL Evaluation Integrity" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "EVAL-002 NL2SQL Evaluation Integrity" in _markdown_section(
+    assert "SQL-010 Post-SQL-009 Real-model Rerun" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "EVAL-002 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-010 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 
