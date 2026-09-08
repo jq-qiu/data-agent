@@ -2,29 +2,30 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-022 使用 DeepSeek-V3.2
-完成复测：23/30、Gate true；与 V4-flash 的 26/30 存在能力差异。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-023 完成 V4-flash 同版本
+Head-to-head：25/30，优于 V3.2 的 23/30；模型保持 V4-flash。
 
 ## Current Feature
 
-SQL-022 Post-SQL-021 Real-model Rerun (DeepSeek-V3.2).
+SQL-023 V4-flash Head-to-head Rerun.
 
-## Feature Status (SQL-022 completed)
+## Feature Status (SQL-023 completed)
 
-Completed and validated. Compatible/Strict Execution 23/30，Metric Accuracy 26/30，
-Correction 4/10，Gate 3 true，Live/Replay 完全一致。
+Completed and validated. Compatible/Strict Execution 25/30，Metric Accuracy 29/30，
+Validator Acceptance 30/30，Gate 3 true，Live/Replay 完全一致。
 
 ## Last Completed Feature
 
-SQL-022 Post-SQL-021 Real-model Rerun (DeepSeek-V3.2).
+SQL-023 V4-flash Head-to-head Rerun.
 
 ## Next Feature
 
-SQL-023 Model Choice Validation。当前配置 DeepSeek-V3.2 为 23/30，V4-flash 最近为
-26/30；需用户确认成本/质量取舍后再冻结后续 Feature。
+SQL-024 Post-SQL-023 Continuation。用户已选择 V4-flash；后续按单一失败假设继续修复。
 
 ## Last Successful Validation
 
+- SQL-023 V4 rerun: compatible/strict Execution 25/30；Metric Accuracy 29/30；
+  Validator Acceptance 30/30；Gate true；Live/Replay identical；
 - SQL-022 V3.2 rerun: compatible/strict Execution 23/30；Metric Accuracy 26/30；
   Correction 4/10；Gate true；Live/Replay identical；
 - SQL-021 daily DWS scope: schema-linking contract 20 passed；Daily Plan group/order =
@@ -280,21 +281,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-022 开始前，本地 `HEAD` 为 SQL-021 commit `f2879f1`。本地 LLM 配置已切换为
-`deepseek-ai/DeepSeek-V3.2`；SQL-022 使用该配置完成评测。
+SQL-023 开始前，本地 `HEAD` 为 SQL-022 commit `9375a22`，本地 LLM 配置由用户改回
+`deepseek-ai/DeepSeek-V4-flash`；SQL-023 使用该配置完成评测。
 
 ## Known Blockers
 
-SQL-022 实测 V3.2 Execution 23/30（Metric 26/30），低于 V4-flash SQL-020 的 26/30
-（Metric 30/30）。V3.2 需要更多修复（10 次、成功 4 次），说明 SQL 生成能力更弱但成本
-是否更低需用户自行评估。J02/C05/N02/T05 及模型取舍仍待后续。
+SQL-023 实测 V4-flash 同版本 Execution 25/30（Metric 29/30），高于 V3.2 SQL-022 的
+23/30（Metric 26/30），确认 V4-flash 仍是当前最佳模型选择。T04/T05/J02/N02/C05 仍为
+剩余失败。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-022_v32_post_sql021_real_model_rerun.md` and
-   `docs/reports/SQL-022_COMPLETION.md`.
-4. Confirm V3.2/V4-flash model choice，再冻结后续单一修复 Feature。
-5. J02 语义冲突、C05/N02/T05 与模型取舍分开处理。
-6. Create and freeze a SQL-023 Spec once the model choice is confirmed.
+3. Review `specs/SQL-023_v4_post_sql021_real_model_rerun.md` and
+   `docs/reports/SQL-023_COMPLETION.md`.
+4. Model choice confirmed：V4-flash。
+5. Next：按单一失败假设冻结 SQL-024（T04/T05/J02/N02/C05 中选一个）。

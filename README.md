@@ -235,7 +235,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 23/30 | SQL-022 DeepSeek-V3.2 复测；Gate 通过 |
+| NL2SQL Execution Accuracy | 25/30 | SQL-023 DeepSeek-V4-flash 同版本复测；Gate 通过 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
@@ -260,9 +260,9 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
-SQL-020（DeepSeek-V4-flash）实测 26/30 是当前最高分；SQL-022（DeepSeek-V3.2）实测
-23/30 且 Metric Accuracy 26/30。两者均为单次真实运行，存在模型非确定性。J02 差异已
-定位为 NULL category_name_en 的 Golden/Plan 分组语义冲突。
+DeepSeek-V4-flash SQL-020 为 26/30，SQL-023（同版本 Head-to-head）为 25/30；
+DeepSeek-V3.2 SQL-022 为 23/30。V4-flash 是当前模型选择。J02 差异已定位为 NULL
+category_name_en 的 Golden/Plan 分组语义冲突。
 
 ## 技术栈
 
