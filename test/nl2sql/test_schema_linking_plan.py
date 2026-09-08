@@ -177,6 +177,16 @@ def test_plan_validator_rejects_unknown_column(catalog) -> None:
         validate_schema_linking_plan(plan, catalog)
 
 
+def test_plan_model_requires_metric_columns_in_allowed_columns() -> None:
+    with pytest.raises(ValueError, match="required_metric_columns"):
+        SchemaLinkingPlan(
+            tables=("dws_sales_region_daily",),
+            columns=("dws_sales_region_daily.date_id",),
+            required_metric_columns=("dws_sales_region_daily.order_count",),
+            join_relations=(),
+        )
+
+
 @pytest.mark.asyncio
 async def test_disconnected_tables_fail_closed(catalog) -> None:
     builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
@@ -253,3 +263,42 @@ async def test_aggregate_dimension_groups_without_registered_metric(
 
     assert "dim_region.state_code" in plan.group_by_columns
     assert plan.metric_ids == ()
+
+
+@pytest.mark.asyncio
+async def test_dws_metric_columns_restore_registered_source_table(
+    catalog,
+) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="2018年5月整体订单数是多少",
+        table_infos=[_table("fact_order", ("order_id", "customer_id", "status"))],
+        metric_infos=[_metric("order_count")],
+        join_relations=[],
+    )
+
+    assert "dws_sales_region_daily.order_count" in plan.required_metric_columns
+    assert "dws_sales_region_daily.order_count" in plan.columns
+    assert plan.tables == ("dws_sales_region_daily",)
+    assert "fact_order" not in plan.tables
+
+
+@pytest.mark.asyncio
+async def test_comparison_question_adds_dim_date_calendar_table(catalog) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="对比2018年4月和5月的GMV",
+        table_infos=[
+            _table(
+                "dws_sales_region_daily",
+                ("date_id", "region_id", "gmv", "order_count"),
+                role="aggregate",
+            )
+        ],
+        metric_infos=[_metric("gmv")],
+        join_relations=[],
+    )
+
+    assert plan.calendar_table == "dim_date"
+    assert "dim_date" in plan.tables
+    assert any(join.relation_id == "region_daily_to_date" for join in plan.join_relations)

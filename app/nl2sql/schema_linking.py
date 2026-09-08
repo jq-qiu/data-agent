@@ -75,6 +75,8 @@ class SchemaLinkingPlan(BaseModel):
     metric_ids: tuple[str, ...] = ()
     tables: tuple[str, ...]
     columns: tuple[str, ...]
+    required_metric_columns: tuple[str, ...] = ()
+    calendar_table: str | None = None
     join_relations: tuple[SchemaLinkingJoin, ...]
     group_by_columns: tuple[str, ...] = ()
     display_columns: tuple[str, ...] = ()
@@ -95,6 +97,7 @@ class SchemaLinkingPlan(BaseModel):
                 raise ValueError(f"{label} must be unique")
         for label, values in (
             ("columns", self.columns),
+            ("required_metric_columns", self.required_metric_columns),
             ("group_by_columns", self.group_by_columns),
             ("display_columns", self.display_columns),
         ):
@@ -103,6 +106,10 @@ class SchemaLinkingPlan(BaseModel):
                     raise ValueError(f"{label} must be qualified table.column")
         if not set(self.group_by_columns).issubset(self.columns):
             raise ValueError("group_by_columns must be in columns")
+        if not set(self.required_metric_columns).issubset(self.columns):
+            raise ValueError("required_metric_columns must be in columns")
+        if self.calendar_table is not None and self.calendar_table not in self.tables:
+            raise ValueError("calendar_table must be in tables")
         if not set(self.display_columns).issubset(self.columns):
             raise ValueError("display_columns must be in columns")
         for order in self.order_by:
@@ -156,6 +163,40 @@ _AGGREGATE_TERMS = (
     "count",
     "rank",
 )
+_DWS_ONLY_METRIC_COLUMNS: dict[str, tuple[str, ...]] = {
+    "order_count": (
+        "dws_sales_region_daily.order_count",
+        "dws_sales_region_daily.date_id",
+        "dws_sales_region_daily.region_id",
+    ),
+    "item_count": (
+        "dws_sales_category_daily.item_count",
+        "dws_sales_category_daily.date_id",
+        "dws_sales_category_daily.region_id",
+        "dws_sales_category_daily.category_id",
+    ),
+    "visitors": (
+        "dws_sales_region_daily.visitors",
+        "dws_sales_region_daily.date_id",
+        "dws_sales_region_daily.region_id",
+    ),
+    "category_order_count": (
+        "dws_sales_category_daily.category_order_count",
+        "dws_sales_category_daily.date_id",
+        "dws_sales_category_daily.region_id",
+        "dws_sales_category_daily.category_id",
+    ),
+}
+_CALENDAR_QUERY_TERMS = (
+    "按月",
+    "月份",
+    "季度",
+    "对比",
+    "相比",
+    "同比",
+    "环比",
+)
+_CALENDAR_DATE_COLUMNS = ("date_id", "date", "month", "quarter", "year")
 
 
 def _normalize(value: str) -> str:
@@ -265,6 +306,9 @@ class SchemaLinkingPlanBuilder:
             if table in selected_table_map
         }
 
+        required_metric_columns = self._dws_metric_columns(metric_ids)
+        self._restore_dws_metric_tables(plan_tables, required_metric_columns)
+
         planned_joins = {
             str(row["relation_id"]): SchemaLinkingJoin(
                 relation_id=str(row["relation_id"]),
@@ -365,6 +409,12 @@ class SchemaLinkingPlanBuilder:
         ):
             display_columns.append("dim_category.category_name_en")
 
+        calendar_table = self._calendar_table(
+            query,
+            plan_tables,
+            dimension_paths,
+        )
+
         table_names = tuple(sorted(plan_tables))
         selected_columns = {
             _qualified(str(ti["name"]), str(column["name"]))
@@ -376,7 +426,12 @@ class SchemaLinkingPlanBuilder:
             for column in self._metric_columns(metric_ids)
             if _table_of(column) in table_names
         }
-        columns = set(selected_columns) | metric_columns
+        columns = (
+            set(selected_columns)
+            | metric_columns
+            | set(required_metric_columns)
+            | set(self._calendar_columns(calendar_table))
+        )
         for column in (*group_columns, *display_columns):
             columns.add(column)
         for join in dimension_paths:
@@ -413,6 +468,8 @@ class SchemaLinkingPlanBuilder:
             metric_ids=metric_ids,
             tables=table_names,
             columns=_unique(sorted(columns)),
+            required_metric_columns=_unique(required_metric_columns),
+            calendar_table=calendar_table,
             join_relations=connected,
             group_by_columns=_unique(group_columns),
             display_columns=_unique(display_columns),
@@ -450,6 +507,99 @@ class SchemaLinkingPlanBuilder:
             return None
         candidates.sort(key=lambda item: (item[0], item[1]))
         return _qualified(candidates[0][1], column_name)
+
+    def _dws_metric_columns(
+        self,
+        metric_ids: Sequence[str],
+    ) -> tuple[str, ...]:
+        columns: list[str] = []
+        for metric_id in metric_ids:
+            for column_id in _DWS_ONLY_METRIC_COLUMNS.get(metric_id, ()):
+                if column_id in self._catalog.column_ids:
+                    columns.append(column_id)
+        return tuple(dict.fromkeys(columns))
+
+    def _restore_dws_metric_tables(
+        self,
+        plan_tables: dict[str, Mapping[str, Any]],
+        required_metric_columns: Sequence[str],
+    ) -> None:
+        required_tables = tuple(
+            dict.fromkeys(_table_of(column) for column in required_metric_columns)
+        )
+        if not required_tables:
+            return
+
+        restored: dict[str, Mapping[str, Any]] = {}
+        for table_name in required_tables:
+            definition = self._catalog.table_map.get(table_name)
+            if definition is None:
+                raise SchemaLinkingPlanError(
+                    f"metric_source_table_missing_from_catalog:{table_name}"
+                )
+            restored[table_name] = self.table_state_from_catalog(definition)
+        plan_tables.clear()
+        plan_tables.update(restored)
+
+    def _calendar_table(
+        self,
+        query: str,
+        plan_tables: dict[str, Mapping[str, Any]],
+        calendar_paths: list[SchemaLinkingJoin],
+    ) -> str | None:
+        if not _contains_any(query, _CALENDAR_QUERY_TERMS):
+            return None
+        if "dim_date" in plan_tables:
+            return "dim_date"
+        owners = sorted(
+            table_name
+            for table_name, table in plan_tables.items()
+            if any(str(column.get("name")) == "date_id" for column in table.get("columns", []))
+        )
+        for owner in owners:
+            for relation in self._catalog.relationships:
+                if relation.left_table != "dim_date" and relation.right_table != "dim_date":
+                    continue
+                if relation.left_table != owner and relation.right_table != owner:
+                    continue
+                join = SchemaLinkingJoin(
+                    relation_id=relation.relation_id,
+                    left_table=relation.left_table,
+                    left_column=relation.left_column,
+                    right_table=relation.right_table,
+                    right_column=relation.right_column,
+                )
+                if join.relation_id not in {
+                    item.relation_id for item in calendar_paths
+                }:
+                    calendar_paths.append(join)
+                for table_name in (owner, "dim_date"):
+                    if table_name in plan_tables:
+                        continue
+                    definition = self._catalog.table_map.get(table_name)
+                    if definition is None:
+                        raise SchemaLinkingPlanError(
+                            f"calendar_table_missing_from_catalog:{table_name}"
+                        )
+                    plan_tables[table_name] = self.table_state_from_catalog(
+                        definition
+                    )
+                return "dim_date"
+        return None
+
+    def _calendar_columns(
+        self,
+        calendar_table: str | None,
+    ) -> tuple[str, ...]:
+        if calendar_table is None:
+            return ()
+        return tuple(
+            dict.fromkeys(
+                _qualified(calendar_table, column_name)
+                for column_name in _CALENDAR_DATE_COLUMNS
+                if _qualified(calendar_table, column_name) in self._catalog.column_ids
+            )
+        )
 
     async def _ensure_dimension_table(
         self,
@@ -656,6 +806,9 @@ def validate_schema_linking_plan(
         table_name = _table_of(column)
         if table_name not in table_set:
             issues.append(f"column_without_table:{column}")
+    for column in plan.required_metric_columns:
+        if column not in catalog.column_ids:
+            issues.append(f"unknown_metric_column:{column}")
     known_relations = {item.relation_id: item for item in catalog.relationships}
     for join in plan.join_relations:
         relation = known_relations.get(join.relation_id)

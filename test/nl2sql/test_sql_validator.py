@@ -104,6 +104,28 @@ def test_aov_requires_region_dws_components(validator: SQLValidator) -> None:
         validator.validate("SELECT AVG(price) FROM fact_order_item", ("aov",))
 
 
+def test_order_count_rejects_fact_count_alternative(validator: SQLValidator) -> None:
+    with pytest.raises(SQLValidationError, match="order_count"):
+        validator.validate(
+            "SELECT COUNT(order_id) AS order_count FROM fact_order",
+            ("order_count",),
+        )
+
+    result = validator.validate(
+        "SELECT SUM(order_count) AS order_count FROM dws_sales_region_daily",
+        ("order_count",),
+    )
+    assert "dws_sales_region_daily" in result.tables
+
+
+def test_item_count_rejects_non_dws_source(validator: SQLValidator) -> None:
+    with pytest.raises(SQLValidationError, match="item_count"):
+        validator.validate(
+            "SELECT COUNT(order_id) AS item_count FROM fact_order_item",
+            ("item_count",),
+        )
+
+
 def test_category_order_count_requires_category_scope(validator: SQLValidator) -> None:
     with pytest.raises(SQLValidationError, match="category grouping"):
         validator.validate(

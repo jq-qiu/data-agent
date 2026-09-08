@@ -2,15 +2,14 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口。SQL-005 已使用 SQL-004 SchemaLinkingPlan
-链路完成 30 条真实模型复测：Execution Accuracy 16/30 → 19/30，
-JOIN bucket 0/5 → 3/5；SQL-002 历史报告保持不可变。
+MVP V1 的功能与工程链路已收口。SQL-006 已完成指标公式与日历约束：
+Plan/Prompt/Validator 已锁定 DWS 注册口径和 dim_date 时间表达。
 
 ## Current Feature
 
-SQL-005 NL2SQL SchemaLinkingPlan Rerun.
+SQL-006 Metric Formula and Calendar Enforcement.
 
-## Feature Status (SQL-005 completed, user approved)
+## Feature Status (SQL-006 completed)
 
 Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
 GitHub visibility remains unchanged until the separate action-time confirmation.
@@ -19,21 +18,20 @@ README 已覆盖项目定位、两条执行链、ODS→DWD→DWS、混合意图�
 
 ## Last Completed Feature
 
-COMMENT-001 Chinese Code Explanation.
+SQL-006 Metric Formula and Calendar Enforcement.
 
 ## Next Feature
 
-继续基于 SQL-005 失败样本修正 SQL 文本/时间表达与 Schema 严格匹配。
+建立 SQL-007 Live/Replay 评测或新一轮真实复测。
 生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
 
 ## Last Successful Validation
 
-- SQL-005 implementation complete, user approved, 344 pytest passed, Ruff/mypy clean.
+- SQL-006 implementation complete, 349 pytest passed, Ruff/mypy clean.
 - SHOWCASE-001 full pytest regression: 338 passed；frontend 11 passed/build passed；
   Ruff/mypy 0/0；
-- SQL-005 full pytest regression: 344 passed；Ruff/mypy 0/0；
-- SQL-005 SchemaLinkingPlan 单元测试: 6 passed（含聚合无指标分组、全 Registry 连通回归）；
-- SQL-005 真实模型复测: Execution Accuracy 19/30；JOIN 0/5 → 3/5；SQL-002 历史 16/30 保持不可变；
+- SQL-006 full pytest regression: 349 passed；Ruff/mypy 0/0；
+- SQL-006 Plan/Validator 新增 9 个专项覆盖 DWS-only 指标列、dim_date、日历对比与事实 COUNT 拒绝；
 - SHOWCASE-001 documentation contract: 23 passed；当前事实源 Markdown 断链 0；
   33/34 历史报告保持原 Git blob，INTERVIEW-001 报告仅移除不公开资料说明；
 - INTERVIEW-001 deliverables: 2 documents created and linked from README；

@@ -37,6 +37,8 @@ SQL 生成前已确定的 Schema 方案如下：
 11. Synthetic Evidence 必须与 Olist 事实数据区分，不得将 analysis_* 表描述为真实经营事实。
 12. 分组 TopN 必须先聚合，再使用 ROW_NUMBER() OVER (PARTITION BY 分组维度 ORDER BY 指标 DESC 或 ASC, 稳定实体标识 ASC) 编号，并在外层按 rn <= N 过滤；全局 TopN 则使用 ROW_NUMBER() OVER (ORDER BY 指标 DESC 或 ASC, 稳定实体标识 ASC)，不要写 PARTITION BY。禁止 PARTITION BY 1 或任何位置数字；只允许 ROW_NUMBER，不得改用 RANK、DENSE_RANK 或其他窗口函数。该规则表示每组最多 N 行（或全局最多 N 行），并用稳定标识打破并列；不得编造名称字段。
 13. 当提供 SchemaLinkingPlan 时，SQL 只能引用该方案 tables、columns 和 join_relations 中声明的对象，不得新增方案外表、列或 JOIN。需要按维度聚合时，分组列必须使用 schema_linking_plan.group_by_columns；方案 filters 提供过滤值时，必须作为固定过滤条件使用。
+14. 当 schema_linking_plan.required_metric_columns 非空时，相关指标必须引用这些注册来源列所在的表与列，不得用 COUNT(事实表主键) 替代 DWS 已登记口径。
+15. 当 schema_linking_plan.calendar_table 为 dim_date 时，年/月/季度/日期比较必须通过 dim_date 字段表达，禁止对 date_id 使用 LEFT、SUBSTRING、DIV、CONCAT 等字符串或算术转换。
 用户查询如下：
 {query}
 

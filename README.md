@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 344 passed | 当前仓库行为回归 |
+| Python 全量回归 | 349 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -234,7 +234,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Numeric Consistency | 10/10 | 拆解、贡献和指标链完成数学对账 |
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
-| SchemaLinkingPlan | 6/6 | 确定性 Builder/Validator 单元测试 |
+| SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
 | NL2SQL Execution Accuracy | 19/30 | SQL-005 SchemaLinkingPlan 真实模型复测；JOIN 0/5 → 3/5 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch

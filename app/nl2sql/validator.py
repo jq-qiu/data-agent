@@ -13,6 +13,27 @@ from sqlglot.errors import ParseError
 from app.metadata.catalog import MetadataCatalog
 from app.nl2sql.policy import SQLPolicy
 
+_METRIC_REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
+    "order_count": frozenset({"dws_sales_region_daily.order_count"}),
+    "item_count": frozenset({"dws_sales_category_daily.item_count"}),
+    "visitors": frozenset({"dws_sales_region_daily.visitors"}),
+    "category_order_count": frozenset(
+        {"dws_sales_category_daily.category_order_count"}
+    ),
+    "promotion_coverage": frozenset(
+        {
+            "dws_sales_region_daily.promoted_sku_count",
+            "dws_sales_region_daily.active_sku_count",
+        }
+    ),
+    "inventory_fill_rate": frozenset(
+        {
+            "dws_sales_region_daily.available_sku_count",
+            "dws_sales_region_daily.required_sku_count",
+        }
+    ),
+}
+
 
 class SQLValidationError(ValueError):
     """Raised when SQL violates the frozen V1 query policy."""
@@ -103,7 +124,13 @@ class SQLValidator:
         self._validate_window_functions(statement)
         self._validate_functions(statement)
         self._validate_sensitive_projection(statement, tables, alias_map)
-        self._validate_grain_rules(statement, tables, columns, metric_ids)
+        self._validate_grain_rules(
+            statement,
+            tables,
+            columns,
+            metric_ids,
+            alias_map,
+        )
 
         # LIMIT 在 Validator 内统一收紧，不能依赖生成模型主动遵守返回规模约束。
         statement = self._enforce_limit(statement)
@@ -340,6 +367,7 @@ class SQLValidator:
         tables: set[str],
         columns: set[str],
         metric_ids: tuple[str, ...],
+        aliases: dict[str, str],
     ) -> None:
         """检查无法仅靠 SQL 语法发现的指标口径与一对多聚合风险。"""
 
@@ -375,10 +403,39 @@ class SQLValidator:
                 raise SQLValidationError(
                     "AOV must be recomputed from region-DWS GMV and order count"
                 )
+        for metric_id in metric_ids:
+            metric_required = _METRIC_REQUIRED_COLUMNS.get(metric_id)
+            used = self._statement_source_columns(statement, tables, aliases)
+            if metric_required is not None and not metric_required.issubset(used):
+                raise SQLValidationError(
+                    f"{metric_id} must use its registered Metric Registry source columns"
+                )
         if "category_order_count" in metric_ids and not self._has_category_scope(statement):
             raise SQLValidationError(
                 "category_order_count requires category grouping or a category filter"
             )
+
+    def _statement_source_columns(
+        self,
+        statement: exp.Expression,
+        tables: set[str],
+        aliases: dict[str, str],
+    ) -> set[str]:
+        resolved: set[str] = set()
+        for column in statement.find_all(exp.Column):
+            name = column.name
+            qualifier = column.table
+            if qualifier:
+                source_name = aliases.get(qualifier)
+                if source_name in tables and name in self.table_columns[source_name]:
+                    resolved.add(f"{source_name}.{name}")
+                continue
+            candidates = [
+                table for table in tables if name in self.table_columns[table]
+            ]
+            if len(candidates) == 1:
+                resolved.add(f"{candidates[0]}.{name}")
+        return resolved
 
     def _has_gmv_status_filter(self, statement: exp.Expression) -> bool:
         for negation in statement.find_all(exp.Not):
