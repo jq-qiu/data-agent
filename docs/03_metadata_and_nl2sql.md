@@ -140,7 +140,9 @@ JOIN 关系必须来自 Relationship Registry，不能让 LLM 根据字段名自
 - 时间字段和粒度是否正确。
 
 `SchemaLinkingPlan` 同时冻结 `required_metric_columns`、`calendar_table`、规范分组列、
-显示列、排序和固定过滤。开放式问数的 Validator 必须再次核对 SQL 没有使用方案外
+显示列、排序和固定过滤。SQL-017 起 DWS-only `required_metric_columns` 只含公式必需列，
+日期/地区/品类等口径列通过 plan.columns 与 group/filter 约束，避免整体 SUM 被强制携带
+无关粒度列。开放式问数的 Validator 必须再次核对 SQL 没有使用方案外
 表、列或 JOIN，并要求 GROUP BY、ORDER BY 和固定过滤与方案一致；生成节点和执行节点
 都使用同一 Plan 复验，不能在修复后绕过。
 

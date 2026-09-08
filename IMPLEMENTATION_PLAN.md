@@ -207,7 +207,8 @@ EVAL-003 Primary Failure Classification Completeness
 | SQL-014 | 在 EVAL v3 与 SQL-011~013 后重新执行真实 Live/Replay | 已完成；25/30 且 Gate 3 通过 |
 | SQL-015 | 支持无表名前缀外层引用并归一 ISO date_id | 已完成；T03 形状本地通过，未真实复测 |
 | SQL-016 | 在 SQL-015 修复后重新执行真实 Live/Replay | 已完成；24/30，Gate 3 true |
-| SQL-017 | 按整体/Region Scope 约束 DWS 必需列，不强制 Region ID | 下一项；针对 T03/A02 单一口径假设 |
+| SQL-017 | 按整体/Region Scope 约束 DWS 必需列，不强制 Region ID | 已完成；required 只含公式列，未真实复测 |
+| SQL-018 | 在 SQL-017 后重新执行真实 Live/Replay | 下一项；评测 Feature，不现场修 Runtime |
 
 SQL-010 的历史 Gate false 保持不变；EVAL-003 已保证后续同类偏差会完整分类。之后若
 处理真实失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。

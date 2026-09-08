@@ -166,28 +166,10 @@ _AGGREGATE_TERMS = (
     "rank",
 )
 _DWS_ONLY_METRIC_COLUMNS: dict[str, tuple[str, ...]] = {
-    "order_count": (
-        "dws_sales_region_daily.order_count",
-        "dws_sales_region_daily.date_id",
-        "dws_sales_region_daily.region_id",
-    ),
-    "item_count": (
-        "dws_sales_category_daily.item_count",
-        "dws_sales_category_daily.date_id",
-        "dws_sales_category_daily.region_id",
-        "dws_sales_category_daily.category_id",
-    ),
-    "visitors": (
-        "dws_sales_region_daily.visitors",
-        "dws_sales_region_daily.date_id",
-        "dws_sales_region_daily.region_id",
-    ),
-    "category_order_count": (
-        "dws_sales_category_daily.category_order_count",
-        "dws_sales_category_daily.date_id",
-        "dws_sales_category_daily.region_id",
-        "dws_sales_category_daily.category_id",
-    ),
+    "order_count": ("dws_sales_region_daily.order_count",),
+    "item_count": ("dws_sales_category_daily.item_count",),
+    "visitors": ("dws_sales_region_daily.visitors",),
+    "category_order_count": ("dws_sales_category_daily.category_order_count",),
 }
 _CALENDAR_QUERY_TERMS = (
     "按月",

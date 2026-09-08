@@ -43,6 +43,7 @@
 - [SQL-014 Post-repair Real-model Rerun](SQL-014_COMPLETION.md)
 - [SQL-015 Unqualified Derived-column and Date ID Repair](SQL-015_COMPLETION.md)
 - [SQL-016 Post-SQL-015 Real-model Rerun](SQL-016_COMPLETION.md)
+- [SQL-017 Overall DWS Required Columns](SQL-017_COMPLETION.md)
 
 ## 诊断分析与评测
 

@@ -431,3 +431,45 @@ async def test_display_name_grouping_orders_by_requested_display(catalog) -> Non
     assert plan.display_columns == ("dim_category.category_name_en",)
     assert tuple(item.column for item in plan.order_by) == plan.display_columns
     assert len(plan.filters) == 1
+
+
+
+@pytest.mark.asyncio
+async def test_overall_order_count_plan_does_not_force_grain_columns(catalog) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="2018年5月整体订单数是多少",
+        table_infos=[_table("fact_order", ("order_id", "customer_id", "status"))],
+        metric_infos=[_metric("order_count")],
+        join_relations=[],
+    )
+
+    assert set(plan.required_metric_columns) == {
+        "dws_sales_region_daily.order_count"
+    }
+    assert "dws_sales_region_daily.date_id" in plan.columns
+    assert "dws_sales_region_daily.region_id" in plan.columns
+
+
+@pytest.mark.asyncio
+async def test_region_grouping_keeps_region_id_outside_required_metric_columns(
+    catalog,
+) -> None:
+    builder = SchemaLinkingPlanBuilder(catalog, StubPathProvider())
+    plan = await builder.build(
+        query="按巴西州统计2018年5月整体订单数",
+        table_infos=[
+            _table(
+                "dws_sales_region_daily",
+                ("date_id", "region_id", "order_count"),
+                role="aggregate",
+            )
+        ],
+        metric_infos=[_metric("order_count")],
+        join_relations=[],
+    )
+
+    assert "dws_sales_region_daily.region_id" in plan.group_by_columns
+    assert set(plan.required_metric_columns) == {
+        "dws_sales_region_daily.order_count"
+    }

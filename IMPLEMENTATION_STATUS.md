@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-016 已确认 SQL-015 后真实
-结果为 24/30 且 Gate true；T03 仍受 DWS Plan 强制 Region ID 必需列影响。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-017 已把 DWS-only 指标的
+required_metric_columns 收窄为公式列，真实复测待 SQL-018。
 
 ## Current Feature
 
-SQL-016 Post-SQL-015 Real-model Rerun.
+SQL-017 Overall DWS Required Columns.
 
-## Feature Status (SQL-016 completed)
+## Feature Status (SQL-017 completed)
 
-Completed and validated. Compatible/Strict Execution 24/30，Metric Accuracy 30/30，
-Safety 12/12，Gate 3 true，Live/Replay 完全一致。
+Completed and validated. `_DWS_ONLY_METRIC_COLUMNS` 只保留 DWS 公式列；整体 order_count
+不再强制 date_id/region_id，Region 口径仍由 group/filter 约束。
 
 ## Last Completed Feature
 
-SQL-016 Post-SQL-015 Real-model Rerun.
+SQL-017 Overall DWS Required Columns.
 
 ## Next Feature
 
-SQL-017 Overall DWS Required Columns。按整体/Region Scope 约束 DWS-only 必需列，
-避免整体订单数强制引用 Region ID；只处理一个口径假设，不现场修本次评测。
+SQL-018 Post-SQL-017 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
+Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
 
 ## Last Successful Validation
 
+- SQL-017 overall DWS required columns: schema-linking repair contract 36 passed；
+  overall required 只含公式列，region group 仍保留 region_id；历史产物 changed: 0；
 - SQL-016 real-model rerun: compatible/strict Execution 24/30；Metric Accuracy 30/30；
   Gate 3 true；Live/Replay identical；N02 new drift；T03/A02 plan-region issue remains；
 - SQL-015 unqualified derived/date-id repair: SQL repair contract 18 passed；T03 exact
@@ -268,20 +270,19 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-016 开始前，本地 `HEAD` 为 SQL-015 commit `15e7ddd`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-016 不执行远端推送或仓库可见性变更。
+SQL-017 开始前，本地 `HEAD` 为 SQL-016 commit `364691e`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-017 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-016 实测兼容/严格 Execution 为 24/30，Gate true；Metric Accuracy 30/30。T03/A02
-仍因 DWS-only Plan 强制 `region_id` 必需列而拒绝整体订单查询；C05/J02 仍失败，N02 为
-本轮新增 TopN 漂移。SQL-010/014 的 26/30、25/30 均为历史一次运行。
+SQL-017 已本地消除整体 DWS 必需列的口径误伤，但尚未真实复测；SQL-016 的 24/30 仍
+是最近实测。C05/J02 仍失败，TopN 存在模型结构漂移，SQL-010/014 是历史一次运行。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-016_post_sql015_real_model_rerun.md` and
-   `docs/reports/SQL-016_COMPLETION.md`.
-4. Create and freeze a SQL-017 Spec for overall DWS required columns.
-5. Keep C05/J02/TopN drift and future reruns outside that runtime repair Feature.
+3. Review `specs/SQL-017_overall_dws_required_columns.md` and
+   `docs/reports/SQL-017_COMPLETION.md`.
+4. Create and freeze a SQL-018 Spec for the post-SQL-017 Live/Replay rerun.
+5. Keep C05/J02/TopN drift and future reruns outside that evaluation Feature.

@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 392 passed | 当前仓库行为回归 |
+| Python 全量回归 | 394 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -260,9 +260,10 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
-SQL-010 的 26/30 与 SQL-014 的 25/30 都是历史一次运行。SQL-015 补齐 T03 的无前缀
-派生列映射与 Plan 内 ISO `date_id` 归一；SQL-016 复测为 24/30（Gate true，Metric
-Accuracy 30/30），T03/A02 仍受整体 DWS Plan 强制 Region ID 必需列影响。
+SQL-010 的 26/30 与 SQL-014 的 25/30 都是历史一次运行。SQL-015 补齐无前缀派生列映射
+与 ISO `date_id` 归一；SQL-016 复测为 24/30（Gate true，Metric Accuracy 30/30）。
+SQL-017 随后把 DWS-only required_metric_columns 收窄为公式列，避免整体订单查询被强制
+引用 region_id/date_id；尚未执行新的真实复测。
 
 ## 技术栈
 
