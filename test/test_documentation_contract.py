@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "SQL-010 Post-SQL-009 Real-model Rerun" in _markdown_section(
+    assert "EVAL-003 Primary Failure Classification Completeness" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "EVAL-002 NL2SQL Evaluation Integrity" in _markdown_section(
+    assert "EVAL-003 Primary Failure Classification Completeness" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "EVAL-003 Primary Failure Classification Completeness" in _markdown_section(
+    assert "SQL-011 Deterministic Plan-aware Repair" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "EVAL-003 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-011 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 
@@ -171,7 +171,7 @@ def test_semantic_grounding_and_planner_boundaries_are_current() -> None:
     assert "绑定能力经 CLARIFY-001 接入生产单轮 API" in implementation_plan
     assert "EVAL-002 NL2SQL Evaluation Integrity" in implementation_plan
     assert "EVAL-003 Primary Failure Classification Completeness" in implementation_plan
-    assert "下一项；只修分类" in implementation_plan
+    assert "已完成；Evaluator v3" in implementation_plan
 
 
 def test_architecture_narrative_keeps_production_boundaries_honest() -> None:

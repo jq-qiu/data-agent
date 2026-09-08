@@ -76,7 +76,7 @@ class ReplayCacheIdentity:
     model_name: str
     source_commit: str
     source_dirty: bool
-    evaluator_version: str = "sql-evaluator-v2"
+    evaluator_version: str = "sql-evaluator-v3"
 
 
 @dataclass(frozen=True)
@@ -441,8 +441,8 @@ def classify_failure(
     *,
     valid: bool = True,
     metric_match: bool,
-    table_recall: float,
-    column_recall: float,
+    table_match: bool,
+    column_match: bool,
     join_match: bool,
     result_match: bool,
     strict_result_match: bool | None = None,
@@ -457,7 +457,7 @@ def classify_failure(
         return "SQL Generation Error"
     if not metric_match:
         return "Metric Recognition Error"
-    if table_recall < 1 or column_recall < 1 or not join_match:
+    if not table_match or not column_match or not join_match:
         return "Schema Linking Error"
     if not result_match or strict_result_match is False:
         return "SQL Generation Error"
@@ -695,8 +695,8 @@ async def evaluate_nl2sql_cases(
             run,
             valid=valid,
             metric_match=metric_match,
-            table_recall=table_recall,
-            column_recall=column_recall,
+            table_match=table_match,
+            column_match=column_match,
             join_match=join_match,
             result_match=result_match,
             strict_result_match=strict_result_match,

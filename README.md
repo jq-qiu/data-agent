@@ -225,7 +225,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 
 | 范围 | 当前结果 | 说明 |
 |---|---:|---|
-| Python 全量回归 | 373 passed | 当前仓库行为回归 |
+| Python 全量回归 | 374 passed | 当前仓库行为回归 |
 | 前端单元测试 | 11 passed | SSE 与 Trace 等 |
 | Ruff / mypy | 0 / 0 | 114 个 Python 源文件 |
 | 混合意图路由 | 48/48 | 固定路由样本，三类 Recall 均为 1.0，诊断误放行 0 |
@@ -253,7 +253,8 @@ Success；Replay 现在还绑定提交、工作树状态与实际运行时代码
 均为 26/30，Simple/Aggregate/TopN 5/5、Time/Join 4/5、Comparison 3/5；30 条严格参考
 摘要和 Live/Replay 对账均通过，Safety 仍为 12/12。由于 `N04`、`C01` 的额外 Schema
 Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评测器遗漏由独立 EVAL-003
-处理，不能把本次运行表述为全 Gate 通过。
+处理，不能把本次运行表述为全 Gate 通过。EVAL-003 已让主分类改用表、列、JOIN 精确
+符合判断，并升级 Evaluator v3；SQL-010 作为历史运行仍保留原 Gate false。
 
 ## 技术栈
 

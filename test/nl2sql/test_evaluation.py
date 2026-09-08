@@ -348,3 +348,49 @@ async def test_correction_requires_correct_result_and_reports_multiple_failures(
         "Result Shape Mismatch",
         "Grain Contract Error",
     }
+
+
+@pytest.mark.asyncio
+async def test_extra_schema_trace_has_primary_classification_even_when_result_matches() -> None:
+    rows = [{"month": "2018-05", "gmv": Decimal("10.00")}]
+    case = NL2SQLGoldenCase(
+        case_id="extra-trace",
+        bucket="comparison",
+        question="比较GMV",
+        expected_metric_ids=("gmv",),
+        expected_tables=("dws_sales_region_daily",),
+        expected_columns=("dws_sales_region_daily.gmv",),
+        expected_join_relations=(),
+        reference_sql="SELECT month, SUM(gmv) FROM dws_sales_region_daily",
+        expected_result_sha256=result_checksum(rows, ordered=False),
+        risk_tags=(),
+        result_ordered=False,
+    )
+
+    async def reference(_: NL2SQLGoldenCase) -> list[dict]:
+        return rows
+
+    async def candidate(_: NL2SQLGoldenCase) -> NL2SQLRun:
+        return NL2SQLRun(
+            validated_sql="SELECT month, SUM(gmv) FROM extra_join LIMIT 500",
+            rows=rows,
+            metric_ids=("gmv",),
+            validation_trace={
+                "tables": ["dws_sales_region_daily", "dim_date"],
+                "columns": ["dws_sales_region_daily.gmv", "dim_date.month"],
+                "join_relations": [],
+            },
+        )
+
+    result = await evaluate_nl2sql_cases((case,), candidate, reference)
+    evaluated_case = result["cases"][0]
+
+    assert evaluated_case["execution_accuracy"] == 1
+    assert evaluated_case["strict_execution_accuracy"] == 1
+    assert evaluated_case["trace_conformance_rate"] == 0
+    assert evaluated_case["failure_labels"] == ["Schema Linking Error"]
+    assert evaluated_case["error_category"] == "Schema Linking Error"
+    assert all(
+        not item["failure_labels"] or item["error_category"]
+        for item in result["cases"]
+    )

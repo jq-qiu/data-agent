@@ -61,7 +61,7 @@ PROMPT_PATHS = (
     ROOT / "prompts" / "generate_sql.prompt",
     ROOT / "prompts" / "correct_sql.prompt",
 )
-EVALUATOR_VERSION = "sql-evaluator-v2"
+EVALUATOR_VERSION = "sql-evaluator-v3"
 
 
 def _runtime_paths() -> tuple[Path, ...]:

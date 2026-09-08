@@ -2,30 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-010 已在 EVAL-002 评测器上
-完成真实 Live/Replay：兼容与严格 Execution 均为 26/30，但分类完整性 Gate 未通过。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。EVAL-003 已修复 SQL-010 暴露的
+单主错误分类遗漏；SQL-010 历史 Gate false 与 26/30 真实结果保持不变。
 
 ## Current Feature
 
-SQL-010 Post-SQL-009 Real-model Rerun.
+EVAL-003 Primary Failure Classification Completeness.
 
-## Feature Status (SQL-010 run completed; integrity Gate failed)
+## Feature Status (EVAL-003 completed)
 
-Live/Replay 主体完全一致，30 条严格参考摘要齐全，Safety 12/12，兼容与严格 Execution
-均为 26/30。`N04`、`C01` 只有额外 Schema Trace，多标签已记录但兼容主分类为空，导致
-`all_failures_classified=false` 和 Gate 3 false；本 Feature 不越界修改 Evaluator。
+Completed and validated. 主错误分类现与多标签一致，按表、列和 JOIN 精确符合判断；
+结果正确但包含额外表/列的 Trace 仍保留结果正确，同时得到 `Schema Linking Error`。
 
 ## Last Completed Feature
 
-EVAL-002 NL2SQL Evaluation Integrity.
+EVAL-003 Primary Failure Classification Completeness.
 
 ## Next Feature
 
-EVAL-003 Primary Failure Classification Completeness。只修 `classify_failure` 对额外表/列
-Trace 的主分类遗漏，不修改 SQL-010 真实运行、运行时规则或历史产物。
+SQL-011 Deterministic Plan-aware Repair。针对 SQL-010 三条“首次校验失败后仍不符合
+SchemaLinkingPlan”的共同假设，先设计确定性最小修复，不处理 J02 结果差异。
 
 ## Last Successful Validation
 
+- EVAL-003 classification contract: 11 passed；额外表/列且结果正确仍有主分类；
+  SQL-010 与历史评测产物 changed: 0；
 - SQL-010 real-model rerun: compatible/strict Execution 26/30；Live/Replay identical；
   Safety 12/12；Gate 3 false because 2 multi-label failures lack a primary category；
 - EVAL-002 evaluator contract: 10 passed；full pytest regression: 373 passed；
@@ -253,8 +254,8 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-010 开始前，本地 `HEAD` 为 EVAL-002 commit `6f71b4b`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-010 不执行远端推送或仓库可见性变更。
+EVAL-003 开始前，本地 `HEAD` 为 SQL-010 commit `7914358`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。EVAL-003 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
@@ -266,7 +267,7 @@ J02、C02、C05，另有 14 条 Trace 偏差和 10/15 Grain 契约偏差。诊�
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-010_post_semantics_real_model_rerun.md` and
-   `docs/reports/SQL-010_COMPLETION.md`.
-4. Create and freeze an EVAL-003 Spec for the primary-classification omission only.
-5. Do not modify SQL-010 artifacts or NL2SQL Runtime while repairing that evaluator Gate.
+3. Review `specs/EVAL-003_primary_failure_classification.md` and
+   `docs/reports/EVAL-003_COMPLETION.md`.
+4. Create and freeze a SQL-011 Spec for one Plan-aware repair hypothesis.
+5. Keep J02 and any later real-model rerun outside that repair Feature.

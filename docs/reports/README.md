@@ -36,6 +36,7 @@
 - [SQL-009 Query Semantics Remediation](SQL-009_COMPLETION.md)
 - [EVAL-002 NL2SQL Evaluation Integrity](EVAL-002_COMPLETION.md)
 - [SQL-010 Post-SQL-009 Real-model Rerun](SQL-010_COMPLETION.md)
+- [EVAL-003 Primary Failure Classification Completeness](EVAL-003_COMPLETION.md)
 
 ## 诊断分析与评测
 

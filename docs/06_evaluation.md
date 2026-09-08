@@ -110,7 +110,9 @@ Alias 或投影顺序完全一致。该口径可能掩盖列值交换，因此 E
 - `correction_success_rate` 要求修复后有效、可执行且兼容结果正确，不能仅以“能执行”
   作为成功；严格参考摘要可用时另报 `strict_correction_success_rate`；
 - `failure_labels` 可同时记录结果、Trace、Grain 等多个问题，`error_category` 仅保留为
-  单主分类兼容字段。错误报告分别统计兼容结果不匹配、严格结果不匹配和 Trace 偏差。
+  单主分类兼容字段。EVAL-003 起主分类也使用表、列、JOIN 精确符合判断，只有额外表/列
+  的 Trace 偏差同样归为 `Schema Linking Error`，保证任一多标签失败都有主分类。错误报告
+  分别统计兼容结果不匹配、严格结果不匹配和 Trace 偏差。
 
 ### 4.1 Live/Replay 运行模式
 
