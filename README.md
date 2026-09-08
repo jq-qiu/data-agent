@@ -235,7 +235,7 @@ Synthetic 场景演示 Traffic Drop、Promotion End 和 Stockout 的完整证据
 | Unsupported Claim / 因果越界 | 0 / 0 | 固定诊断回归 |
 | Grouped TopN | 4/4 | 固定受控 SQL 场景 |
 | SchemaLinkingPlan | 9/9 | 确定性 Builder/Validator 单元测试 |
-| NL2SQL Execution Accuracy | 24/30 | SQL-016 真实模型复测；Metric Accuracy 30/30，Gate 3 通过 |
+| NL2SQL Execution Accuracy | 25/30 | SQL-018 真实模型复测；Grain 7/15，Gate 3 通过 |
 
 Synthetic 指标验证的是固定功能回归，不是生产泛化能力。真实 Qdrant/Elasticsearch
 语义召回准确率和真实 LLM Planner 尚未评测，不能用 Stub 契约结果替代。
@@ -260,10 +260,9 @@ Trace 没有落入兼容单主分类，分类完整性 Gate 为 false；该评�
 精确分组/排序等冻结 Plan 提炼为错误导向修复约束。SQL-014 在 EVAL-003/Evaluator v3
 上完成真实复测：兼容与严格 Execution 均为 25/30，Gate 3 通过，Live/Replay 完全一致；
 C02 从失败转通过，T03/J02/C05 仍失败，A02 为 MySQL 连接丢失，N04 为新模型漂移。
-SQL-010 的 26/30 与 SQL-014 的 25/30 都是历史一次运行。SQL-015 补齐无前缀派生列映射
-与 ISO `date_id` 归一；SQL-016 复测为 24/30（Gate true，Metric Accuracy 30/30）。
-SQL-017 随后把 DWS-only required_metric_columns 收窄为公式列，避免整体订单查询被强制
-引用 region_id/date_id；尚未执行新的真实复测。
+SQL-010 的 26/30、SQL-014 与 SQL-018 的 25/30 均为单次真实运行，模型存在显著
+非确定性。SQL-017 收窄整体 DWS required 列后，SQL-018 中 T03/A02/N04 转通过，
+Grain 升至 7/15；J02/C05 仍失败，T05/N03 为本轮新漂移。
 
 ## 技术栈
 

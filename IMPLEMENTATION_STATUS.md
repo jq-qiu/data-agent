@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-017 已把 DWS-only 指标的
-required_metric_columns 收窄为公式列，真实复测待 SQL-018。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-018 已验证 SQL-017 的
+整体 DWS required 修复：25/30，T03/A02/N04 转通过。
 
 ## Current Feature
 
-SQL-017 Overall DWS Required Columns.
+SQL-018 Post-SQL-017 Real-model Rerun.
 
-## Feature Status (SQL-017 completed)
+## Feature Status (SQL-018 completed)
 
-Completed and validated. `_DWS_ONLY_METRIC_COLUMNS` 只保留 DWS 公式列；整体 order_count
-不再强制 date_id/region_id，Region 口径仍由 group/filter 约束。
+Completed and validated. Compatible/Strict Execution 25/30，Grain 7/15，Trace 18/30，
+Gate 3 true，Live/Replay 完全一致。T03/A02/N04 转通过，T05/N03 为新漂移。
 
 ## Last Completed Feature
 
-SQL-017 Overall DWS Required Columns.
+SQL-018 Post-SQL-017 Real-model Rerun.
 
 ## Next Feature
 
-SQL-018 Post-SQL-017 Real-model Rerun。在同一 Golden 与 Evaluator v3 上重跑
-Live/Replay，只记录真实结果与失败，不在评测现场修改 Runtime。
+SQL-019 Group-by Join-key Canonicalization。当 SQL 分组使用与 Plan 分组列等价的
+Join 键时，确定性地规范为 Plan 分组列；目标 SQL-018 J02。
 
 ## Last Successful Validation
 
+- SQL-018 real-model rerun: compatible/strict Execution 25/30；Grain 7/15；Trace 18/30；
+  Gate 3 true；Live/Replay identical；T03/A02/N04 fixed vs SQL-016；
 - SQL-017 overall DWS required columns: schema-linking repair contract 36 passed；
   overall required 只含公式列，region group 仍保留 region_id；历史产物 changed: 0；
 - SQL-016 real-model rerun: compatible/strict Execution 24/30；Metric Accuracy 30/30；
@@ -270,19 +272,20 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-017 开始前，本地 `HEAD` 为 SQL-016 commit `364691e`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-017 不执行远端推送或仓库可见性变更。
+SQL-018 开始前，本地 `HEAD` 为 SQL-017 commit `ac286cc`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-018 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
-SQL-017 已本地消除整体 DWS 必需列的口径误伤，但尚未真实复测；SQL-016 的 24/30 仍
-是最近实测。C05/J02 仍失败，TopN 存在模型结构漂移，SQL-010/014 是历史一次运行。
+SQL-018 实测兼容/严格 Execution 为 25/30，Gate true；Grain Contract 7/15，
+Trace Conformance 18/30。T03/A02/N04 相对 SQL-016 转通过，T05/N03 为新模型漂移；
+J02/C05 仍是稳定 Runtime/语义失败。SQL-010/014/016 都是历史一次运行。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-017_overall_dws_required_columns.md` and
-   `docs/reports/SQL-017_COMPLETION.md`.
-4. Create and freeze a SQL-018 Spec for the post-SQL-017 Live/Replay rerun.
-5. Keep C05/J02/TopN drift and future reruns outside that evaluation Feature.
+3. Review `specs/SQL-018_post_sql017_real_model_rerun.md` and
+   `docs/reports/SQL-018_COMPLETION.md`.
+4. Create and freeze a SQL-019 Spec for J02 group-by join-key canonicalization only.
+5. Keep C05 and future reruns outside that runtime repair Feature.
