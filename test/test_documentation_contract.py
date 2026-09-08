@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "EVAL-003 Primary Failure Classification Completeness" in _markdown_section(
+    assert "SQL-011 Calendar Literal Repair Normalization" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "EVAL-003 Primary Failure Classification Completeness" in _markdown_section(
+    assert "SQL-011 Calendar Literal Repair Normalization" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "SQL-011 Deterministic Plan-aware Repair" in _markdown_section(
+    assert "SQL-012 Required Metric Repair Shape" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "SQL-011 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-012 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 

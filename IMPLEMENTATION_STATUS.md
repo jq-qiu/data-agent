@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。EVAL-003 已修复 SQL-010 暴露的
-单主错误分类遗漏；SQL-010 历史 Gate false 与 26/30 真实结果保持不变。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-011 已对最后一次 LLM 修复
+增加 Plan 限定的 `dim_date` 数字 Literal 规范化；SQL-010 真实结果尚未再次复测。
 
 ## Current Feature
 
-EVAL-003 Primary Failure Classification Completeness.
+SQL-011 Calendar Literal Repair Normalization.
 
-## Feature Status (EVAL-003 completed)
+## Feature Status (SQL-011 completed)
 
-Completed and validated. 主错误分类现与多标签一致，按表、列和 JOIN 精确符合判断；
-结果正确但包含额外表/列的 Trace 仍保留结果正确，同时得到 `Schema Linking Error`。
+Completed and validated. 仅在 Plan Calendar Table 为 `dim_date` 时，把修复 SQL 中规范的
+year/quarter/date_id 数字字符串改为整数；Month/Date、其他表、无效 SQL 均保持不变。
 
 ## Last Completed Feature
 
-EVAL-003 Primary Failure Classification Completeness.
+SQL-011 Calendar Literal Repair Normalization.
 
 ## Next Feature
 
-SQL-011 Deterministic Plan-aware Repair。针对 SQL-010 三条“首次校验失败后仍不符合
-SchemaLinkingPlan”的共同假设，先设计确定性最小修复，不处理 J02 结果差异。
+SQL-012 Required Metric Repair Shape。只处理 T03 修复 SQL 引入派生表后 Validator 无法
+回溯必需指标列的单一假设，不处理 C05/J02 或执行真实复测。
 
 ## Last Successful Validation
 
+- SQL-011 calendar repair contract: 4 passed；Plan/Alias/反向比较/IN 与安全不变路径覆盖；
+  SQL-010 与历史评测产物 changed: 0；
 - EVAL-003 classification contract: 11 passed；额外表/列且结果正确仍有主分类；
   SQL-010 与历史评测产物 changed: 0；
 - SQL-010 real-model rerun: compatible/strict Execution 26/30；Live/Replay identical；
@@ -254,8 +256,8 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-EVAL-003 开始前，本地 `HEAD` 为 SQL-010 commit `7914358`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。EVAL-003 不执行远端推送或仓库可见性变更。
+SQL-011 开始前，本地 `HEAD` 为 EVAL-003 commit `dcd1dc1`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-011 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
@@ -267,7 +269,7 @@ J02、C02、C05，另有 14 条 Trace 偏差和 10/15 Grain 契约偏差。诊�
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/EVAL-003_primary_failure_classification.md` and
-   `docs/reports/EVAL-003_COMPLETION.md`.
-4. Create and freeze a SQL-011 Spec for one Plan-aware repair hypothesis.
-5. Keep J02 and any later real-model rerun outside that repair Feature.
+3. Review `specs/SQL-011_calendar_literal_repair_normalization.md` and
+   `docs/reports/SQL-011_COMPLETION.md`.
+4. Create and freeze a SQL-012 Spec for the T03 derived-table repair-shape hypothesis only.
+5. Keep C05, J02 and any real-model rerun outside that repair Feature.

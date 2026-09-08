@@ -148,6 +148,11 @@ JOIN 关系必须来自 Relationship Registry，不能让 LLM 根据字段名自
 `quarter` 和 `date_id` 使用整数。Validator 在执行前拒绝类型错配。物理明细行数不绑定
 业务 `item_count`；包含订单状态筛选/拆分时，不使用缺少状态粒度的 DWS `order_count`。
 
+一次受限 LLM 修复后仍必须回到同一 Validator。SQL-011 在该回路中只增加 Plan-aware 的
+确定性类型规范化：仅当 Calendar Table 为 `dim_date` 时，将修复结果中的四位 `year`、
+1-4 `quarter` 和八位 `date_id` 数字字符串转换为整数 Literal；`month`、`date` 和其他表
+值保持不变。该步骤不放宽 Validator、不新增字段/JOIN，也不增加修复轮数。
+
 ## 6. 两类 SQL 路径
 
 ### 6.1 开放式问数

@@ -201,7 +201,8 @@ EVAL-003 Primary Failure Classification Completeness
 | EVAL-002 | 修复结果列语义、Grain、Correction 和 Replay 身份等评测可信度问题 | 已完成；未运行真实模型，不更新运行时准确率 |
 | SQL-010 | 在可信评测器上执行 SQL-009 后 Live/Replay 真实复测 | 已执行；26/30，但单主分类完整性 Gate 未通过 |
 | EVAL-003 | 让额外表/列等 Trace 偏差获得兼容主错误分类 | 已完成；Evaluator v3，不修改 SQL-010 历史结果 |
-| SQL-011 | 对首次校验失败执行确定性、Plan-aware 的最小修复 | 下一项；先验证一个主要失败假设 |
+| SQL-011 | 规范化 LLM 修复结果中的 dim_date 数字字符串 Literal | 已完成；针对 C02 假设，未真实复测 |
+| SQL-012 | 限制必需指标列修复引入派生表导致 Trace 丢失 | 下一项；针对 T03 单一失败假设 |
 
 SQL-010 的历史 Gate false 保持不变；EVAL-003 已保证后续同类偏差会完整分类。之后若
 处理真实失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。
