@@ -2,29 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-012 已对严格安全的单表指标
-派生查询执行 Plan 限定扁平化，解决 T03 必需物理列 Trace 丢失假设；尚未真实复测。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-013 已把冻结 Plan 格式化为
+短、错误导向的修复约束，针对 C05 分组/日历 Join 偏离假设；尚未真实复测。
 
 ## Current Feature
 
-SQL-012 Required Metric Subquery Flattening.
+SQL-013 Structured Plan Repair Constraints.
 
-## Feature Status (SQL-012 completed)
+## Feature Status (SQL-013 completed)
 
-Completed and validated. 仅扁平化无 Join/聚合/分组/排序/Limit/Distinct/窗口的单表裸列
-派生查询；过滤保持，未用投影删除，最终列必须完全属于含必需指标列的 Plan。
+Completed and validated. Repair Prompt 现在收到独立的允许表、必需列、Calendar、Join、
+精确 Group/Order 与过滤约束；Group 偏差明确禁止条件聚合透视，Validator 仍最终裁决。
 
 ## Last Completed Feature
 
-SQL-012 Required Metric Subquery Flattening.
+SQL-013 Structured Plan Repair Constraints.
 
 ## Next Feature
 
-SQL-013 Plan Grouping and Calendar Join Repair。只处理 C05 修复 SQL 偏离冻结分组/日历
-Join 的单一假设，不处理 J02 或执行真实复测。
+SQL-014 Post-repair Real-model Rerun。在 Evaluator v3 与 SQL-011~013 上重跑同一 30 条
+Live/Replay，只记录真实结果与失败，不在评测 Feature 现场修改 Runtime。
 
 ## Last Successful Validation
 
+- SQL-013 structured repair constraints: 21 个相关专项通过；C05 Plan 的表、Calendar、
+  Join、Group、Order、Filter 与禁止透视均显式；历史评测产物 changed: 0；
 - SQL-012 subquery repair contract: 13 passed；T03 形状通过原 Validator，复杂/越界形状
   全部安全保持；SQL-010 与历史评测产物 changed: 0；
 - SQL-011 calendar repair contract: 4 passed；Plan/Alias/反向比较/IN 与安全不变路径覆盖；
@@ -258,8 +260,8 @@ DOC-002 completion commit. Resolve the immutable local commit ID with `git log -
 
 ## Push Status
 
-SQL-012 开始前，本地 `HEAD` 为 SQL-011 commit `9892361`，`origin/main` 和远端
-`main` 为 SQL-009 commit `5b29094`。SQL-012 不执行远端推送或仓库可见性变更。
+SQL-013 开始前，本地 `HEAD` 为 SQL-012 commit `05298e2`，`origin/main` 和远端
+`main` 为 SQL-009 commit `5b29094`。SQL-013 不执行远端推送或仓库可见性变更。
 
 ## Known Blockers
 
@@ -271,7 +273,7 @@ J02、C02、C05，另有 14 条 Trace 偏差和 10/15 Grain 契约偏差。诊�
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-012_required_metric_subquery_flattening.md` and
-   `docs/reports/SQL-012_COMPLETION.md`.
-4. Create and freeze a SQL-013 Spec for the C05 Plan grouping/calendar hypothesis only.
-5. Keep J02 and any real-model rerun outside that repair Feature.
+3. Review `specs/SQL-013_structured_plan_repair_constraints.md` and
+   `docs/reports/SQL-013_COMPLETION.md`.
+4. Create and freeze a SQL-014 Spec for the post-repair Live/Replay rerun.
+5. Do not modify Runtime while the evaluation Feature is running.

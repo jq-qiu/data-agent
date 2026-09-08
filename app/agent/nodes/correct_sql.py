@@ -10,6 +10,7 @@ from app.agent.llm import llm
 from app.agent.state import DataAgentState
 from app.core.log import logger
 from app.nl2sql.repair import (
+    build_structured_repair_constraints,
     flatten_redundant_metric_subquery,
     normalize_calendar_numeric_literals,
 )
@@ -34,7 +35,7 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
         db_info = state["db_info"]
         date_info = state["date_info"]
         sql = state["sql"]
-        error = state["error"]
+        error = state["error"] or "unknown validation error"
         # 2.调用大模型修复SQL
         prompt = PromptTemplate(
             template=load_prompt("correct_sql"),
@@ -45,6 +46,7 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
                 "join_relations",
                 "grain_warnings",
                 "schema_linking_plan",
+                "repair_constraints",
                 "db_info",
                 "date_info",
                 "sql",
@@ -67,6 +69,10 @@ async def correct_sql(state: DataAgentState, runtime: Runtime[DataAgentContext])
                     schema_linking_plan,
                     allow_unicode=True,
                     sort_keys=False,
+                ),
+                "repair_constraints": build_structured_repair_constraints(
+                    error,
+                    schema_linking_plan,
                 ),
                 "db_info": yaml.dump(db_info, allow_unicode=True, sort_keys=False),
                 "date_info": yaml.dump(date_info, allow_unicode=True, sort_keys=False),

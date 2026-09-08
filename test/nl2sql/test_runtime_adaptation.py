@@ -176,6 +176,7 @@ def test_prompts_require_registry_join_and_contain_no_domestic_demo_examples() -
 
     assert "{join_relations}" in content
     assert "{schema_linking_plan}" in content
+    assert "{repair_constraints}" in content
     assert "则基于用户问题语义与通用业务常识进行" not in content
     assert "不得使用通用业务常识自创公式" in content
     for stale_term in ("华南", "广东省", "华为"):

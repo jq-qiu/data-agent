@@ -189,3 +189,46 @@ def flatten_redundant_metric_subquery(
     if isinstance(inner_where, exp.Where):
         statement.set("where", inner_where.copy())
     return statement.sql(dialect="mysql")
+
+
+def build_structured_repair_constraints(
+    error: str,
+    schema_linking_plan: SchemaLinkingPlan | Mapping[str, Any] | None,
+) -> str:
+    """Render the frozen plan as concise, error-directed repair constraints."""
+    plan = _coerce_plan(schema_linking_plan)
+    if plan is None:
+        return "SchemaLinkingPlan unavailable; do not infer missing schema constraints."
+
+    groups = (*plan.group_by_columns, *plan.display_columns)
+    joins = tuple(
+        f"{item.left_table}.{item.left_column} = "
+        f"{item.right_table}.{item.right_column} ({item.relation_id})"
+        for item in plan.join_relations
+    )
+    orders = tuple(f"{item.column} {item.direction.upper()}" for item in plan.order_by)
+    filters = tuple(
+        f"{item.column_id} {'NOT IN' if item.exclude else 'IN'} "
+        f"({', '.join(repr(value) for value in item.values)})"
+        for item in plan.filters
+    )
+
+    def render(values: tuple[str, ...]) -> str:
+        return ", ".join(values) if values else "none"
+
+    lines = [
+        f"Validator error: {error}",
+        f"Allowed tables only: {render(plan.tables)}",
+        f"Required metric source columns: {render(plan.required_metric_columns)}",
+        f"Required calendar table: {plan.calendar_table or 'none'}",
+        f"Allowed JOIN equalities only: {render(joins)}",
+        f"Required GROUP BY exactly: {render(groups)}",
+        f"Required ORDER BY exactly: {render(orders)}",
+        f"Required filters: {render(filters)}",
+    ]
+    if "GROUP BY differs from SchemaLinkingPlan" in error:
+        lines.append(
+            "Return one row per required group; do not pivot group values into "
+            "separate conditional aggregate columns."
+        )
+    return "\n".join(lines)

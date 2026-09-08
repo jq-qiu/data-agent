@@ -19,6 +19,9 @@
 SQL 生成前已确定的 Schema 方案如下：
 {schema_linking_plan}
 
+根据当前校验错误从 Schema 方案提取的强制修复约束如下：
+{repair_constraints}
+
 当前的时间信息如下：
 {date_info}
 

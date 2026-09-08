@@ -5,10 +5,16 @@ import pytest
 from app.metadata.catalog import load_catalog
 from app.nl2sql.policy import load_sql_policy
 from app.nl2sql.repair import (
+    build_structured_repair_constraints,
     flatten_redundant_metric_subquery,
     normalize_calendar_numeric_literals,
 )
-from app.nl2sql.schema_linking import SchemaLinkingPlan
+from app.nl2sql.schema_linking import (
+    SchemaLinkingFilter,
+    SchemaLinkingJoin,
+    SchemaLinkingOrder,
+    SchemaLinkingPlan,
+)
 from app.nl2sql.validator import SQLValidator
 
 ROOT = Path(__file__).parents[2]
@@ -39,6 +45,41 @@ def _order_count_plan() -> SchemaLinkingPlan:
         ),
         required_metric_columns=("dws_sales_region_daily.order_count",),
         join_relations=(),
+    )
+
+
+def _status_comparison_plan() -> SchemaLinkingPlan:
+    return SchemaLinkingPlan(
+        tables=("fact_order", "dim_date"),
+        columns=(
+            "fact_order.order_id",
+            "fact_order.status",
+            "fact_order.date_id",
+            "dim_date.date_id",
+            "dim_date.month",
+        ),
+        calendar_table="dim_date",
+        join_relations=(
+            SchemaLinkingJoin(
+                relation_id="order_to_date",
+                left_table="fact_order",
+                left_column="date_id",
+                right_table="dim_date",
+                right_column="date_id",
+            ),
+        ),
+        group_by_columns=("dim_date.month", "fact_order.status"),
+        filters=(
+            SchemaLinkingFilter(
+                column_id="fact_order.status",
+                values=("delivered", "canceled"),
+                exclude=False,
+            ),
+        ),
+        order_by=(
+            SchemaLinkingOrder(column="dim_date.month"),
+            SchemaLinkingOrder(column="fact_order.status"),
+        ),
     )
 
 
@@ -179,3 +220,29 @@ def test_leaves_subquery_unchanged_without_required_metric_contract() -> None:
     plan = _order_count_plan().model_copy(update={"required_metric_columns": ()})
 
     assert flatten_redundant_metric_subquery(sql, plan) == sql
+
+
+def test_structured_repair_constraints_make_grouping_plan_explicit() -> None:
+    constraints = build_structured_repair_constraints(
+        "SQL GROUP BY differs from SchemaLinkingPlan",
+        _status_comparison_plan(),
+    )
+
+    assert "Allowed tables only: fact_order, dim_date" in constraints
+    assert "Required calendar table: dim_date" in constraints
+    assert (
+        "fact_order.date_id = dim_date.date_id (order_to_date)"
+        in constraints
+    )
+    assert "Required GROUP BY exactly: dim_date.month, fact_order.status" in constraints
+    assert "Required ORDER BY exactly: dim_date.month ASC, fact_order.status ASC" in constraints
+    assert "fact_order.status IN ('delivered', 'canceled')" in constraints
+    assert "do not pivot group values" in constraints
+
+
+def test_structured_repair_constraints_do_not_infer_without_plan() -> None:
+    constraints = build_structured_repair_constraints("invalid", None)
+
+    assert constraints == (
+        "SchemaLinkingPlan unavailable; do not infer missing schema constraints."
+    )

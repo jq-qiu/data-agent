@@ -39,6 +39,7 @@
 - [EVAL-003 Primary Failure Classification Completeness](EVAL-003_COMPLETION.md)
 - [SQL-011 Calendar Literal Repair Normalization](SQL-011_COMPLETION.md)
 - [SQL-012 Required Metric Subquery Flattening](SQL-012_COMPLETION.md)
+- [SQL-013 Structured Plan Repair Constraints](SQL-013_COMPLETION.md)
 
 ## 诊断分析与评测
 

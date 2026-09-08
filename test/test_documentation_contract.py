@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "SQL-012 Required Metric Subquery Flattening" in _markdown_section(
+    assert "SQL-013 Structured Plan Repair Constraints" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "SQL-012 Required Metric Subquery Flattening" in _markdown_section(
+    assert "SQL-013 Structured Plan Repair Constraints" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "SQL-013 Plan Grouping and Calendar Join Repair" in _markdown_section(
+    assert "SQL-014 Post-repair Real-model Rerun" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "SQL-013 Spec" in _markdown_section(status, "## Resume From")
+    assert "SQL-014 Spec" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 
