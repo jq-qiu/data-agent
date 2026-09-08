@@ -1,7 +1,7 @@
 {
   "run_id": "sql-005-schema-linking-v1",
   "generated_at_utc": "2026-09-08T03:41:54.569299+00:00",
-  "source_commit": "3b5f0751b8337dc17896816d8fdd27baf444ef3e",
+  "source_commit": "971cad090dab7a1d332db1315d9678cca0690564",
   "evaluator_version": "sql-evaluator-v1",
   "dataset_version": "nl2sql-golden-v1",
   "dataset_sha256": "c7d067d7048aaed82457aa13f7f2ffb5f38a7a55d7b56b672a2a9a70a1a00025",
