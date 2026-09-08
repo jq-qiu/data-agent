@@ -215,7 +215,8 @@ EVAL-003 Primary Failure Classification Completeness
 | SQL-022 | 以 DeepSeek-V3.2 在 SQL-021 后执行真实 Live/Replay | 已完成；23/30，Gate true |
 | SQL-023 | 以 V4-flash 执行同版本 Head-to-head Rerun | 已完成；25/30，Gate true |
 | SQL-024 | Daily GMV DWS Source and Projection Contract | 已完成；T05 Plan 锁地区 DWS 单表与 date_id/SUM(gmv) 投影，Validator AST 校验；未真实复测 |
-| SQL-025 | Post-SQL-024 T05 Real-model Rerun | 下一项；真实模型验证 T05 是否转通过 |
+| SQL-025 | Post-SQL-024 T05 Real-model Rerun | 已完成；27/30，T04/T05/N02 转通过，N01 漂移失败；Gate true |
+| SQL-026 | Post-SQL-025 继续修复剩余失败 | 下一项；待用户指定目标后冻结 |
 
 SQL-010 的历史 Gate false 保持不变；EVAL-003 已保证后续同类偏差会完整分类。之后若
 处理真实失败，每个 Feature 只处理一个主要失败假设，并保持历史评测产物不可变。

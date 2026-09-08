@@ -141,16 +141,16 @@ def test_current_status_and_resume_instructions_are_consistent() -> None:
         encoding="utf-8"
     )
 
-    assert "SQL-024 Daily GMV DWS Source and Projection Contract" in _markdown_section(
+    assert "SQL-025 Post-SQL-024 T05 Real-model Rerun" in _markdown_section(
         status, "## Current Feature"
     )
-    assert "SQL-024 Daily GMV DWS Source and Projection Contract" in _markdown_section(
+    assert "SQL-025 Post-SQL-024 T05 Real-model Rerun" in _markdown_section(
         status, "## Last Completed Feature"
     )
-    assert "SQL-025 Post-SQL-024 T05 Real-model Rerun" in _markdown_section(
+    assert "SQL-026 Post-SQL-025 Continuation" in _markdown_section(
         status, "## Next Feature"
     )
-    assert "SQL-025" in _markdown_section(status, "## Resume From")
+    assert "SQL-026" in _markdown_section(status, "## Resume From")
     assert "Commit and explicitly push the complete SHOWCASE-001" not in status
     assert "GitHub CLI 尚未登录" not in status
 

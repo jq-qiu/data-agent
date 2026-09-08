@@ -2,30 +2,31 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-023 完成 V4-flash 同版本
-Head-to-head：25/30，优于 V3.2 的 23/30；模型保持 V4-flash。SQL-024 已把整体每日
-GMV 的 DWS 源表与 date_id/SUM(gmv) 投影契约冻结到 Plan/Validator。
+MVP V1 的功能与工程链路已收口，当前进入可靠性加固。SQL-025 在 SQL-024 上完成
+V4-flash 真实复测：兼容/严格 Execution 27/30，Metric 30/30，Gate true；T04/T05/N02
+转通过，N01 出现模型漂移失败。
 
 ## Current Feature
 
-SQL-024 Daily GMV DWS Source and Projection Contract.
+SQL-025 Post-SQL-024 T05 Real-model Rerun.
 
-## Feature Status (SQL-024 completed)
+## Feature Status (SQL-025 completed)
 
-Completed and validated without a real-model rerun. T05 Plan locks
-`dws_sales_region_daily` as the only source and `date_id, SUM(gmv)` as the ordered
-projection contract; Validator rejects DWD/dim_date/extra-column variants by AST.
+Completed and validated. Compatible/Strict Execution 27/30（90%），Metric Accuracy
+30/30，Validator Acceptance 29/30，Gate 3 true，Live/Replay 完全一致。
 
 ## Last Completed Feature
 
-SQL-024 Daily GMV DWS Source and Projection Contract.
+SQL-025 Post-SQL-024 T05 Real-model Rerun.
 
 ## Next Feature
 
-SQL-025 Post-SQL-024 T05 Real-model Rerun。以 V4-flash 验证 T05 是否从 0 转为 1。
+SQL-026 Post-SQL-025 Continuation。用户已选择 V4-flash；后续按单一失败假设继续修复。
 
 ## Last Successful Validation
 
+- SQL-025 V4 rerun after SQL-024: compatible/strict Execution 27/30；Metric 30/30；
+  T04/T05/N02 fixed；N01 model drift；J02/C05 remain；Live/Replay identical；
 - SQL-024 daily GMV source/projection contract: full pytest 410 passed；T05 Plan only
   dws_sales_region_daily with date_id/SUM(gmv)；historical evaluation artifacts changed: 0；
 - SQL-023 V4 rerun: compatible/strict Execution 25/30；Metric Accuracy 29/30；
@@ -290,15 +291,14 @@ SQL-023 开始前，本地 `HEAD` 为 SQL-022 commit `9375a22`，本地 LLM 配�
 
 ## Known Blockers
 
-SQL-023 实测 V4-flash 同版本 Execution 25/30（Metric 29/30），高于 V3.2 SQL-022 的
-23/30（Metric 26/30），确认 V4-flash 仍是当前最佳模型选择。SQL-024 已修复 T05 的
-Plan/Validator 契约但尚未真实复测；T04/J02/N02/C05 仍为剩余失败。
+SQL-025 实测 V4-flash Execution 27/30（Metric 30/30），较 SQL-023 25/30 提升且无回退
+之外的 J02/C05 仍需语义/形状修复，N01 为模型非确定性新失败，T04/T05/N02 已转通过。
 
 ## Resume From
 
 1. Read the current task history, `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, and this file.
 2. Verify `git status --short --branch`, recent commits, and remote synchronization.
-3. Review `specs/SQL-024_daily_gmv_dws_source_projection_contract.md` and
-   `docs/reports/SQL-024_COMPLETION.md`.
+3. Review `specs/SQL-025_v4_post_sql024_real_model_rerun.md` and
+   `docs/reports/SQL-025_COMPLETION.md`.
 4. Model choice confirmed：V4-flash。
-5. Next：冻结 SQL-025 Post-SQL-024 T05 Real-model Rerun。
+5. Next：冻结 SQL-026（J02/C05/N01 中选一个主要失败假设）。

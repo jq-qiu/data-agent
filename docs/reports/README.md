@@ -51,6 +51,7 @@
 - [SQL-022 DeepSeek-V3.2 Real-model Rerun](SQL-022_COMPLETION.md)
 - [SQL-023 V4-flash Head-to-head Rerun](SQL-023_COMPLETION.md)
 - [SQL-024 Daily GMV DWS Source and Projection Contract](SQL-024_COMPLETION.md)
+- [SQL-025 Post-SQL-024 T05 Real-model Rerun](SQL-025_COMPLETION.md)
 
 ## 诊断分析与评测
 
