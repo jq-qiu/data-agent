@@ -27,6 +27,7 @@
 - [SQL-002 NL2SQL Evaluation](SQL-002_COMPLETION.md)
 - [ROUTE-001 Hybrid Intent Router](ROUTE-001_COMPLETION.md)
 - [SQL-003 Grouped TopN Query Support](SQL-003_COMPLETION.md)
+- [SQL-004 Deterministic SchemaLinkingPlan](SQL-004_COMPLETION.md)
 
 ## 诊断分析与评测
 
@@ -65,8 +66,9 @@
 1. [DATA-002](DATA-002_COMPLETION.md)：理解 DWD/DWS 粒度与指标对账；
 2. [SQL-002](SQL-002_COMPLETION.md)：理解 NL2SQL 首次真实基线和错误分类；
 3. [ROUTE-001](ROUTE-001_COMPLETION.md)：理解混合意图路由；
-4. [ANA-005](ANA-005_COMPLETION.md) 至 [ANA-007](ANA-007_COMPLETION.md)：理解受控查询、
+4. [SQL-004](SQL-004_COMPLETION.md)：理解 SQL 生成前的确定性 Schema 方案；
+5. [ANA-005](ANA-005_COMPLETION.md) 至 [ANA-007](ANA-007_COMPLETION.md)：理解受控查询、
    确定性分析、Evidence 与报告；
-5. [FIX-001](FIX-001_COMPLETION.md)：理解冻结 Synthetic 诊断回归结果；
-6. [API-001](API-001_COMPLETION.md) 与 [FRONT-001](FRONT-001_COMPLETION.md)：理解端到端
+6. [FIX-001](FIX-001_COMPLETION.md)：理解冻结 Synthetic 诊断回归结果；
+7. [API-001](API-001_COMPLETION.md) 与 [FRONT-001](FRONT-001_COMPLETION.md)：理解端到端
    SSE 演示。

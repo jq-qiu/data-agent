@@ -2,15 +2,15 @@
 
 ## Current Phase
 
-MVP V1 的功能与工程链路已收口，当前进入公开仓库展示整理阶段。SHOWCASE-001
-重构 README 的访客信息层级，并将根目录 Feature 报告归档到统一索引目录；不改变
-任何运行逻辑或既有评测结果。
+MVP V1 的功能与工程链路已收口。SQL-004 Deterministic SchemaLinkingPlan
+已完成并经用户批准：在 SQL 生成前冻结指标、表、列与 JOIN 路径，不改变
+SQL-002 历史评测基线；真实模型复测属于后续 SQL-005。
 
 ## Current Feature
 
-SHOWCASE-001 Public Repository Presentation.
+SQL-004 Deterministic SchemaLinkingPlan.
 
-## Feature Status
+## Feature Status (SQL-004 completed, user approved)
 
 Completed and validated. User approved the SHOWCASE-001 commit and explicit `main` push;
 GitHub visibility remains unchanged until the separate action-time confirmation.
@@ -23,13 +23,17 @@ COMMENT-001 Chinese Code Explanation.
 
 ## Next Feature
 
-完成 SHOWCASE-001 提交、推送和公开前最终安全检查。生产接入 LLM
-Planner、真实语义检索评测、受限多轮和部署监控均需建立新的独立 Feature。
+以 SQL-005 重跑 30 条真实模型基线，验证 SchemaLinkingPlan 对 JOIN/维度的改进。
+生产接入 LLM Planner、真实语义检索评测、受限多轮和部署监控均需独立 Feature。
 
 ## Last Successful Validation
 
+- SQL-004 implementation complete, user approved, 343 pytest passed, Ruff/mypy clean.
 - SHOWCASE-001 full pytest regression: 338 passed；frontend 11 passed/build passed；
   Ruff/mypy 0/0；
+- SQL-004 full pytest regression: 343 passed；Ruff/mypy 0/0；
+- SQL-004 SchemaLinkingPlan: 5 个单测覆盖地区路径补全、DWS 品类优先、未知列校验、断连失败关闭和地区过滤不误分组；
+- SQL-004 真实模型复测：未执行；SQL-002 历史 16/30 保持不可变；
 - SHOWCASE-001 documentation contract: 23 passed；当前事实源 Markdown 断链 0；
   33/34 历史报告保持原 Git blob，INTERVIEW-001 报告仅移除不公开资料说明；
 - INTERVIEW-001 deliverables: 2 documents created and linked from README；

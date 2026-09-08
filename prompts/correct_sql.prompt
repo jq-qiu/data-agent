@@ -16,6 +16,9 @@
 必须遵守的粒度警告如下：
 {grain_warnings}
 
+SQL 生成前已确定的 Schema 方案如下：
+{schema_linking_plan}
+
 当前的时间信息如下：
 {date_info}
 
@@ -44,5 +47,6 @@ SQL 执行错误信息如下：
 10. 多表查询只能使用给定 JOIN 关系；不得通过新增未登记 JOIN、改用运费/支付金额或跨粒度聚合来绕过错误。
 11. 禁止 SELECT *、注释、系统表、文件读写和危险函数；结果最多 500 行。
 12. 分组 TopN 必须保留“先聚合、后 ROW_NUMBER 分组编号、再按 rn <= N 外层过滤”的结构，并在指标排序后追加稳定实体标识 ASC 打破并列；全局 TopN 的 ROW_NUMBER 只使用 ORDER BY，不写 PARTITION BY。禁止 PARTITION BY 1 或任何位置数字；只允许 ROW_NUMBER，不得替换为 RANK、DENSE_RANK、相关 COUNT 子查询或其他窗口函数。COUNT(*) 仅可用于真正的行数聚合，不能用于模拟排名。
+13. 当提供 SchemaLinkingPlan 时，修复不得把表、列或 JOIN 改成方案外的对象，也不得改变 group_by_columns、filters 和排序意图。
 
 输出：

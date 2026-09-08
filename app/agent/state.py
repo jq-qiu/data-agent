@@ -84,6 +84,8 @@ class DataAgentState(TypedDict, total=False):
     metric_infos: list[MetricInfoState]  # 指标信息
     join_relations: list[RelationshipInfoState]
     grain_warnings: list[str]
+    # SQL-004: SQL 生成前由确定性 Builder 生成的 Schema Linking 方案
+    schema_linking_plan: dict
 
     # 额外上下文结果
     date_info: DateInfoState

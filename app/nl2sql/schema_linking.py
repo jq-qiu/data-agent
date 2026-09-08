@@ -1,0 +1,614 @@
+"""SQL-004: NL2SQL SchemaLinkingPlan and deterministic plan builder.
+
+模块职责
+--------
+开放式 NL2SQL 在召回/过滤之后、LLM 生成 SQL 之前，需要一个可审计的
+结构化查询方案。本模块用 Metadata Catalog 和 Relationship Registry 决定：
+用哪些指标、哪些表、哪些列、走哪条 JOIN 路径、按什么规范维度分组，
+从而避免让模型在最后一步自行猜测 JOIN 与业务维度。
+"""
+
+from __future__ import annotations
+
+import re
+import unicodedata
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal, Protocol
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.metadata.catalog import MetadataCatalog
+from app.repositories.mysql.meta.meta_mysql_repository import MetaMySQLRepository
+
+
+class SchemaLinkingPlanError(ValueError):
+    """Plan 构建或校验失败时抛出，原因使用稳定机器可读文本。"""
+
+
+class SchemaLinkingJoin(BaseModel):
+    """Plan 中一条已登记 JOIN 关系；左右端必须是 Catalog 中的真实键。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    relation_id: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
+    left_table: str
+    left_column: str
+    right_table: str
+    right_column: str
+
+
+class SchemaLinkingOrder(BaseModel):
+    """稳定排序声明；列必须是 qualified column id。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    column: str = Field(pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+    direction: Literal["asc", "desc"] = "asc"
+
+
+class SchemaLinkingFilter(BaseModel):
+    """从 Metric Registry status_filters 投影出的值过滤，不接收自由文本。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    column_id: str = Field(pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+    values: tuple[str, ...]
+    exclude: bool = True
+
+
+class SchemaLinkingTopN(BaseModel):
+    """TopN 声明；分组为空表示全局 TopN，否则为受约束的分组 TopN。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    limit: int = Field(ge=1, le=100)
+    partition_by: tuple[str, ...] = ()
+    order_by: tuple[SchemaLinkingOrder, ...] = Field(min_length=1)
+
+
+class SchemaLinkingPlan(BaseModel):
+    """SQL 生成前冻结的查询方案；只包含 Registry 可回查的逻辑/物理对象。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    plan_version: Literal["schema-linking-plan-v1"] = "schema-linking-plan-v1"
+    metric_ids: tuple[str, ...] = ()
+    tables: tuple[str, ...]
+    columns: tuple[str, ...]
+    join_relations: tuple[SchemaLinkingJoin, ...]
+    group_by_columns: tuple[str, ...] = ()
+    display_columns: tuple[str, ...] = ()
+    filters: tuple[SchemaLinkingFilter, ...] = ()
+    order_by: tuple[SchemaLinkingOrder, ...] = ()
+    topn: SchemaLinkingTopN | None = None
+    grain_warnings: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def unique_and_qualified(self) -> SchemaLinkingPlan:
+        for label, values in (
+            ("tables", self.tables),
+            ("columns", self.columns),
+            ("group_by_columns", self.group_by_columns),
+            ("display_columns", self.display_columns),
+        ):
+            if len(values) != len(set(values)):
+                raise ValueError(f"{label} must be unique")
+        for label, values in (
+            ("columns", self.columns),
+            ("group_by_columns", self.group_by_columns),
+            ("display_columns", self.display_columns),
+        ):
+            for value in values:
+                if not _QUALIFIED_COLUMN.fullmatch(value):
+                    raise ValueError(f"{label} must be qualified table.column")
+        if not set(self.group_by_columns).issubset(self.columns):
+            raise ValueError("group_by_columns must be in columns")
+        if not set(self.display_columns).issubset(self.columns):
+            raise ValueError("display_columns must be in columns")
+        for order in self.order_by:
+            if order.column not in self.columns:
+                raise ValueError("order_by columns must be in columns")
+        return self
+
+
+_QUALIFIED_COLUMN = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+_TABLE_COLUMN = re.compile(
+    r"^(?P<table>[a-z][a-z0-9_]*)\.(?P<column>[a-z][a-z0-9_]*)$"
+)
+
+_REGION_TERMS = ("州", "地区", "region", "state")
+_CATEGORY_TERMS = ("品类", "分类", "category")
+_DISPLAY_TERMS = ("名称", "名字", "显示名", "英文", "葡萄牙语", "name")
+_LIST_TERMS = ("列出", "有哪些", "各", "按", "排名", "排行", "分别")
+_GROUP_CUES = (
+    "按",
+    "各",
+    "每",
+    "哪些",
+    "分别",
+    "贡献",
+    "分布",
+    "排名",
+    "排行",
+    "最高",
+    "最低",
+    "最多",
+    "最少",
+    "top",
+    "bottom",
+)
+
+
+def _normalize(value: str) -> str:
+    return unicodedata.normalize("NFKC", value).casefold()
+
+
+def _contains_any(value: str, terms: Sequence[str]) -> bool:
+    normalized = _normalize(value)
+    return any(term in normalized for term in terms)
+
+
+def _qualified(table: str, column: str) -> str:
+    return f"{table}.{column}"
+
+
+def _table_of(qualified_column: str) -> str:
+    match = _TABLE_COLUMN.fullmatch(qualified_column)
+    if match is None:
+        raise SchemaLinkingPlanError(f"invalid qualified column: {qualified_column}")
+    return match.group("table")
+
+
+def _unique(values: Sequence[str]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(values))
+
+
+class RelationshipPathProvider(Protocol):
+    """返回 Registry 中 start 到 end 的最短合法 JOIN 路径。"""
+
+    async def relationship_path(
+        self,
+        start_table: str,
+        end_table: str,
+    ) -> tuple[SchemaLinkingJoin, ...]: ...
+
+
+class MetaRelationshipPathProvider:
+    """Production provider：直接复用 MySQL Metadata 的 BFS 关系路径查询。"""
+
+    def __init__(self, repository: MetaMySQLRepository) -> None:
+        self._repository = repository
+
+    async def relationship_path(
+        self,
+        start_table: str,
+        end_table: str,
+    ) -> tuple[SchemaLinkingJoin, ...]:
+        rows = await self._repository.get_v1_relationship_path(start_table, end_table)
+        return tuple(
+            SchemaLinkingJoin(
+                relation_id=str(row["relation_id"]),
+                left_table=str(row["left_table"]),
+                left_column=str(row["left_column"]),
+                right_table=str(row["right_table"]),
+                right_column=str(row["right_column"]),
+            )
+            for row in rows
+        )
+
+
+class SchemaLinkingPlanBuilder:
+    """从过滤后的 NL2SQL 上下文确定性生成 SchemaLinkingPlan。
+
+    本类不调用 LLM、不访问原始行、不把连接对象写入 State。
+    当用户问题需要地区/品类维度而对应规范维度表尚未进入候选时，
+    通过 Relationship Registry 反查路径并把中间表/键加入方案。
+    """
+
+    def __init__(
+        self,
+        catalog: MetadataCatalog,
+        path_provider: RelationshipPathProvider,
+    ) -> None:
+        self._catalog = catalog
+        self._path_provider = path_provider
+        self._metric_map = {item.metric_id: item for item in catalog.metrics}
+
+    async def build(
+        self,
+        *,
+        query: str,
+        table_infos: Sequence[Mapping[str, Any]],
+        metric_infos: Sequence[Mapping[str, Any]],
+        join_relations: Sequence[Mapping[str, Any]],
+        grain_warnings: Sequence[str] = (),
+    ) -> SchemaLinkingPlan:
+        selected_tables = [str(item["name"]) for item in table_infos]
+        selected_table_map = {
+            name: item for item in table_infos if (name := str(item["name"]))
+        }
+        metric_ids = tuple(
+            dict.fromkeys(str(item["id"]) for item in metric_infos if item.get("id"))
+        )
+        missing_metrics = [
+            metric_id
+            for metric_id in metric_ids
+            if metric_id not in self._metric_map
+        ]
+        if missing_metrics:
+            raise SchemaLinkingPlanError(
+                f"unknown_metric_in_schema_plan:{','.join(sorted(missing_metrics))}"
+            )
+
+        plan_tables: dict[str, Mapping[str, Any]] = {
+            table: selected_table_map[table]
+            for table in selected_tables
+            if table in selected_table_map
+        }
+
+        planned_joins = {
+            str(row["relation_id"]): SchemaLinkingJoin(
+                relation_id=str(row["relation_id"]),
+                left_table=str(row["left_table"]),
+                left_column=str(row["left_column"]),
+                right_table=str(row["right_table"]),
+                right_column=str(row["right_column"]),
+            )
+            for row in join_relations
+            if all(
+                str(row.get(key))
+                for key in (
+                    "relation_id",
+                    "left_table",
+                    "left_column",
+                    "right_table",
+                    "right_column",
+                )
+            )
+        }
+
+        requested = self._requested_dimensions(query, bool(metric_ids))
+        dimension_paths: list[SchemaLinkingJoin] = []
+        group_columns: list[str] = []
+        display_columns: list[str] = []
+
+        # 地区语义：优先使用已选择汇总表的 region_id；否则通过 Registry 反查 dim_region。
+        if requested.get("region"):
+            direct = self._direct_dimension_column(
+                plan_tables,
+                "region_id",
+            )
+            if direct is not None:
+                group_columns.append(direct)
+            else:
+                await self._ensure_dimension_table(
+                    plan_tables,
+                    "dim_region",
+                    dimension_paths,
+                )
+                if "dim_region" not in plan_tables:
+                    raise SchemaLinkingPlanError(
+                        "requested_region_dimension_unresolved"
+                    )
+                group_columns.append("dim_region.state_code")
+                if requested.get("display"):
+                    display_columns.append("dim_region.display_name")
+
+        # 品类语义：DWS 已含 category_id 时优先直接分组，不额外引入 JOIN。
+        if requested.get("category"):
+            direct = self._direct_dimension_column(
+                plan_tables,
+                "category_id",
+            )
+            if direct is not None:
+                group_columns.append(direct)
+            elif "dim_product" in plan_tables:
+                group_columns.append("dim_product.category_id")
+            else:
+                await self._ensure_dimension_table(
+                    plan_tables,
+                    "dim_category",
+                    dimension_paths,
+                )
+                if "dim_category" not in plan_tables:
+                    raise SchemaLinkingPlanError(
+                        "requested_category_dimension_unresolved"
+                    )
+                group_columns.append("dim_category.category_id")
+                if requested.get("display"):
+                    display_columns.append("dim_category.category_name_en")
+
+        # 显示名称只在用户明确要求时补入；不能用名称列替代规范分组列。
+        if (
+            requested.get("display")
+            and requested.get("region")
+            and "dim_region" in plan_tables
+            and "dim_region.display_name" not in display_columns
+            and "dim_region.display_name" in self._catalog.column_ids
+        ):
+            display_columns.append("dim_region.display_name")
+        if (
+            requested.get("display")
+            and requested.get("category")
+            and "dim_category" in plan_tables
+            and "dim_category.category_name_en" not in display_columns
+            and "dim_category.category_name_en" in self._catalog.column_ids
+        ):
+            display_columns.append("dim_category.category_name_en")
+
+        table_names = tuple(sorted(plan_tables))
+        selected_columns = {
+            _qualified(str(ti["name"]), str(column["name"]))
+            for ti in table_infos
+            for column in ti.get("columns", [])
+        }
+        metric_columns = {
+            column
+            for column in self._metric_columns(metric_ids)
+            if _table_of(column) in table_names
+        }
+        columns = set(selected_columns) | metric_columns
+        for column in (*group_columns, *display_columns):
+            columns.add(column)
+        for join in dimension_paths:
+            columns.add(_qualified(join.left_table, join.left_column))
+            columns.add(_qualified(join.right_table, join.right_column))
+
+        columns = {
+            column
+            for column in columns
+            if column in self._catalog.column_ids and _table_of(column) in table_names
+        }
+
+        join_list = (*planned_joins.values(), *dimension_paths)
+        connected = self._connect_plan_tables(table_names, join_list)
+        if connected is None:
+            # 失败关闭：宁可让本次请求明确失败，也不让模型补出未登记 JOIN。
+            raise SchemaLinkingPlanError("schema_linking_tables_not_connected")
+
+        order_by = self._infer_order(query, group_columns)
+        filters = self._metric_filters(metric_ids)
+        plan = SchemaLinkingPlan(
+            metric_ids=metric_ids,
+            tables=table_names,
+            columns=_unique(sorted(columns)),
+            join_relations=connected,
+            group_by_columns=_unique(group_columns),
+            display_columns=_unique(display_columns),
+            filters=filters,
+            order_by=order_by,
+            grain_warnings=tuple(grain_warnings),
+        )
+        validate_schema_linking_plan(plan, self._catalog)
+        return plan
+
+    def _metric_columns(self, metric_ids: Sequence[str]) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(
+                column
+                for metric_id in metric_ids
+                if (metric := self._metric_map.get(metric_id))
+                for column in metric.relevant_columns
+            )
+        )
+
+    @staticmethod
+    def _direct_dimension_column(
+        plan_tables: Mapping[str, Mapping[str, Any]],
+        column_name: str,
+    ) -> str | None:
+        candidates: list[tuple[int, str]] = []
+        role_order = ("aggregate", "dimension", "fact", "synthetic_evidence")
+        for table_name, table in plan_tables.items():
+            columns = table.get("columns", [])
+            if any(str(column.get("name")) == column_name for column in columns):
+                role = str(table.get("role", ""))
+                rank = role_order.index(role) if role in role_order else len(role_order)
+                candidates.append((rank, table_name))
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: (item[0], item[1]))
+        return _qualified(candidates[0][1], column_name)
+
+    async def _ensure_dimension_table(
+        self,
+        plan_tables: dict[str, Mapping[str, Any]],
+        dimension_table: str,
+        dimension_paths: list[SchemaLinkingJoin],
+    ) -> None:
+        if dimension_table in plan_tables:
+            return
+        dimension_definition = self._catalog.table_map.get(dimension_table)
+        if dimension_definition is None:
+            raise SchemaLinkingPlanError(
+                f"dimension_table_missing_from_catalog:{dimension_table}"
+            )
+        start = self._best_path_start(plan_tables)
+        path = await self._path_provider.relationship_path(start, dimension_table)
+        if not path:
+            return
+        for join in path:
+            if join.relation_id not in {item.relation_id for item in dimension_paths}:
+                dimension_paths.append(join)
+            for table_name in (join.left_table, join.right_table):
+                definition = self._catalog.table_map.get(table_name)
+                if definition is None:
+                    raise SchemaLinkingPlanError(
+                        f"path_table_missing_from_catalog:{table_name}"
+                    )
+                if table_name not in plan_tables:
+                    plan_tables[table_name] = self._table_state_from_catalog(
+                        definition
+                    )
+        if dimension_table not in plan_tables:
+            plan_tables[dimension_table] = self._table_state_from_catalog(
+                dimension_definition
+            )
+
+    @staticmethod
+    def _best_path_start(
+        plan_tables: Mapping[str, Mapping[str, Any]],
+    ) -> str:
+        preferred = ("fact_order_item", "fact_order", "dim_customer", "dim_product")
+        for table in preferred:
+            if table in plan_tables:
+                return table
+        return next(iter(sorted(plan_tables)))
+
+    def _connect_plan_tables(
+        self,
+        table_names: Sequence[str],
+        extra_joins: Sequence[SchemaLinkingJoin],
+    ) -> tuple[SchemaLinkingJoin, ...] | None:
+        table_set = set(table_names)
+        catalog_joins = [
+            SchemaLinkingJoin(
+                relation_id=item.relation_id,
+                left_table=item.left_table,
+                left_column=item.left_column,
+                right_table=item.right_table,
+                right_column=item.right_column,
+            )
+            for item in self._catalog.relationships
+            if item.left_table in table_set and item.right_table in table_set
+        ]
+        all_joins = {
+            join.relation_id: join for join in (*extra_joins, *catalog_joins)
+        }
+        neighbors: dict[str, list[SchemaLinkingJoin]] = {}
+        for join in all_joins.values():
+            neighbors.setdefault(join.left_table, []).append(join)
+            neighbors.setdefault(join.right_table, []).append(join)
+
+        root = next(iter(sorted(table_set)))
+        queue = [root]
+        visited = {root}
+        selected: list[SchemaLinkingJoin] = []
+        index = 0
+        while index < len(queue):
+            current = queue[index]
+            index += 1
+            for join in neighbors.get(current, []):
+                neighbor = (
+                    join.right_table
+                    if join.left_table == current
+                    else join.left_table
+                )
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                selected.append(join)
+                queue.append(neighbor)
+        if visited != table_set:
+            return None
+        return tuple(selected)
+
+    @staticmethod
+    def _infer_order(
+        query: str,
+        group_columns: Sequence[str],
+    ) -> tuple[SchemaLinkingOrder, ...]:
+        if group_columns and _contains_any(query, _LIST_TERMS):
+            return tuple(
+                SchemaLinkingOrder(column=column) for column in group_columns
+            )
+        return ()
+
+    def _metric_filters(
+        self,
+        metric_ids: Sequence[str],
+    ) -> tuple[SchemaLinkingFilter, ...]:
+        filters: list[SchemaLinkingFilter] = []
+        for metric_id in metric_ids:
+            metric = self._metric_map.get(metric_id)
+            if metric is None or not metric.status_filters:
+                continue
+            for key, values in metric.status_filters.items():
+                column_id = key.partition(":")[2] if key.startswith("exclude:") else key
+                if column_id in self._catalog.column_ids:
+                    filters.append(
+                        SchemaLinkingFilter(
+                            column_id=column_id,
+                            values=tuple(values),
+                            exclude=key.startswith("exclude:"),
+                        )
+                    )
+        return tuple(filters)
+
+    @staticmethod
+    @staticmethod
+    def _requested_dimensions(
+        query: str,
+        has_metric: bool,
+    ) -> dict[str, bool]:
+        grouped = has_metric and _contains_any(query, _GROUP_CUES)
+        return {
+            "region": grouped and _contains_any(query, _REGION_TERMS),
+            "category": grouped and _contains_any(query, _CATEGORY_TERMS),
+            "display": _contains_any(query, _DISPLAY_TERMS),
+        }
+
+    @staticmethod
+    def _table_state_from_catalog(definition: Any) -> dict[str, Any]:
+        return {
+            "name": definition.table_name,
+            "role": definition.role,
+            "grain": definition.grain,
+            "description": definition.description,
+            "time_column": definition.time_column,
+            "primary_key": list(definition.primary_key),
+            "allowed_join_relations": list(definition.allowed_join_relations),
+            "columns": [
+                {
+                    "name": column.name,
+                    "type": "text",
+                    "role": column.role,
+                    "examples": [],
+                    "description": column.description,
+                    "alias": list(column.aliases),
+                }
+                for column in definition.columns
+            ],
+        }
+
+
+def validate_schema_linking_plan(
+    plan: SchemaLinkingPlan,
+    catalog: MetadataCatalog,
+) -> None:
+    """校验 Plan 的所有对象都可回溯到 Catalog；失败时抛出 SchemaLinkingPlanError。"""
+
+    issues: list[str] = []
+    table_set = set(plan.tables)
+    for table_name in plan.tables:
+        if table_name not in catalog.table_map:
+            issues.append(f"unknown_table:{table_name}")
+    for column in (*plan.columns, *plan.group_by_columns, *plan.display_columns):
+        if column not in catalog.column_ids:
+            issues.append(f"unknown_column:{column}")
+        table_name = _table_of(column)
+        if table_name not in table_set:
+            issues.append(f"column_without_table:{column}")
+    known_relations = {item.relation_id: item for item in catalog.relationships}
+    for join in plan.join_relations:
+        relation = known_relations.get(join.relation_id)
+        if relation is None:
+            issues.append(f"unknown_relation:{join.relation_id}")
+        else:
+            if (
+                relation.left_table != join.left_table
+                or relation.left_column != join.left_column
+                or relation.right_table != join.right_table
+                or relation.right_column != join.right_column
+            ):
+                issues.append(f"relation_mismatch:{join.relation_id}")
+            if relation.left_table not in table_set or relation.right_table not in table_set:
+                issues.append(f"relation_outside_plan:{join.relation_id}")
+    metric_map = {item.metric_id for item in catalog.metrics}
+    for metric_id in plan.metric_ids:
+        if metric_id not in metric_map:
+            issues.append(f"unknown_metric:{metric_id}")
+    if issues:
+        raise SchemaLinkingPlanError(
+            "schema_linking_plan_invalid:" + ",".join(sorted(set(issues)))
+        )

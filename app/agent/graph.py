@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph
 
 from app.agent.context import DataAgentContext
 from app.agent.nodes.add_extra_context import add_extra_context
+from app.agent.nodes.build_schema_linking_plan import build_schema_linking_plan
 from app.agent.nodes.correct_sql import correct_sql
 from app.agent.nodes.execute_sql import execute_sql
 from app.agent.nodes.expand_recall_keywords import expand_recall_keywords
@@ -49,6 +50,7 @@ graph_builder.add_node("merge_retrieved_info", merge_retrieved_info)
 graph_builder.add_node("filter_table", filter_table)
 graph_builder.add_node("filter_metric", filter_metric)
 graph_builder.add_node("add_extra_context", add_extra_context)
+graph_builder.add_node("build_schema_linking_plan", build_schema_linking_plan)
 graph_builder.add_node("generate_sql", generate_sql)
 graph_builder.add_node("validate_sql", validate_sql)
 graph_builder.add_node("correct_sql", correct_sql)
@@ -71,7 +73,8 @@ graph_builder.add_edge("merge_retrieved_info", "filter_metric")
 graph_builder.add_edge("filter_table", "add_extra_context")
 graph_builder.add_edge("filter_metric", "add_extra_context")
 
-graph_builder.add_edge("add_extra_context", "generate_sql")
+graph_builder.add_edge("add_extra_context", "build_schema_linking_plan")
+graph_builder.add_edge("build_schema_linking_plan", "generate_sql")
 graph_builder.add_edge("generate_sql", "validate_sql")
 
 
